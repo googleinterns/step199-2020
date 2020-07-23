@@ -13,7 +13,7 @@ jobs:
     - name: Install ESLint with Google Config
       run: npm install eslint@^7.3.1 eslint-config-google@^0.14.0
     - name: Check
-      run: npx eslint src
+      run: npx eslint src/main/webapp
 
   lint-java:
     runs-on: ubuntu-latest
