@@ -11,7 +11,7 @@ let controls;
 const rotationData = new Map();
 const points = [];
 
-/** 
+/**
  * Intializes the scene and its child objects
  */
 function init() {
@@ -100,7 +100,9 @@ function init() {
         }
       });
 }
-
+/**
+ * Animation loop
+ */
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
