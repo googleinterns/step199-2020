@@ -3,9 +3,9 @@ import {FlyControls} from 'https://threejs.org/examples/jsm/controls/FlyControls
 import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 
 // global objects
-var scene, camera, renderer, clock, controls;
+let scene, camera, renderer, clock, controls;
 let rotationData = new Map();
-var points = [];
+let points = [];
 
 
 function init() {
@@ -26,51 +26,50 @@ function init() {
   controls.dragToLook = true;
 
   // Scene Objects
-  var geometry = new THREE.PlaneGeometry(5, 25, 1);
-  var material =
+  let geometry = new THREE.PlaneGeometry(5, 25, 1);
+  let material =
       new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
-  var plane = new THREE.Mesh(geometry, material);
+  let plane = new THREE.Mesh(geometry, material);
   plane.rotation.x = Math.PI / 2;
   plane.position.z = -10;
   scene.add(plane);
 
   // Fake Pose Data
   material = new THREE.LineBasicMaterial({color: 'red'});
-  for (var increment = 0; increment < 15; increment++) {
-    points.push(new THREE.Vector3(
+  for (let increment = 0; increment < 15; increment++) {
+    pnoints.push(new THREE.Vector3(
         Math.pow(-1, increment), .20, -increment));  // GPS points
 
-    var geometry = new THREE.CylinderGeometry(.02, .02, .5);
-    var cylinder = new THREE.Mesh(geometry, material);
+    let geometry = new THREE.CylinderGeometry(.02, .02, .5);
+    let cylinder = new THREE.Mesh(geometry, material);
     cylinder.rotateX(THREE.Math.degToRad(-90));
     cylinder.position.set(0, 0, -.25);
     scene.add(cylinder);  // Orientation indicator
 
-    var pivot = new THREE.Group();  // Pivot point for each cylinder
+    let pivot = new THREE.Group();  // Pivot point for each cylinder
     pivot.position.set(Math.pow(-1, increment), .25, -increment);
-    scene.add(pivot)
+      scene.add(pivot);
     pivot.add(cylinder);
-    var pivotSphereGeo =
+    let pivotSphereGeo =
         new THREE.SphereGeometry(.03);  // Small sphere indicating pivot point
-    var pivotSphere = new THREE.Mesh(pivotSphereGeo);
+    let pivotSphere = new THREE.Mesh(pivotSphereGeo);
     pivotSphere.position.set(Math.pow(-1, increment), .25, -increment);
     scene.add(pivotSphere);
 
     rotationData.set(increment, {origin: pivot, mesh: cylinder});
-  }
+  }ppp
   geometry = new THREE.BufferGeometry().setFromPoints(points);
   material = new THREE.LineBasicMaterial({color: 'blue'});
-  var line = new THREE.Line(geometry, material);
-  scene.add(line)
-
+  let line = new THREE.Line(geometry, material);
+  scene.add(line);
   // GUI initialization
-  var gui = new GUI();
-  var params = {clipIntersection: true, Yaw: 0, showHelpers: false};
+  let gui = new GUI();
+  let params = {clipIntersection: true, Yaw: 0, showHelpers: false};
   gui.add(params, 'Yaw', -360, 360)
       .step(.1)
       .name('Yaw (degrees)')
       .onChange(function(value) {
-        for (var i = 0; i < rotationData.size; i++) {
+        for (let i = 0; i < rotationData.size; i++) {
           rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(value);
         }
       });
@@ -80,7 +79,7 @@ function init() {
       .step(.1)
       .name('Pitch (degrees)')
       .onChange(function(value) {
-        for (var i = 0; i < rotationData.size; i++) {
+        for (let i = 0; i < rotationData.size; i++) {
           rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(value);
         }
       });
@@ -90,15 +89,15 @@ function init() {
       .step(.1)
       .name('Roll (degrees)')
       .onChange(function(value) {
-        for (var i = 0; i < rotationData.size; i++) {
+        for (let i = 0; i < rotationData.size; i++) {
           rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(value);
         }
       });
 }
 
-var animate = function() {
+let animate = function() {
   requestAnimationFrame(animate);
-  var delta = clock.getDelta();
+  let delta = clock.getDelta();
   controls.update(delta);
   renderer.render(scene, camera);
 };
