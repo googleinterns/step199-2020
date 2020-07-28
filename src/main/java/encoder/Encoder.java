@@ -16,6 +16,9 @@ import proto.DataFormats.Heading;
 import proto.DataFormats.Position;
 import proto.DataFormats.SerializedData;
 
+/**
+ * Change file format from .txt to proto format.
+ */
 public class Encoder {
   // Define interface for functional programming style.
   public interface Lambda<T, U> {
