@@ -1,0 +1,23 @@
+{
+  "name": "step199-2020",
+  "version": "1.0.0",
+  "description": "File for npm packages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/googleinterns/step199-2020.git"
+  },
+  "author": "David Morley",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/googleinterns/step199-2020/issues"
+  },
+  "homepage": "https://github.com/googleinterns/step199-2020#readme",
+  "devDependencies": {
+    "eslint": "^7.5.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}
