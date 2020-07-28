@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-/** Validate that a .txt file can be properly encoded into a protobuf file. */
+/** Validate that a .txt file can be properly encoded into a .proto file. */
 public final class EncodeTest {
   private static String inputFile;
   private static String outputFile;
