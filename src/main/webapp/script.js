@@ -17,10 +17,10 @@ const points = [];
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
-      /*fov = */ 75, 
-      /*aspectRatio = */ window.innerWidth / window.innerHeight, 
-      /*nearFrustum = */.1,
-      /*farFrustum = */ 1000);
+      /* fov =*/ 75,
+      /* aspectRatio =*/ window.innerWidth / window.innerHeight,
+      /* nearFrustum =*/.1,
+      /* farFrustum =*/ 1000);
   camera.position.set(0, 1, 1);
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -38,10 +38,10 @@ function init() {
   gui();
 }
 
-/** 
+/**
  * Creates all the objects and adds them to the scene.
 */
-function addObjects(){
+function addObjects() {
   let geometry = new THREE.PlaneGeometry(5, 25, 1);
   let material =
       new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
@@ -83,7 +83,7 @@ function addObjects(){
 /**
  * Creates a GUI for manipulating the orientation of each data point
  */
-function gui(){
+function gui() {
   const gui = new GUI();
   let params = {clipIntersection: true, Yaw: 0, showHelpers: false};
   gui.add(params, 'Yaw', -360, 360)
