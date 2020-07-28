@@ -1,5 +1,7 @@
 package encoder;
 
+import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.GeneratedMessageV3;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,10 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.List;
-
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.GeneratedMessageV3;
-
 import proto.DataFormats.Data;
 import proto.DataFormats.Heading;
 import proto.DataFormats.Position;
@@ -20,9 +18,12 @@ import proto.DataFormats.SerializedData;
 
 public class Encoder {
   // Define interface for functional programming style.
-  public interface Lambda<T, U> { T parseToType(U input); }
-  private static Lambda<Float, String> toFloat =
-      (String x) -> Float.parseFloat(x);
+  public interface Lambda<T, U> {
+    T parseToType(U input);
+  }
+
+  private static Lambda<Float, String> toFloat = (String x) -> Float.parseFloat(x);
+
   public static void encode(InputStream inStream, OutputStream outStream) {
     // Set an upper threshold by default on the maximum number of fields, this
     // will make the call to split faster.
@@ -30,8 +31,7 @@ public class Encoder {
     // Split the input based on spaces, any number of spaces is allowed.
     final String regex = " +";
     SerializedData.Builder serialized = SerializedData.newBuilder();
-    try (BufferedReader reader =
-             new BufferedReader(new InputStreamReader(inStream, "UTF-8"))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "UTF-8"))) {
       // The first thing we want to do is read the header line, this will tell
       // us the names of the fields, and how many input fields that there are.
       String headLine = reader.readLine();
@@ -64,8 +64,7 @@ public class Encoder {
     }
   }
   // appropriate line to easily get the specific field
-  private static String[] parseFields(String currentLine, String regex,
-                                      int maxFields) {
+  private static String[] parseFields(String currentLine, String regex, int maxFields) {
     // Split all the files based on a RegEx.
     // TODO(morleyd): Add some file sanity checking, throw an error on
     // unexpected format (might not do though as slows down operation).
@@ -73,23 +72,19 @@ public class Encoder {
     return fields;
   }
 
-  private static Heading parseHeading(String[] input, int startIndex,
-                                      int endIndex) {
+  private static Heading parseHeading(String[] input, int startIndex, int endIndex) {
     Heading.Builder head = Heading.newBuilder();
     List<FieldDescriptor> currentFields = head.getDescriptor().getFields();
-    ArrayList<Lambda> headingTypes =
-        new ArrayList<>(Arrays.asList(toFloat, toFloat, toFloat));
+    ArrayList<Lambda> headingTypes = new ArrayList<>(Arrays.asList(toFloat, toFloat, toFloat));
     setFields(head, currentFields, input, headingTypes, startIndex, endIndex);
     return head.build();
   }
-  private static Position parsePosition(String[] input, int startIndex,
-                                        int endIndex) {
+
+  private static Position parsePosition(String[] input, int startIndex, int endIndex) {
     Position.Builder position = Position.newBuilder();
     List<FieldDescriptor> currentFields = position.getDescriptor().getFields();
-    ArrayList<Lambda> headingTypes =
-        new ArrayList<>(Arrays.asList(toFloat, toFloat, toFloat));
-    setFields(position, currentFields, input, headingTypes, startIndex,
-              endIndex);
+    ArrayList<Lambda> headingTypes = new ArrayList<>(Arrays.asList(toFloat, toFloat, toFloat));
+    setFields(position, currentFields, input, headingTypes, startIndex, endIndex);
     return position.build();
   }
 
@@ -103,10 +98,13 @@ public class Encoder {
     return data.setHead(head).setPose(position).build();
   }
 
-  private static void setFields(GeneratedMessageV3.Builder toBuild,
-                                List<FieldDescriptor> currentFields,
-                                String[] input, ArrayList<Lambda> types,
-                                int startIndex, int endIndex)
+  private static void setFields(
+      GeneratedMessageV3.Builder toBuild,
+      List<FieldDescriptor> currentFields,
+      String[] input,
+      ArrayList<Lambda> types,
+      int startIndex,
+      int endIndex)
       throws InputMismatchException {
     int listLength = currentFields.size();
     int arrayLength = endIndex - startIndex;
@@ -118,8 +116,9 @@ public class Encoder {
 
     for (int i = startIndex; i != endIndex; i++) {
       int currentFieldsIndex = i - startIndex;
-      toBuild.setField(currentFields.get(currentFieldsIndex),
-                       types.get(currentFieldsIndex).parseToType(input[i]));
+      toBuild.setField(
+          currentFields.get(currentFieldsIndex),
+          types.get(currentFieldsIndex).parseToType(input[i]));
     }
   }
 }

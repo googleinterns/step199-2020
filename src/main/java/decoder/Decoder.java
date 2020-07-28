@@ -1,11 +1,11 @@
 package decoder;
+
+import com.google.protobuf.util.JsonFormat;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-
-import com.google.protobuf.util.JsonFormat;
-
 import proto.DataFormats.SerializedData;
+
 public class Decoder {
   public static void decode(InputStream dataStream, OutputStream outputStream) {
 
