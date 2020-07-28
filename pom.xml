@@ -26,6 +26,30 @@
       <artifactId>appengine-api-1.0-sdk</artifactId>
       <version>1.9.59</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Provides the core protobuf library features -->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>4.0.0-rc-2</version>
+    </dependency>
+    <!-- Provides JSON converter -->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java-util</artifactId>
+      <version>4.0.0-rc-2</version>
+    </dependency>
+    <!-- May be possible to remove this dependency now, unsure, look into -->
+    <dependency>
+      <groupId>com.googlecode.protobuf-java-format</groupId>
+      <artifactId>protobuf-java-format</artifactId>
+      <version>1.4</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -52,6 +76,32 @@
             </googleJavaFormat>
           </java>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.os72</groupId>
+        <artifactId>protoc-jar-maven-plugin</artifactId>
+        <version>3.2.0.1</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <inputDirectories>
+                <include>src/main/java/proto</include>
+              </inputDirectories>
+              <!-- Create java files. And put them in the src/main/java directory. -->
+              <outputTargets>
+                <outputTarget>
+                  <type>java</type>
+                  <outputDirectory>src/main/java</outputDirectory>
+                  <!-- Output directory is already determined by the package in the .proto file. -->
+                </outputTarget>
+              </outputTargets>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
