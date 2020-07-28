@@ -10,6 +10,6 @@ and truly impactful. The name 'Stellarpoint' is in reference to
 the massive point clouds we show complementing the pose data.
 These point clouds are made up of hundreds of thousands of points,
 reconstructing any physical object in 3D space. The project uses
-Three.js, an open source library which supports 3D web-applications. 
+Three.js, an open source library which supports 3D web-applications.
 This allows the user to easily upload pose or lidar data and quickly
 see results in their web browser.
