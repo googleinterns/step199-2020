@@ -46,24 +46,22 @@ public class Encoder {
       while ((nextLine = reader.readLine()) != null) {
         String[] currentEntry = parseFields(nextLine, regex, maxFields);
         serialized.addData(parseData(currentEntry));
-        //  parseIntoProtobuf(currentEntry);
         // TODO(morleyd): Generalize this part of the code by using java
         // reflection so it is generally applicable.
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
-    // Attempt to open the output file.
     try {
       // Build the entire message.
       serialized.build().writeTo(outStream);
-      // Close the file stream.
+      // Ensure we close the file stream.
       outStream.close();
     } catch (Exception e) {
       e.getStackTrace();
     }
   }
-  // appropriate line to easily get the specific field
+  // Split into array based on the given RegEx.
   private static String[] parseFields(String currentLine, String regex, int maxFields) {
     // Split all the files based on a RegEx.
     // TODO(morleyd): Add some file sanity checking, throw an error on
@@ -113,7 +111,6 @@ public class Encoder {
       throw new InputMismatchException();
     }
     // The index of the one array and the other are no longer the same.
-
     for (int i = startIndex; i != endIndex; i++) {
       int currentFieldsIndex = i - startIndex;
       toBuild.setField(
