@@ -6,9 +6,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import proto.DataFormats.SerializedData;
 
-/**
- * Decode data from the proto format to JSON.
- */
+/** Decode data from the proto format to JSON. */
 public class Decoder {
   public static void decode(InputStream dataStream, OutputStream outputStream) {
 
