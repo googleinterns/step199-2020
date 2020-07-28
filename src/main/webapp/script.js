@@ -2,7 +2,7 @@
 import {FlyControls} from 'https://threejs.org/examples/jsm/controls/FlyControls.js';
 import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 
-// global objects
+// Initialization of global objects.
 let scene;
 let camera;
 let renderer;
@@ -12,26 +12,36 @@ const rotationData = new Map();
 const points = [];
 
 /**
- * Intializes the scene and its child objects
+ * Initializes the scene, camera, renderer, and clock.
  */
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, .1, 1000);
+      /*fov = */ 75, 
+      /*aspectRatio = */ window.innerWidth / window.innerHeight, 
+      /*nearFrustum = */.1,
+      /*farFrustum = */ 1000);
   camera.position.set(0, 1, 1);
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
 
-  // Camera controls, imported from FlyControls library
+  // The camera controls allows the user to fly with the camera.
   controls = new FlyControls(camera, renderer.domElement);
   controls.movementSpeed = 1;
   controls.rollSpeed = Math.PI / 10;
   controls.autoForward = false;
   controls.dragToLook = true;
 
-  // Scene Objects
+  addObjects();
+  gui();
+}
+
+/** 
+ * Creates all the objects and adds them to the scene.
+*/
+function addObjects(){
   let geometry = new THREE.PlaneGeometry(5, 25, 1);
   let material =
       new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
@@ -68,7 +78,12 @@ function init() {
   material = new THREE.LineBasicMaterial({color: 'blue'});
   const line = new THREE.Line(geometry, material);
   scene.add(line);
-  // GUI initialization
+}
+
+/**
+ * Creates a GUI for manipulating the orientation of each data point
+ */
+function gui(){
   const gui = new GUI();
   let params = {clipIntersection: true, Yaw: 0, showHelpers: false};
   gui.add(params, 'Yaw', -360, 360)
@@ -101,7 +116,9 @@ function init() {
       });
 }
 /**
- * Animation loop
+ * This is the animation loop which continually updates the scene.
+ * It allows the movement of objects to be seen on screen and the camera
+ * to be moved in accordance to the controls.
  */
 function animate() {
   requestAnimationFrame(animate);
