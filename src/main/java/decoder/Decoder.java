@@ -4,7 +4,7 @@ import com.google.protobuf.util.JsonFormat;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import proto.DataFormats.SerializedData;
+import proto.SensorData;
 
 /** Decode data from the proto format to JSON. */
 public class Decoder {

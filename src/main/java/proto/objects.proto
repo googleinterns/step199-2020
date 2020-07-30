@@ -9,22 +9,13 @@ syntax = "proto3";
 
 package formats;
 option java_package = "proto";
-option java_outer_classname = "DataFormats";
+option java_outer_classname = "SensorData";
 
-message SerializedData { repeated Data data = 1; }
-message Data {
-  Position pose = 1;
-  Heading head = 2;
-}
-
-message Position {
-  float lat = 1;
-  float long = 2;
-  float alt = 3;
-}
-
-message Heading {
-  float roll_deg = 1;
-  float pitch_deg = 2;
-  float yaw_deg = 3;
+message Pose{
+  double lat = 1;
+  double lng = 2;
+  double alt = 3;
+  float roll_deg = 4;
+  float pitch_deg = 5;
+  float yaw_deg = 6;
 }
