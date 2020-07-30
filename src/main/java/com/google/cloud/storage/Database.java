@@ -3,14 +3,15 @@ package com.google.cloud.storage;
 import java.util.HashMap;
 
 
-/* This class creates an instance of a database that a file can be written to and read from. */
+/* This class creates an instance of a database that a file can be written to and read from.
+Assumptions: for weach runID, only 1 of each datatype can be associated with it */
 public class Database{
 
     /* Name of Database. */
     private String name;
 
     /* List of all buckets in Database. */
-    private Arraylist<Bucket> buckets; 
+    private ArrayList<Bucket> buckets; 
     
      /* Before we can use Google Cloud storage, we have to create a service object. */
     private Storage storage;
@@ -26,11 +27,20 @@ public class Database{
     }
 
     /* Searches for bucket named runID, and if it doesnt find it, makes a new one. */
-    public Bucket updateBucket(String runID){
+    public Bucket getCurrentBucket(String runID){
     }
 
     /* Returns all files id and names with the purpose of having them show to webpage.  */
-    public HashMap<String, String>  getAllFiles(){
+    public ArrayList<String>  getAllFiles(){
     }
+
+    /* Returns a Reader with this runId. */
+    public ReaderGCS getReader(String runID){
+    }
+
+    /* Returns a Writer associated with the runID */
+    public WriterGCS getWriter(String runID){
+    }
+
 
 }

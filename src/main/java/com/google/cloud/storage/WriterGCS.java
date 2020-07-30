@@ -7,34 +7,31 @@ import javax.jms;
 /* GCS Writer class */
 public class WriterGCS{
     
-    /* Type of data of file, wheter its Pose or Proto or something different. */
-    private Message datatype;
- 
-    /* File stream. */
-    private FileInputStream stream;
+    /* Streams_ represents the streams of all files in a specific bucket. message is type and OutputStream is the binary info inside */
+    private HashMap<Message, OutputStream> streams_;
 
     /* RunID. */
     private String runID;
 
-    /* raw data in file*/
-    private String sensorData;
+    /* Initiates a WriterGCS object to store file's sensorData in runID bucket. */
+    public WriterGCS(String runID){
+         open();
+    }
 
-    /* streams  sensorData to file dataType in Bucket runID*/
-    public void write(Message type, Stream stream){
+    /* Returns outputstream to write new file of message type in memory. */
+    public OutputStream write(Message type)throws FileNotFoundException{
+    }
+
+    /* Returns outputstream to write 1 proto of message type in memory. */
+    public OutputStream writeOneProto(Message type)throws FileNotFoundException{  
     }
 
     /* Close file, and finishes streaming to database. */    
     public void close(){
     }
 
-    /* Initiates a WriterGCS object to store file's sensorData in runID bucket and identify it by its datatype. */
-    public WriterGCS(String runID, Message datatype, String sensorData){
-         open();
-    }
-
     /* Opens file and allocated storage space for this file's contents. */
     private void open(){
     }
-
 
 }
