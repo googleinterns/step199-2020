@@ -1,6 +1,6 @@
 package com.google.cloud.storage;
 
-import java.util.ArrayList<E>;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
