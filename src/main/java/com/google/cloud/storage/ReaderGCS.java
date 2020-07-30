@@ -21,7 +21,7 @@ public class ReaderGCS{
     /* If  blob of the particular data type is found located in this particular database,
      * blob is read and streamed. If file not found, prints error.
      */
-    public Stream readBlob(Message type,double* time_stamp){
+    public Stream readBlob(Message type,double time_stamp){
 
     }
     
