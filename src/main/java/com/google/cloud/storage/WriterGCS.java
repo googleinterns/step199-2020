@@ -1,3 +1,8 @@
+package com.google.cloud;
+
+import java.io.FileInputStream;
+import java.io.OutputStream;
+import javax.jms;
 
 /* GCS Writer class */
 public class WriterGCS{

@@ -1,3 +1,8 @@
+package com.google.cloud;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import javax.jms;
 
 /* GCS Reader class blob information to read its contents. */
 public class ReaderGCS{
@@ -31,7 +36,7 @@ public class ReaderGCS{
     }
  
     /* what is time stamp use in pose data?  */
-    public bool SeekToTime(double time_stamp) {
+    public boolean SeekToTime(double time_stamp) {
         // Binary search to seek to target records.
     }
 } 

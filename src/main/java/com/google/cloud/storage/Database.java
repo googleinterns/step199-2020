@@ -1,3 +1,9 @@
+package com.google.cloud.storage;
+
+import java.util.ArrayList<E>;
+import java.util.HashMap;
+
+
 /* This class creates an instance of a database that a file can be written to and read from. */
 public class Database{
 
