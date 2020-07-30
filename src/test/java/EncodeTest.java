@@ -22,7 +22,7 @@ public final class EncodeTest {
 
   @Before
   public void setUp() {
-    inputFile = "testInput.txt";
+    inputFile = "testInput2.txt";
     outputFile = "testOutput.sstable";
     try {
       input = new FileInputStream(inputFile);

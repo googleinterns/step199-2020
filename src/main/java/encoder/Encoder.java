@@ -25,7 +25,7 @@ public class Encoder {
 
   /*
    * Convert a given .txt that contains a header line specifying file contents
-   * into the defined protobuf format
+   * into the defined protobuf format.
    */
   public static void encode(InputStream inStream, OutputStream outStream) {
     // Set an upper threshold by default on the maximum number of fields, this
@@ -50,12 +50,16 @@ public class Encoder {
         String[] currentEntry = parseFields(nextLine, regex, maxFields);
         Pose currentPose = parsePose(currentEntry);
         // Write the pose data to the necessary output stream.
-        currentPose.writeTo(outStream);
+        currentPose.writeDelimitedTo(outStream);
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
-
+    try {
+      outStream.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private static String[] parseFields(String currentLine, String regex, int maxFields) {
@@ -69,14 +73,21 @@ public class Encoder {
   private static Pose parsePose(String[] input) {
     Pose.Builder pose = Pose.newBuilder();
     List<FieldDescriptor> currentFields = pose.getDescriptor().getFields();
-    ArrayList<Lambda> headingTypes = new ArrayList<>(
-        Arrays.asList(toDouble, toDouble, toDouble, toFloat, toFloat, toFloat));
+    ArrayList<Lambda> headingTypes =
+        new ArrayList<>(
+            Arrays.asList(toDouble, toDouble, toDouble, toDouble, toFloat, toFloat, toFloat));
     setFields(pose, currentFields, input, headingTypes, 0, input.length);
     return pose.build();
   }
 
-  private static void setFields(GeneratedMessageV3.Builder toBuild, List<FieldDescriptor> currentFields, String[] input,
-      ArrayList<Lambda> types, int startIndex, int endIndex) throws InputMismatchException {
+  private static void setFields(
+      GeneratedMessageV3.Builder toBuild,
+      List<FieldDescriptor> currentFields,
+      String[] input,
+      ArrayList<Lambda> types,
+      int startIndex,
+      int endIndex)
+      throws InputMismatchException {
     int listLength = currentFields.size();
     int arrayLength = endIndex - startIndex;
     if (arrayLength != listLength) {
@@ -86,7 +97,9 @@ public class Encoder {
     // The index of the one array and the other are no longer the same.
     for (int i = startIndex; i != endIndex; i++) {
       int currentFieldsIndex = i - startIndex;
-      toBuild.setField(currentFields.get(currentFieldsIndex), types.get(currentFieldsIndex).parseToType(input[i]));
+      toBuild.setField(
+          currentFields.get(currentFieldsIndex),
+          types.get(currentFieldsIndex).parseToType(input[i]));
     }
   }
 }
