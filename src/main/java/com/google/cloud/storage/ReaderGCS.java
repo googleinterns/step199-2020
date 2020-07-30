@@ -1,14 +1,14 @@
 
-/* GCS Reader class blob information to read its contents*/
+/* GCS Reader class blob information to read its contents. */
 public class ReaderGCS{
     
-    /* Binary file data in the blob*/
+    /* Binary file data in the blob. */
     private InputStream stream_;
 
-    /* */
+    /* Jie put this as a global variable in pseudo code, but im confused on its use. */
     private ReadChannel reader_;
 
-    /* creates instance of a Reader with this runId*/
+    /* Creates instance of a Reader with this runId. */
     public ReaderGCS(String runID){
     }
 
@@ -30,7 +30,7 @@ public class ReaderGCS{
       
     }
  
-
+    /* what is time stamp use in pose data?  */
     public bool SeekToTime(double time_stamp) {
         // Binary search to seek to target records.
     }
