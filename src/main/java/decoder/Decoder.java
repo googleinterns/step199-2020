@@ -14,16 +14,19 @@ public class Decoder {
     // data file and include headers in the proto definitions so we could
     // address issues with large files, stuff not fitting into RAM, etc.
     try {
-      int i = 0;
       PrintWriter output = new PrintWriter(outputStream);
       Pose currentPose = Pose.parseDelimitedFrom(dataStream);
-      ;
-      for (; currentPose != null && i != 10; i++) {
+      // Read until nothing left to read, in which case null is returned.
+      output.write("[");
+      while (currentPose != null) {
         output.write(JsonFormat.printer().print(currentPose));
         currentPose = Pose.parseDelimitedFrom(dataStream);
+        // Write ',' on all but last entry.
+        if (currentPose != null) output.write(",");
       }
+      output.write("]");
+      // Close the PrintWriter stream.
       output.close();
-      // Now convert the data we have streamed in to JSON.parseFrom
     } catch (Exception e) {
       e.printStackTrace();
     }
