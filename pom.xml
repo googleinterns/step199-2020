@@ -39,7 +39,7 @@
         <version>2.2.0</version>
         <configuration>
          <!-- TODO: Set project ID. -->
-          <deploy.projectId></deploy.projectId>
+          <deploy.projectId>pose-3d-viewer-step-2020</deploy.projectId>
           <deploy.version>1</deploy.version>
         </configuration>
       </plugin>
