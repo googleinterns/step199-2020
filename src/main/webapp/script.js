@@ -8,23 +8,19 @@ let camera;
 let renderer;
 let clock;
 let controls;
-let count = test.data.length;
+let count = test.length;
 const rotationData = new Map();
 const path = [];
 
-let highest = 0;
-let lowest = 0;
-for(let i = 0; i<test.data.length;i++){
-    if(highest<test.data[i].pose.long){
-        highest = test.data[i].pose.long;
-    }    
-    if(lowest>test.data[i].pose.long){
-        lowest = test.data[i].pose.long;
-    }  
+let low = 10000;
+let high=0;
+for(let i = 0; i<test.length;i++){
+   if(high<test[i].lat)high =test[i].lat;
+   if(low>test[i].lat)low=test[i].lat;
 }
-console.log("Highest: " + highest);
-console.log("Lowest: " + lowest);
-console.log("Range: " + (highest - lowest));
+console.log("high: "+ high);
+console.log("low: "+ low);
+console.log("range: "+ (high-low));
 
 
 /**
@@ -70,9 +66,9 @@ function addPoseData() {
   // Adds test pose data as one Geometry instance
   for (let increment = 0; increment < count; increment++) {
     path.push(new THREE.Vector3(
-        (test.data[increment].pose.lat/1000) - 1140885,
-        test.data[increment].pose.alt * 100,
-        test.data[increment].pose.long * 100));// GPS points
+        (test[increment].lat-48.12)*10000,
+        test[increment].alt,
+        (test[increment].lng-11.58)*10000));// GPS points
   }
   geometry = new THREE.BufferGeometry().setFromPoints(path);
   material = new THREE.LineBasicMaterial({color: 'blue'});
@@ -92,24 +88,24 @@ function addPoseData() {
     // var pivotSphereGeo = new THREE.SphereGeometry(.02); // Small sphere indicating pivot point
     // var pivotSphere = new THREE.Mesh(pivotSphereGeo);
     // pivotSphere.position.set(
-    //   (test.data[i].pose.lat/1000) - 1140885,
-    //   test.data[i].pose.alt * 100,
+    //   (test[i].pose.lat/1000) - 1140885,
+    //   test[i].alt,
     //   test.data[i].pose.long * 100);
     // scene.add(pivotSphere);
 
     let matrix = new THREE.Matrix4();
     dummy.matrix.identity();
     matrix.makeTranslation(
-      (test.data[i].pose.lat/1000) - 1140885,
-      test.data[i].pose.alt * 100,
-      test.data[i].pose.long * 100);
+      (test[i].lat-48.12)*10000,
+      test[i].alt,
+      (test[i].lng-11.58)*10000);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
-        test.data[i].head.pitchDeg));
+        THREE.Math.degToRad(test[i].pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
-        test.data[i].head.yawDeg));
+       THREE.Math.degToRad( test[i].yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
-        test.data[i].head.rollDeg));
+        THREE.Math.degToRad(test[i].rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .5, 0.0));
     dummy.applyMatrix4(matrix);
     dummy.updateMatrix();
