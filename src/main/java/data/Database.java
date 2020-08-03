@@ -1,5 +1,6 @@
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it */
+package data;
 public class Database{
  
     /*place where files are stored*/
