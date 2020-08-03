@@ -1,14 +1,57 @@
+/* GCS Reader class blob information to read its contents. */
+/* Make generic for the readOneProto method */
 package IO;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
-// getMessageClass can take the message name and convert it into the relevant proto.
-// http://googleapis.github.io/gax-java/0.2.0/apidocs/com/google/api/gax/protobuf/ProtoReflectionUtil.html
-// Then use getDefaultInstance along with the instructions from this stackoverflow post
-// https://stackoverflow.com/questions/43675811/create-new-builder-using-com-google-protobuf-descriptors-descriptor
+
+import data.Database;
+
 public class ReaderSimple {
-    private InputStream currentStream;
-    public InputStream read(){
+    private Database database;
 
+    private String runId;
 
+    private String type;
+
+    private InputStream in;
+
+    public ReaderSimple(Database database, String runId, String type) {
+        this.database = database;
+        this.runId = runId;
+        String extension = ".proto";
+        String fileName = database.getName() + this.runId + this.type + extension;
+
+        // Attempt to open a stream to the data, normally to database, in this case to
+        // file.
+        try {
+            in = new FileInputStream(fileName);
+        } catch (FileNotFoundException e) {
+            System.err.format("Unable to locate the give file with name %s", fileName);
+        }
     }
+
+    /*
+     * Return a stream object for reading from the file, eventually from the
+     * database, right now reading a file that includes the database name.
+     */
+    public InputStream read(String type) {
+        return in;
+    }
+
+    /*
+     * Handle all actions that are necessary when done using the ReaderSimple
+     * Object.
+     */
+    public void finish() {
+        try {
+            in.close();
+        } catch (IOException e) {
+            System.err.println("Unable to close the file, an error occurred");
+            e.printStackTrace();
+        }
+    }
+
 }
