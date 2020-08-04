@@ -16,7 +16,5 @@ public class Database{
     public String getName(){
         return name; 
     }
-    
-
    
 }
