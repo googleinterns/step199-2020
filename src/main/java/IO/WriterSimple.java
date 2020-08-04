@@ -37,7 +37,7 @@ public class WriterSimple {
 
   public WriterSimple(Database database, String type) {
     this.database = database;
-    this.runId = generateRandomRunId();
+    generateRandomRunId();
     String extension = ".proto";
     fileName = database.getName() + this.runId + this.type + extension;
 
@@ -61,7 +61,10 @@ public class WriterSimple {
     return out;
   }
 
-  public String generateRandomRunId() {
+  private void generateRandomRunId(){
+    runId = getRandomRunId();
+  }
+  private String getRandomRunId() {
     byte[] array = new byte[7]; // length is bounded by 7
     new Random().nextBytes(array);
     String runID = new String(array, Charset.forName("UTF-8"));
@@ -74,7 +77,7 @@ public class WriterSimple {
     boolean exists = tmpDir.exists();
     if (exists) {
       // In this case we need to try to generate a different runId
-      return generateRandomRunId();
+      return getRandomRunId();
     }
     return runId;
   }
