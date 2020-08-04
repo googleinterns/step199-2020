@@ -10,17 +10,25 @@ import java.util.Random;
 
 import data.Database;
 
-/* GCS generic Writer class */
+/* WriterSimple returns an FileOutputStream to take and store data.*/
 public class WriterSimple {
-
+  /* OutputStream to be given to client.*/
   private OutputStream out;
+
+  /*  RunId of data being written.*/
   private String runId;
+
+  /* Type of data being written.*/
   private String type;
+  
+  /* Database the reader is associated with.*/
   private Database database;
+
+  /* Filename that identifies how user can view the file*/
   private String fileName;
 
   /* Creates instance of a Writer with this runId. */
-  public WriterSimple(Database database, String runId, String type) {
+  public WriterSimple(Database database, String type, String runId) {
     this.database = database;
     this.runId = runId;
     String extension = ".proto";
@@ -35,6 +43,7 @@ public class WriterSimple {
     }
   }
 
+  /* Creates instance of a Writer with that doesn't have a runId yet. */
   public WriterSimple(Database database, String type) {
     this.database = database;
     this.runId = generateRandomRunId();
@@ -50,18 +59,18 @@ public class WriterSimple {
     }
   }
 
-  // Create writer object, then generate random runId if need one
-  // Method so that the user can get the value of the runId if they need one
+  /* Returns runId. */
   public String getRunId() {
     return runId;
   }
 
+  /* Returns OutputStream. */
   public OutputStream write() {
-    /* some database method */
     return out;
   }
 
-  public String generateRandomRunId() {
+  /* Returns unique runId  associated with particular writer. */
+  private String generateRandomRunId() {
     byte[] array = new byte[7]; // length is bounded by 7
     new Random().nextBytes(array);
     String runID = new String(array, Charset.forName("UTF-8"));
@@ -72,14 +81,18 @@ public class WriterSimple {
     // shouldn't by chance)
     File tmpDir = new File(database.getName() + runID + this.type + ".proto");
     boolean exists = tmpDir.exists();
+    
+    /* If file name is not unique, try again. */
     if (exists) {
-      // In this case we need to try to generate a different runId
       return generateRandomRunId();
     }
     return runId;
   }
 
-  /* */
+    /*
+     * Handle all actions that are necessary when done using the WriterSimple
+     * Object.
+     */
   public void finish() {
     try {
       out.close();
@@ -88,4 +101,5 @@ public class WriterSimple {
       e.printStackTrace();
     }
   }
+  
 }

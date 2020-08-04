@@ -1,5 +1,3 @@
-/* GCS Reader class blob information to read its contents. */
-/* Make generic for the readOneProto method */
 package IO;
 
 import java.io.FileInputStream;
@@ -9,15 +7,26 @@ import java.io.InputStream;
 
 import data.Database;
 
+/* ReaderSimple class attempts to stream file information from  
+ * storage to an Inputstream.
+ */
 public class ReaderSimple {
+    /* Database the reader is associated with. */
     private Database database;
 
+    /* RunId of data being read. */
     private String runId;
 
+    /* Type of data being read. */
     private String type;
 
+    /* InputStream produced. */
     private InputStream in;
 
+    /* Filename that identifies how user can view the file*/
+    private String fileName;
+
+    /* Produces an FileInputStream in database associated to runId and type. */
     public ReaderSimple(Database database, String runId, String type) {
         this.database = database;
         this.runId = runId;
@@ -37,7 +46,7 @@ public class ReaderSimple {
      * Return a stream object for reading from the file, eventually from the
      * database, right now reading a file that includes the database name.
      */
-    public InputStream read(String type) {
+    public InputStream read() {
         return in;
     }
 
