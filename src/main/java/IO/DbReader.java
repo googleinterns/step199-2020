@@ -15,7 +15,9 @@ public class DbReader {
     private String runId;
     private String type;
     private InputStream in;
-    // private static final String extension = ".bin";
+
+    /* Comments out extension variable bc may not need it
+     private static final String extension = ".bin"; . */
     private String fileName;
 
     public DbReader(Database database, String runId, String type) {
