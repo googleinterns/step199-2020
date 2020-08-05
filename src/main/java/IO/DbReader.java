@@ -1,5 +1,4 @@
-/* GCS Reader class blob information to read its contents. */
-/* Make generic for the readOneProto method */
+
 package IO;
 
 import java.io.FileInputStream;
@@ -9,6 +8,7 @@ import java.io.InputStream;
 
 import data.Database;
 
+/* DbReader class accesses blob information to read its contents. */
 public class DbReader {
 
     private Database database;
@@ -19,7 +19,8 @@ public class DbReader {
     /* Comments out extension variable bc may not need it
      private static final String extension = ".bin"; . */
     private String fileName;
-
+    
+    /* Makes a reader object. */
     public DbReader(Database database, String runId, String type) {
         this.database = database;
         this.runId = runId;
