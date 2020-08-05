@@ -8,7 +8,13 @@ import java.io.InputStream;
 
 import data.Database;
 
-/* DbReader class accesses blob information to read its contents. */
+/*
+ * DbReader class accesses blob information to read its contents with an 
+ * InputStream. If user makes DbReader object and calls the read() function, 
+ * user also must call close on the Inputstream returned. Instead, the user 
+ * must use the finish() function to handle closing the inputstream and any 
+ * other necessary end operations. 
+ */
 public class DbReader {
 
     private Database database;
@@ -16,29 +22,30 @@ public class DbReader {
     private String type;
     private InputStream in;
 
-    /* Comments out extension variable bc may not need it
-     private static final String extension = ".bin"; . */
-    private String fileName;
+    /*
+     * Comments out extension variable bc may not need it
+     * private static final String extension = ".bin"; .
+     */
     
     /* Makes a reader object. */
     public DbReader(Database database, String runId, String type) {
         this.database = database;
         this.runId = runId;
         this.type = type;
-        fileName = database.findName(this.runId, this.type);
+
     }
 
     /*
-     * Return a stream object for reading from the file, eventually from the
+     * Returns a stream object for reading from the file, eventually from the
      * database, right now reading a file that includes the database name.
      */
     public InputStream read() {
-        in = database.readData(fileName);
+        in = database.readData(runId, type);
         return in;
     }
 
     /*
-     * Handle all actions that are necessary when done using the DbReader
+     * Handle alls actions that are necessary when done using the DbReader
      * Object.
      */
     public void finish() {
