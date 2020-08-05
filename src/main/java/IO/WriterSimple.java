@@ -12,8 +12,6 @@ import data.Database;
 
 /* WriterSimple returns an FileOutputStream to take and store data.*/
 public class WriterSimple {
-  /* OutputStream to be given to client.*/
-  private OutputStream out;
 
   /*  RunId of data being written.*/
   private String runId;

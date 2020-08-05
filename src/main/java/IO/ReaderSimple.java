@@ -19,10 +19,10 @@ public class ReaderSimple {
 
     /* Type of data being read. */
     private String type;
-
+    
     /* InputStream produced. */
     private InputStream in;
-
+ 
     /* Filename that identifies how user can view the file*/
     private String fileName;
 
@@ -49,6 +49,8 @@ public class ReaderSimple {
     public InputStream read() {
         return in;
     }
+
+    
 
     /*
      * Handle all actions that are necessary when done using the ReaderSimple

@@ -5,12 +5,17 @@ public class Database{
  
     /*place where files are stored*/
     private String name;
+
+    /* OutputStream to be given to client.*/
+    private OutputStream out;
+
  
     /* Creates instance of a database with this name. */
     public Database(String name){
       /* Database will be GCS and buckets. Bucket will named by different runids. */
       this.name = name;
     }
+
     
     /* Returns projectID of Database. */
     public String getName(){
