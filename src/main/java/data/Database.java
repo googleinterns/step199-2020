@@ -11,20 +11,20 @@ import java.util.ArrayList;
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class Database {
   /* Place where files are stored.*/
-  private String name;
+  private String directory;
 
   /* List of all files stored in Database.*/
   private ArrayList<String> files;
 
   /* Creates instance of a database with this name. */
   public Database(String name) {
-    this.name = name;
+    this.directory = name;
     files = new ArrayList<String>();
   }
 
-  /* Returns projectID of Database. */
+  /* Returns name associated with Database. */
   public String getDatabase() {
-    return name;
+    return directory;
   }
 
   /*
