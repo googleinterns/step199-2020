@@ -28,6 +28,7 @@ public class DbWriter {
     fileName = database.newDatabaseEntry(this.runId, this.type);
   }
 
+  /* Creates instance of a Writer that doesnt have a runId yet. */
   public DbWriter(Database database, String type) {
     this.database = database;
     this.type = type;
@@ -41,16 +42,18 @@ public class DbWriter {
     return runId;
   }
 
+  /* Gets an outputstream from the database. */
   public OutputStream write() {
-    /* some database method */
     out = database.writeData(fileName);
     return out;
   }
-
+   
+   /* Returns unique runid. */
   private String generateRandomRunId() {
     return getRandomRunId();
   }
-
+  
+  /* Returns and makes unique runid. */
   private String getRandomRunId() {
     String newRunId = getAlphaNumericString(hashLength);
     System.out.println("This generated id is " + newRunId);
@@ -67,7 +70,7 @@ public class DbWriter {
     return newRunId;
   }
 
-  /* */
+  /* Closing procedures for outputstream. */
   public void finish() {
     try {
       out.close();
@@ -77,21 +80,23 @@ public class DbWriter {
     }
   }
 
-  // Code from online to generate a random hash of length n
+  // Code from online to generate a random hash of length n.
   private static String getAlphaNumericString(int n) {
-    // chose a Character random from this String
+    // chose a Character random from this String.
     String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
-    // create StringBuffer size of AlphaNumericString
+    // Create StringBuffer size of AlphaNumericString.
     StringBuilder sb = new StringBuilder(n);
     for (int i = 0; i < n; i++) {
-      // generate a random number between
-      // 0 to AlphaNumericString variable length
+      /* Generate a random number between
+       0 to AlphaNumericString variable length. */
       int index = (int) (AlphaNumericString.length() * Math.random());
-      // add Character one by one in end of sb
+      // Add Character one by one in end of sb.
       sb.append(AlphaNumericString.charAt(index));
     }
     return sb.toString();
   }
+
+  /* Return file name that this reader should read from. */
   private String constructName() {
     String fileName = database.getName()+ "/" + runId + "_" + type;
     return fileName;
