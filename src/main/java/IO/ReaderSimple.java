@@ -19,7 +19,7 @@ public class ReaderSimple {
 
     /* Type of data being read. */
     private String type;
-
+    
     /* InputStream produced. */
     private InputStream in;
     private static final String extension = ".bin";
@@ -49,6 +49,8 @@ public class ReaderSimple {
     public InputStream read() {
         return in;
     }
+
+    
 
     /*
      * Handle all actions that are necessary when done using the ReaderSimple
