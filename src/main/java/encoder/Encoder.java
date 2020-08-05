@@ -35,10 +35,12 @@ public class Encoder {
     int maxFields = 20;
     // Split the input based on spaces, any number of spaces is allowed.
     final String regex = " +";
+    System.out.println("This line is called");
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "UTF-8"))) {
       // The first thing we want to do is read the header line, this will tell
       // us the names of the fields, and how many input fields that there are.
       String headLine = reader.readLine();
+      System.out.println(headLine);
       // Check to ensure that a header exists in our input file.
       if (headLine == null) {
         System.err.println("Invalid file format: no header provided");
@@ -55,12 +57,12 @@ public class Encoder {
         currentPose.writeDelimitedTo(outStream);
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      System.out.println("An exception occurred");
     }
     try {
       outStream.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println("Unable to close the stream properly");
     }
   }
 

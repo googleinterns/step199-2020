@@ -18,18 +18,21 @@ public class WriterSimple {
   private String type;
   private Database database;
   private String fileName;
+  private static final int hashLength = 10;
+  private static final String extension = ".bin";
 
   /* Creates instance of a Writer with this runId. */
   public WriterSimple(Database database, String runId, String type) {
     this.database = database;
     this.runId = runId;
-    String extension = ".proto";
-    fileName = database.getName() + this.runId + this.type + extension;
+    fileName = constructName();
+    // Use the binary extension as protobuf generates a binary file.
 
     // Attempt to open a stream to the data, normally to database, in this case to
     // file.
     try {
-      out = new FileOutputStream(fileName);
+      File file = new File(fileName);
+      out = new FileOutputStream(file);
     } catch (FileNotFoundException e) {
       System.err.format("Unable to locate the give file with name %s", fileName);
     }
@@ -37,10 +40,9 @@ public class WriterSimple {
 
   public WriterSimple(Database database, String type) {
     this.database = database;
+    this.type = type;
     generateRandomRunId();
-    String extension = ".proto";
-    fileName = database.getName() + this.runId + this.type + extension;
-
+    fileName = constructName();
     // Attempt to open a stream to the data, normally to database, in this case to
     // file.
     try {
@@ -61,25 +63,24 @@ public class WriterSimple {
     return out;
   }
 
-  private void generateRandomRunId(){
+  private void generateRandomRunId() {
     runId = getRandomRunId();
   }
-  private String getRandomRunId() {
-    byte[] array = new byte[7]; // length is bounded by 7
-    new Random().nextBytes(array);
-    String runID = new String(array, Charset.forName("UTF-8"));
 
+  private String getRandomRunId() {
+    String newRunId = getAlphaNumericString(hashLength);
+    System.out.println("This generated id is " + newRunId);
     // Check if we already have an entry consisting of this runId and data type.
     // At some point this check would need to be better (when using database, to
     // ensure that pose, etc data doesn't randomly get associated with a run it
     // shouldn't by chance)
-    File tmpDir = new File(database.getName() + runID + this.type + ".proto");
+    File tmpDir = new File(constructName());
     boolean exists = tmpDir.exists();
     if (exists) {
       // In this case we need to try to generate a different runId
       return getRandomRunId();
     }
-    return runId;
+    return newRunId;
   }
 
   /* */
@@ -90,5 +91,27 @@ public class WriterSimple {
       System.err.println("Unable to close the file, an error occurred");
       e.printStackTrace();
     }
+  }
+
+  // Code from online to generate a random hash of length n
+  private static String getAlphaNumericString(int n) {
+    // chose a Character random from this String
+    String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
+    // create StringBuffer size of AlphaNumericString
+    StringBuilder sb = new StringBuilder(n);
+    for (int i = 0; i < n; i++) {
+      // generate a random number between
+      // 0 to AlphaNumericString variable length
+      int index = (int) (AlphaNumericString.length() * Math.random());
+      // add Character one by one in end of sb
+      sb.append(AlphaNumericString.charAt(index));
+    }
+
+    return sb.toString();
+  }
+
+  private String constructName() {
+    String fileName = database.getName()+ "/" + this.runId + "_" + this.type + extension;
+    return fileName;
   }
 }
