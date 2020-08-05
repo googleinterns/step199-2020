@@ -1,19 +1,25 @@
 package servlets;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.TreeSet;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import shared.sharedObjects;
+
 /**
  * Fetch all the given recorded run ids in the database with their associated
  * Pose, Pointcloud, etc records.
  */
-@WebServlet("/dataentries")
+@WebServlet("/data")
 public class DataEntries extends HttpServlet {
     // Return numEntries runId and name pairs for getting urls to load viewer data.
     // Optional numEntries parameter limits the number of returned values.
@@ -47,13 +53,41 @@ public class DataEntries extends HttpServlet {
         /*
          * [data: {runId: aks;ldfja entries: []}]
          */
-
-        String tempFileName = "SampleDatabaseEntries.json";
-        try {
-            return new String(Files.readAllBytes(Paths.get(tempFileName)));
-        } catch (Exception e) {
-            System.err.println("Unable to read the given file");
+        String fileName = sharedObjects.dataInstance.getName()+"/";
+        fileName.trim();
+        System.out.println("The filename is " + fileName);
+        File dir = new File(fileName);
+        System.out.println(dir.getAbsolutePath());
+        File[] dataEntries = dir.listFiles();
+        if (dataEntries == null){
+            System.out.println("Directory is empty");
+            return "{}";
         }
-        return null;
+      
+        HashMap<String, TreeSet<String>> dataMap = new HashMap<String, TreeSet<String>>();
+        for (File file : dataEntries) {
+            // Parse through all entries and write them as JSON
+            String name = file.getName();
+            System.out.println("The filename is "+name);
+            String[] params = name.split("[_.]");
+            if (params.length != 3) {
+                System.err.println("Invalid database entry format!");
+                return "";
+            }
+            String hash = params[0];
+            String type = params[1];
+            if (!dataMap.containsKey(hash)) {
+                TreeSet<String> toAdd = new TreeSet<String>();
+                toAdd.add(type);
+                dataMap.put(hash, toAdd);
+            } else {
+                dataMap.get(hash).add(type);
+            }
+        }
+        System.out.println(dataMap);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String json = gson.toJson(dataMap);
+        System.out.println(json);
+        return json;
     }
 }
