@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import IO.ReaderSimple;
+import IO.DbReader;
 import decoder.Decoder;
 import shared.sharedObjects;
 
@@ -26,7 +26,7 @@ public class RunInfo extends HttpServlet {
         System.out.println("The run id is "+runId);
         String dataType = request.getParameter("dataType");
         System.out.println("The dataType is "+dataType);
-        ReaderSimple dataReader = new ReaderSimple(sharedObjects.dataInstance, runId, dataType);
+        DbReader dataReader = new DbReader(sharedObjects.dataInstance, runId, dataType);
         Decoder.decode(dataReader.read(), response.getOutputStream());
         // We now make would make an instance of the reader object to get a stream from
         // the database, then pass this value to the decoder, with a string as our ouput

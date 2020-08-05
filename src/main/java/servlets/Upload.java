@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
-import IO.WriterSimple;
+import IO.DbWriter;
 import encoder.Encoder;
 import shared.sharedObjects;
 
@@ -32,7 +32,7 @@ public class Upload extends HttpServlet {
 
         String dataType = "pose";
         // Should take in database instance, along with data type.
-        WriterSimple dataWriter = new WriterSimple(sharedObjects.dataInstance, dataType);
+        DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, dataType);
         Part filePart = null;
 
         filePart = request.getPart("file");
