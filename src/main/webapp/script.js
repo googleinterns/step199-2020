@@ -54,20 +54,20 @@ function addObjects() {
   material = new THREE.LineBasicMaterial({color: 'red'});
   for (let increment = 0; increment < 15; increment++) {
     points.push(new THREE.Vector3(
-        Math.pow(-1, increment), .20, -increment));// GPS points
+        Math.pow(-1, increment), .20, -increment)); // GPS points
 
     const geometry = new THREE.CylinderGeometry(.02, .02, .5);
     const cylinder = new THREE.Mesh(geometry, material);
     cylinder.rotateX(THREE.Math.degToRad(-90));
     cylinder.position.set(0, 0, -.25);
-    scene.add(cylinder);// Orientation indicator
+    scene.add(cylinder); // Orientation indicator
 
-    const pivot = new THREE.Group();// Pivot point for each cylinder
+    const pivot = new THREE.Group(); // Pivot point for each cylinder
     pivot.position.set(Math.pow(-1, increment), .25, -increment);
     scene.add(pivot);
     pivot.add(cylinder);
     const pivotSphereGeo =
-      new THREE.SphereGeometry(.03);// Small sphere indicating pivot point
+      new THREE.SphereGeometry(.03); // Small sphere indicating pivot point
     const pivotSphere = new THREE.Mesh(pivotSphereGeo);
     pivotSphere.position.set(Math.pow(-1, increment), .25, -increment);
     scene.add(pivotSphere);
@@ -91,7 +91,7 @@ function gui() {
       .name('Yaw (degrees)')
       .onChange(function(value) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(value);
         }
       });
 
@@ -101,7 +101,7 @@ function gui() {
       .name('Pitch (degrees)')
       .onChange(function(value) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(value);
         }
       });
 
@@ -111,7 +111,7 @@ function gui() {
       .name('Roll (degrees)')
       .onChange(function(value) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(value);
         }
       });
 }

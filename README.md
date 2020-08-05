@@ -1,15 +1,20 @@
 # Stellarpoint
 
-The Stellarpoint Project aims to build a Pose 3D viewer
-which will be beneficial to the Geo’s Pose, 3D, and VPS teams.
-We hope to create a product that can efficiently and accurately
-display Pose data that is visually appealing and user interactive.
-This viewer should allow the Geo Pose team to debug and easily
-visualize pose data, making this project universally beneficial
-and truly impactful. The name 'Stellarpoint' is in reference to
-the massive point clouds we show complementing the pose data.
-These point clouds are made up of hundreds of thousands of points,
-reconstructing any physical object in 3D space. The project uses
-Three.js, an open source library which supports 3D web-applications.
-This allows the user to easily upload pose or lidar data and quickly
-see results in their web browser.
+The StellarPoint Project aims to build a 3D viewer which is able to
+visualize different kinds of sensor data, e.g. the pose trajectory,
+point cloud, imu data, etc... We hope to create a web-based visualization
+tool that can efficiently and accurately display sensor data that is not
+only visually appealing, but user friendly. The open-source viewer should
+allow users to conveniently debug and quickly upload pose data to
+visualize, making this project impactful inside and outside Google.
+
+The name StellarPoint is in reference to the various points which make up
+the 3D scene. The pose trajectory is made up of latitude and longitude
+coordinates which, along with altitude, create a path of thousands of
+x, y, z points in our 3D space. Point cloud data is composed of hundreds
+of thousands of lidar data points describing their distance relative to
+the lidar sensor. Inertial Measurement Unit (IMU) data is also an
+important part of our data visualization. Its data describe the linear
+and rotational acceleration of the lidar sensor using an accelerometer
+and gyroscope. The name is meant to accentuate how we manipulate these
+seemingly simple data points into such a stellar project.
