@@ -3,7 +3,7 @@ Assumptions: for each runID, only 1 of each datatype can be associated with it *
 package data;
 public class Database{
  
-    /*place where files are stored*/
+    /* Place where files are stored.*/
     private String name;
 
     /* OutputStream to be given to client.*/
