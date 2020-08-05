@@ -10,7 +10,11 @@ import java.util.Random;
 
 import data.Database;
 
-/* DbWriter class */
+/* DbWriter class provides output stream from database to client.
+ * If user makes DbWriter object and calls the write() function, 
+ * user also must call close on the Outputstream returned. Instead, the user 
+ * must use the finish() function to handle closing the inputstream and any 
+ * other necessary end operations.  */
 public class DbWriter {
 
   private String runId;
@@ -19,13 +23,13 @@ public class DbWriter {
   private String fileName;
   private static final int hashLength = 10;
   private OutputStream out;
-  // private static final String extension = ".bin";
+  
 
   /* Creates instance of a Writer with this runId. */
   public DbWriter(Database database, String runId, String type) {
     this.database = database;
     this.runId = generateRandomRunId();
-    fileName = database.newDatabaseEntry(this.runId, this.type);
+    database.newDatabaseEntry(this.runId, this.type);
   }
 
   /* Creates instance of a Writer that doesnt have a runId yet. */
@@ -33,18 +37,17 @@ public class DbWriter {
     this.database = database;
     this.type = type;
     runId = generateRandomRunId();
-    fileName = database.newDatabaseEntry(this.runId, this.type);
+    database.newDatabaseEntry(this.runId, this.type);
   }
 
-  // Create writer object, then generate random runId if need one
-  // Method so that the user can get the value of the runId if they need one
+  /* Returns runId. */
   public String getRunId() {
     return runId;
   }
 
   /* Gets an outputstream from the database. */
   public OutputStream write() {
-    out = database.writeData(fileName);
+    out = database.writeData(runId, type);
     return out;
   }
    
@@ -57,14 +60,16 @@ public class DbWriter {
   private String getRandomRunId() {
     String newRunId = getAlphaNumericString(hashLength);
     System.out.println("This generated id is " + newRunId);
-    // Check if we already have an entry consisting of this runId and data type.
-    // At some point this check would need to be better (when using database, to
-    // ensure that pose, etc data doesn't randomly get associated with a run it
-    // shouldn't by chance)
+    /*
+     * Check if we already have an entry consisting of this runId and data type.
+     * At some point this check would need to be better (when using database, to
+     * ensure that pose, etc data doesn't randomly get associated with a run it
+     *shouldn't by chance)
+     */
     File tmpDir = new File(constructName());
     boolean exists = tmpDir.exists();
     if (exists) {
-      // In this case we need to try to generate a different runId
+      /* In this case we need to try to generate a different runId. */
       return getRandomRunId();
     }
     return newRunId;
@@ -80,25 +85,25 @@ public class DbWriter {
     }
   }
 
-  // Code from online to generate a random hash of length n.
+  /* Code from online to generate a random hash of length n.*/
   private static String getAlphaNumericString(int n) {
-    // chose a Character random from this String.
+    /* Chose a Character random from this String.*/
     String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
-    // Create StringBuffer size of AlphaNumericString.
+    /* Create StringBuffer size of AlphaNumericString.*/
     StringBuilder sb = new StringBuilder(n);
     for (int i = 0; i < n; i++) {
       /* Generate a random number between
        0 to AlphaNumericString variable length. */
       int index = (int) (AlphaNumericString.length() * Math.random());
-      // Add Character one by one in end of sb.
+      /* Add Character one by one in end of sb.*/
       sb.append(AlphaNumericString.charAt(index));
     }
     return sb.toString();
   }
 
-  /* Return file name that this reader should read from. */
+  /* Return file name that this Writer should write to. */
   private String constructName() {
-    String fileName = database.getName()+ "/" + runId + "_" + type;
+    String fileName = database.getDatabase()+ "/" + runId + "_" + type;
     return fileName;
      }
 }
