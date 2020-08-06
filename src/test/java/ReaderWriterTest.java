@@ -25,8 +25,6 @@ public final class ReaderWriterTest {
 
   @Before
   public void setUp() {
-    inputFile = "testInput2.txt";
-    outputFile = "testOutput.sstable";
   }
 
   @Test
