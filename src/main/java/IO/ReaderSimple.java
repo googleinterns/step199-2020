@@ -37,7 +37,7 @@ public class ReaderSimple {
      * Return a stream object for reading from the file, eventually from the
      * database, right now reading a file that includes the database name.
      */
-    public InputStream read(String type) {
+    public InputStream read() {
         return in;
     }
 
