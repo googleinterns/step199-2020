@@ -10,7 +10,7 @@ let clock;
 let controls;
 const rotationData = new Map();
 const points = [];
-
+const numOfPoints = 15; // Arbitrary test number
 /**
  * Initializes the scene, camera, renderer, and clock.
  */
@@ -45,6 +45,7 @@ function addObjects() {
   let geometry = new THREE.PlaneGeometry(5, 25, 1);
   let material =
       new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
+  // The plane is a place holder for the 2D localized map image
   const plane = new THREE.Mesh(geometry, material);
   plane.rotation.x = Math.PI / 2;
   plane.position.z = -10;
@@ -52,17 +53,20 @@ function addObjects() {
 
   // Fake Pose Data
   material = new THREE.LineBasicMaterial({color: 'red'});
-  for (let increment = 0; increment < 15; increment++) {
+  for (let increment = 0; increment < numOfPoints; increment++) {
     points.push(new THREE.Vector3(
         Math.pow(-1, increment), .20, -increment)); // GPS points
 
     const geometry = new THREE.CylinderGeometry(.02, .02, .5);
+
+    // The cylinder represents the orientation of each data point
     const cylinder = new THREE.Mesh(geometry, material);
     cylinder.rotateX(THREE.Math.degToRad(-90));
     cylinder.position.set(0, 0, -.25);
     scene.add(cylinder); // Orientation indicator
 
-    const pivot = new THREE.Group(); // Pivot point for each cylinder
+    // The pivot sphere represents the position of each data point
+    const pivot = new THREE.Group();
     pivot.position.set(Math.pow(-1, increment), .25, -increment);
     scene.add(pivot);
     pivot.add(cylinder);
@@ -89,9 +93,9 @@ function gui() {
   gui.add(params, 'Yaw', -360, 360)
       .step(.1)
       .name('Yaw (degrees)')
-      .onChange(function(value) {
+      .onChange(function(radians) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(radians);
         }
       });
 
@@ -99,9 +103,9 @@ function gui() {
   gui.add(params, 'Pitch', -360, 360)
       .step(.1)
       .name('Pitch (degrees)')
-      .onChange(function(value) {
+      .onChange(function(radians) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(radians);
         }
       });
 
@@ -109,9 +113,9 @@ function gui() {
   gui.add(params, 'Roll', -360, 360)
       .step(.1)
       .name('Roll (degrees)')
-      .onChange(function(value) {
+      .onChange(function(radians) {
         for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(value);
+          rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(radians);
         }
       });
 }
