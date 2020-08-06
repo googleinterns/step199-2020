@@ -17,7 +17,6 @@ import java.io.OutputStream;
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class Database {
-
   /* List of all files stored in Database.*/
   private File[] files;
 
@@ -36,7 +35,7 @@ public class Database {
   }
 
   /* Returns name of database. */
-  public String getName() {
+  public String getDirectoryName() {
     return folder.getName();
   }
 
@@ -66,8 +65,9 @@ public class Database {
     return null;
   }
 
+  /*Returns appropiate file name for data with this runId and type. */
   private String makeFileName(String runId, String type) {
-    return getName() + "/" + runId + "_" + type;
+    return getDirectoryName() + "/" + runId + "_" + type;
   }
 
   /* Adds file to database given its runid and type. */
@@ -78,24 +78,12 @@ public class Database {
 
   /* Return name of file with runid and type in database. */
   public String findName(String runId, String type) {
-    String fileName = getName() + "/" + runId + "_" + type;
-    return fileName;
+    return makeFileName(runId, type);
   }
 
   /* Returns list of files in database. */
   public File[] getAllFiles() {
     return getDatabase().listFiles();
   }
-
-  /*public static boolean deleteDirectory() {
-   File[] children = getDatabase().listFiles();
-      for (int i = 0; i < children.length; i++) {
-        boolean success = deleteDirectory(children[i]);
-        if (!success) return false;
-      }
-
-  // either file or an empty directory
-  System.out.println("removing file or directory : " + dir.getName());
-  return dir.delete();
-  }*/
+  
 }

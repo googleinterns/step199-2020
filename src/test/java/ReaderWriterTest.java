@@ -24,15 +24,14 @@ public final class ReaderWriterTest {
   private DbReader reader = new DbReader(database, "test", "writingIn");
 
   @Before
-  public void setUp() {
-  }
+  public void setUp() {}
 
   @Test
   public void validateDatabaseName() {
     System.out.println("validateDatabaseName()");
     /* Validate that place where data is stored is named test. */
     System.out.println("test = " + database.getDatabase());
-    Assert.assertEquals(database.getName(), "test");
+    Assert.assertEquals(database.getDirectoryName(), "test");
   }
 
   @Test
