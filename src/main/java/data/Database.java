@@ -5,26 +5,35 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.io.File; 
 
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class Database {
-  /* Place where files are stored.*/
-  private String directory;
+  /* Name of folderwhere files are stored.*/
+  private String name;
 
   /* List of all files stored in Database.*/
-  private ArrayList<String> files;
+  private File[] files;
+
+  /* Folder for Database. */
+  File folder; 
 
   /* Creates instance of a database with this name. */
   public Database(String name) {
-    this.directory = name;
-    files = new ArrayList<String>();
+    this.name = name;
+    folder = new File(name);  
+    folder.mkdir();
   }
 
   /* Returns name associated with Database. */
-  public String getDatabase() {
-    return directory;
+  public File getDatabase() {  
+    return folder;
+  }
+  
+  /* Returns name of database. */
+  public String getName(){
+      return name;
   }
 
   /*
@@ -56,24 +65,36 @@ public class Database {
   }
 
   private String makeFileName(String runId, String type) {
-    return getDatabase() + "/" + runId + "_" + type;
+    return getName() + "/" + runId + "_" + type;
   }
 
   /* Adds file to database given its runid and type. */
   public String newDatabaseEntry(String runId, String type) {
     String fileName = makeFileName(runId, type);
-    files.add(fileName);
     return fileName;
   }
 
   /* Return name of file with runid and type in database. */
   public String findName(String runId, String type) {
-    String fileName = getDatabase() + "/" + runId + "_" + type;
-    return files.get(0);
+    String fileName = getName() + "/" + runId + "_" + type;
+    return fileName;
   }
 
   /* Returns list of files in database. */
-  public ArrayList<String> getAllFiles() {
-    return files;
+  public File[] getAllFiles() {
+    return getDatabase().listFiles();
   }
+
+
+  /*public static boolean deleteDirectory() {
+     File[] children = getDatabase().listFiles();
+        for (int i = 0; i < children.length; i++) {
+          boolean success = deleteDirectory(children[i]);
+          if (!success) return false; 
+        }
+
+    // either file or an empty directory 
+    System.out.println("removing file or directory : " + dir.getName()); 
+    return dir.delete(); 
+    }*/
 }
