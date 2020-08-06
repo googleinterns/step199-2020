@@ -22,7 +22,7 @@ public class DbWriter {
   /* Creates instance of a Writer with this runId. */
   public DbWriter(Database database, String runId, String type) {
     this.database = database;
-    this.runId = generateRandomRunId();
+    this.runId = runId;
     database.newDatabaseEntry(this.runId, this.type);
   }
 
