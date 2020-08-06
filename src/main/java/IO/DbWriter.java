@@ -7,7 +7,7 @@ import java.io.OutputStream;
 
 /* DbWriter class provides output stream from database to client.
  * If user makes DbWriter object and calls the write() function,
- * user also must call close on the Outputstream returned. Instead, the user
+ * user SHOULD NOT close the Outputstream returned directly. Instead, the user
  * must use the finish() function to handle closing the inputstream and any
  * other necessary end operations.  */
 public class DbWriter {
