@@ -35,7 +35,7 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public InputStream readData(String runID, String type) {
-      String fileName = makeFileName(runID, type);
+    String fileName = makeFileName(runID, type);
     try {
       return new FileInputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -47,17 +47,17 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public OutputStream writeData(String runId, String type) {
-      String fileName = makeFileName(runId, type);
-    try {  
+    String fileName = makeFileName(runId, type);
+    try {
       return new FileOutputStream(fileName);
     } catch (FileNotFoundException e) {
       System.err.format("Unable to locate the give file with name %s", fileName);
     }
-     return null; 
+    return null;
   }
 
-  private String makeFileName(String runId, String type){
-     return getDatabase() + "/" + runId + "_" + type;
+  private String makeFileName(String runId, String type) {
+    return getDatabase() + "/" + runId + "_" + type;
   }
 
   /* Adds file to database given its runid and type. */
