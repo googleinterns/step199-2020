@@ -109,10 +109,10 @@ function gui() {
 
   params = {clipIntersection: true, Roll: 0, showHelpers: false};
   gui.add(params, 'Roll', -360, 360)
-        .name('Roll (degrees)')
-        .onChange(function(radians) {
-          rotateAxis(radians, 'y');
-        });
+      .name('Roll (degrees)')
+      .onChange(function(radians) {
+        rotateAxis(radians, 'y');
+      });
 }
 /**
  * This is the animation loop which continually updates the scene.
