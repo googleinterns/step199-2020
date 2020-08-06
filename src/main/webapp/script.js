@@ -41,8 +41,8 @@ function init() {
  * Creates all the objects and adds them to the scene.
 */
 function addObjects() {
-  let geometry = new THREE.PlaneGeometry(5, 25, 1);
-  let material =
+  const geometry = new THREE.PlaneGeometry(5, 25, 1);
+  const material =
       new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
   // The plane is a place holder for the 2D localized map image
   const plane = new THREE.Mesh(geometry, material);
@@ -55,7 +55,7 @@ function addObjects() {
 /**
  * Creates fake pose data and adds them as objects to the scene
  */
-function addPoseData(){
+function addPoseData() {
   let material = new THREE.LineBasicMaterial({color: 'red'});
   for (let increment = 0; increment < numOfPoints; increment++) {
     points.push(new THREE.Vector3(
@@ -82,7 +82,7 @@ function addPoseData(){
 
     rotationData.set(increment, {origin: pivot, mesh: cylinder});
   }
-  let geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
   material = new THREE.LineBasicMaterial({color: 'blue'});
   const line = new THREE.Line(geometry, material);
   scene.add(line);
@@ -95,24 +95,24 @@ function gui() {
   const gui = new GUI();
   let params = {clipIntersection: true, Yaw: 0, showHelpers: false};
   gui.add(params, 'Yaw', -360, 360)
-    .name('Yaw (degrees)')
-    .onChange(function(radians) {
-      rotateAxis(radians, 'z');
-    });
+      .name('Yaw (degrees)')
+      .onChange(function(radians) {
+        rotateAxis(radians, 'z');
+      });
 
   params = {clipIntersection: true, Pitch: 0, showHelpers: false};
   gui.add(params, 'Pitch', -360, 360)
-    .name('Pitch (degrees)')
-    .onChange(function(radians) {
-      rotateAxis(radians, 'x');
-    });
+      .name('Pitch (degrees)')
+      .onChange(function(radians) {
+        rotateAxis(radians, 'x');
+      });
 
   params = {clipIntersection: true, Roll: 0, showHelpers: false};
   gui.add(params, 'Roll', -360, 360)
-      .name('Roll (degrees)')
-      .onChange(function(radians) {
-        rotateAxis(radians, 'y');
-      });
+        .name('Roll (degrees)')
+        .onChange(function(radians) {
+          rotateAxis(radians, 'y');
+        });
 }
 /**
  * This is the animation loop which continually updates the scene.
@@ -129,7 +129,7 @@ function animate() {
 /**
  * This function rotates the data points about given axis using radians.
  * @param {int} radians This how many radians to rotate along an axis.
- * @param {string} string This is identifying which axis to rotate around.
+ * @param {string} axis This is identifying which axis to rotate around.
  */
 function rotateAxis(radians, axis) {
   for (let i = 0; i < rotationData.size; i++) {
