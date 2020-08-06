@@ -1,11 +1,11 @@
 package data;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.File; 
 
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
@@ -15,22 +15,22 @@ public class Database {
   private File[] files;
 
   /* Folder for Database. */
-  File folder; 
+  File folder;
 
   /* Creates instance of a database with this name. */
   public Database(String name) {
-    folder = new File(name);  
+    folder = new File(name);
     folder.mkdir();
   }
 
   /* Returns name associated with Database. */
-  public File getDatabase() {  
+  public File getDatabase() {
     return folder;
   }
-  
+
   /* Returns name of database. */
-  public String getName(){
-      return folder.getName();
+  public String getName() {
+    return folder.getName();
   }
 
   /*
@@ -82,16 +82,15 @@ public class Database {
     return getDatabase().listFiles();
   }
 
-
   /*public static boolean deleteDirectory() {
-     File[] children = getDatabase().listFiles();
-        for (int i = 0; i < children.length; i++) {
-          boolean success = deleteDirectory(children[i]);
-          if (!success) return false; 
-        }
+   File[] children = getDatabase().listFiles();
+      for (int i = 0; i < children.length; i++) {
+        boolean success = deleteDirectory(children[i]);
+        if (!success) return false;
+      }
 
-    // either file or an empty directory 
-    System.out.println("removing file or directory : " + dir.getName()); 
-    return dir.delete(); 
-    }*/
+  // either file or an empty directory
+  System.out.println("removing file or directory : " + dir.getName());
+  return dir.delete();
+  }*/
 }
