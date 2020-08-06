@@ -13,8 +13,6 @@ import java.io.File;
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class Database {
-  /* Name of folderwhere files are stored.*/
-  private String name;
 
   /* List of all files stored in Database.*/
   private File[] files;
@@ -24,7 +22,6 @@ public class Database {
 
   /* Creates instance of a database with this name. */
   public Database(String name) {
-    this.name = name;
     folder = new File(name);  
     folder.mkdir();
   }
@@ -36,7 +33,7 @@ public class Database {
   
   /* Returns name of database. */
   public String getName(){
-      return name;
+      return folder.getName();
   }
 
   /*
