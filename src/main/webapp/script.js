@@ -91,32 +91,23 @@ function gui() {
   const gui = new GUI();
   let params = {clipIntersection: true, Yaw: 0, showHelpers: false};
   gui.add(params, 'Yaw', -360, 360)
-      .step(.1)
       .name('Yaw (degrees)')
       .onChange(function(radians) {
-        for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(radians);
-        }
+          rotateAxis(radians, 'z');
       });
 
   params = {clipIntersection: true, Pitch: 0, showHelpers: false};
   gui.add(params, 'Pitch', -360, 360)
-      .step(.1)
       .name('Pitch (degrees)')
       .onChange(function(radians) {
-        for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(radians);
-        }
+          rotateAxis(radians, 'x');
       });
 
   params = {clipIntersection: true, Roll: 0, showHelpers: false};
   gui.add(params, 'Roll', -360, 360)
-      .step(.1)
       .name('Roll (degrees)')
       .onChange(function(radians) {
-        for (let i = 0; i < rotationData.size; i++) {
-          rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(radians);
-        }
+          rotateAxis(radians, 'y');
       });
 }
 /**
@@ -130,6 +121,23 @@ function animate() {
   controls.update(delta);
   renderer.render(scene, camera);
 };
+
+/**
+ * This function rotates the data points about given axis using radians
+ */
+function rotateAxis(radians, axis){
+    for (let i = 0; i < rotationData.size; i++) {
+      if(axis == 'z') {
+        rotationData.get(i).origin.rotation.z = THREE.Math.degToRad(radians);
+      }
+      if(axis == 'y') {
+        rotationData.get(i).origin.rotation.y = THREE.Math.degToRad(radians);
+      }
+      if(axis == 'x') {
+        rotationData.get(i).origin.rotation.x = THREE.Math.degToRad(radians);
+      }
+    }
+}
 
 init();
 animate();
