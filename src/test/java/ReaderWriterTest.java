@@ -35,7 +35,7 @@ public void validateDatabaseName() {
   System.out.println("validateDatabaseName()");  
   /* Validate that place where data is stored is named test. */
   System.out.println("test = " + database.getDatabase()); 
-  Assert.assertEquals(database.getDatabase(), "test");
+  Assert.assertEquals(database.getName(), "test");
   }
 
   @Test
@@ -57,9 +57,5 @@ public void validateDatabaseName() {
     Assert.assertEquals(true, true);
      }
 
-    @After
-    public void breakDown() {
-       
-    }
    
 }
