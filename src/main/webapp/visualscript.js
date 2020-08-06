@@ -122,13 +122,17 @@ function animate() {
 };
 
 function fetchData() {
-    fetch('/getrun?id=aILTJfpbhZ&dataType=pose')
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const product = urlParams.get('id');
+    const color = urlParams.get('dataType');
+    fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
     .then(data => pose = data)
     .then(() => {
       addPoseData();
-      qqanimate();
     })
 }
 
 init();
+animate();
