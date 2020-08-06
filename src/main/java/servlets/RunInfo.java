@@ -23,7 +23,9 @@ public class RunInfo extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/html;");
         String runId = request.getParameter("id");
+        System.out.println("The run id is "+runId);
         String dataType = request.getParameter("dataType");
+        System.out.println("The dataType is "+dataType);
         ReaderSimple dataReader = new ReaderSimple(sharedObjects.dataInstance, runId, dataType);
         Decoder.decode(dataReader.read(), response.getOutputStream());
         // We now make would make an instance of the reader object to get a stream from
