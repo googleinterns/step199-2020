@@ -61,7 +61,7 @@
         <version>2.2.0</version>
         <configuration>
           <!-- TODO: Set project ID. -->
-          <deploy.projectId></deploy.projectId>
+          <deploy.projectId>portfolio</deploy.projectId>
           <deploy.version>1</deploy.version>
         </configuration>
       </plugin>

@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import IO.ReaderSimple;
 import decoder.Decoder;
+import shared.sharedObjects;
 
 /**
  * Fetch the given data points for a specific run based on its runId and the
@@ -22,8 +23,8 @@ public class RunInfo extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("text/html;");
         String runId = request.getParameter("id");
-        String dataType = request.getParameter("type");
-        ReaderSimple dataReader = new ReaderSimple();
+        String dataType = request.getParameter("dataType");
+        ReaderSimple dataReader = new ReaderSimple(sharedObjects.dataInstance, runId, dataType);
         Decoder.decode(dataReader.read(), response.getOutputStream());
         // We now make would make an instance of the reader object to get a stream from
         // the database, then pass this value to the decoder, with a string as our ouput
