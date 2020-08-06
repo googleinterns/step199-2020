@@ -11,19 +11,17 @@ import data.Database;
 
 public class ReaderSimple {
     private Database database;
-
     private String runId;
-
     private String type;
-
     private InputStream in;
+    private static final String extension = ".bin";
+    private String fileName;
 
     public ReaderSimple(Database database, String runId, String type) {
         this.database = database;
         this.runId = runId;
-        String extension = ".proto";
-        String fileName = database.getName() + this.runId + this.type + extension;
-
+        this.type = type;
+        fileName = constructName();
         // Attempt to open a stream to the data, normally to database, in this case to
         // file.
         try {
@@ -52,6 +50,11 @@ public class ReaderSimple {
             System.err.println("Unable to close the file, an error occurred");
             e.printStackTrace();
         }
+    }
+
+    private String constructName() {
+        String fileName = database.getName() + "/" + this.runId + "_" + this.type + extension;
+        return fileName;
     }
 
 }
