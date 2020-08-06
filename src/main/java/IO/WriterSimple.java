@@ -1,14 +1,11 @@
 package IO;
 
+import data.Database;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.util.Random;
-
-import data.Database;
 
 /* GCS generic Writer class */
 public class WriterSimple {
@@ -96,7 +93,8 @@ public class WriterSimple {
   // Code from online to generate a random hash of length n
   private static String getAlphaNumericString(int n) {
     // chose a Character random from this String
-    String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
+    String AlphaNumericString =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
     // create StringBuffer size of AlphaNumericString
     StringBuilder sb = new StringBuilder(n);
     for (int i = 0; i < n; i++) {
@@ -111,7 +109,7 @@ public class WriterSimple {
   }
 
   private String constructName() {
-    String fileName = database.getName()+ "/" + this.runId + "_" + this.type + extension;
+    String fileName = database.getName() + "/" + this.runId + "_" + this.type + extension;
     return fileName;
   }
 }

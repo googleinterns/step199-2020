@@ -1,5 +1,7 @@
 package encoder;
 
+import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.GeneratedMessageV3;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,10 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.List;
-
-import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.GeneratedMessageV3;
-
 import proto.SensorData.Pose;
 
 /** Change file format from .txt to proto format. */
@@ -77,14 +75,21 @@ public class Encoder {
   private static Pose parsePose(String[] input) {
     Pose.Builder pose = Pose.newBuilder();
     List<FieldDescriptor> currentFields = pose.getDescriptor().getFields();
-    ArrayList<Lambda> headingTypes = new ArrayList<>(
-        Arrays.asList(toDouble, toDouble, toDouble, toDouble, toFloat, toFloat, toFloat));
+    ArrayList<Lambda> headingTypes =
+        new ArrayList<>(
+            Arrays.asList(toDouble, toDouble, toDouble, toDouble, toFloat, toFloat, toFloat));
     setFields(pose, currentFields, input, headingTypes, 0, input.length);
     return pose.build();
   }
 
-  private static void setFields(GeneratedMessageV3.Builder toBuild, List<FieldDescriptor> currentFields, String[] input,
-      ArrayList<Lambda> types, int startIndex, int endIndex) throws InputMismatchException {
+  private static void setFields(
+      GeneratedMessageV3.Builder toBuild,
+      List<FieldDescriptor> currentFields,
+      String[] input,
+      ArrayList<Lambda> types,
+      int startIndex,
+      int endIndex)
+      throws InputMismatchException {
     int listLength = currentFields.size();
     int arrayLength = endIndex - startIndex;
     if (arrayLength != listLength) {
@@ -94,7 +99,9 @@ public class Encoder {
     // The index of the one array and the other are no longer the same.
     for (int i = startIndex; i != endIndex; i++) {
       int currentFieldsIndex = i - startIndex;
-      toBuild.setField(currentFields.get(currentFieldsIndex), types.get(currentFieldsIndex).parseToType(input[i]));
+      toBuild.setField(
+          currentFields.get(currentFieldsIndex),
+          types.get(currentFieldsIndex).parseToType(input[i]));
     }
   }
 }
