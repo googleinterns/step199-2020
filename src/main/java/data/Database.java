@@ -13,7 +13,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
+import java.util.List;
+import java.util.Arrays;
 
 
 /* This class creates an instance of a database that a file can be written to and read from.
@@ -84,8 +85,9 @@ public class Database {
   }
 
   /* Returns list of files in database. */
-  public File[] getAllFiles() {
-    return getDatabase().listFiles();
+  public List<File> getAllFiles() {
+    File[] files =  getDatabase().listFiles();
+    return Arrays.asList(files);
   }
   
 }
