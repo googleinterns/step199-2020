@@ -59,11 +59,10 @@ public final class ReaderWriterTest {
     catch(IOException e) {
        e.printStackTrace();
     }
-    
 
     input = reader.read();
-
     String readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
+    
     Assert.assertEquals(writeTest, readTest);
   }
 }
