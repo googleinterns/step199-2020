@@ -47,22 +47,24 @@ public final class ReaderWriterTest {
   }
 
   @Test
-  public void validateReaderWriterDatabaseConnect() {
+  public void validateReaderWriterDatabaseConnect() throws IOException{
     System.out.println("validateReaderWriterDatabaseConnect()");
-    /* Validate that what writer wrote to dtabase is what reader read. */
-    output = writer.write();
+
     String writeTest = "This is a test string";
-    byte[] b = writeTest.getBytes();
+    /* Validate that what writer wrote to dtabase is what reader reads. */
+    /*try (
+        OutputStream output1 = writer.write()){
+          byte[] b = writeTest.getBytes();
+          output1.write(b);
+        }
+   
 
-    /*try {
-       output.write(b);}
-    catch(IOException e) {
-       e.printStackTrace();
-    }
-
-    input = reader.read();
-    String readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
-    */
+     String readTest = null;
+    try (
+      InputStream  input = reader.read()){
+             readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
+      }*/
+    
     Assert.assertEquals(true, true);
   }
 }

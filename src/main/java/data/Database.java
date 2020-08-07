@@ -13,8 +13,6 @@ import java.util.Arrays;
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class Database {
-  /* List of all files stored in Database.*/
-  private File[] files;
 
   /* Folder for Database. */
   File folder;
