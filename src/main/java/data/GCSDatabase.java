@@ -5,8 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
+import java.util.List;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
@@ -19,33 +20,32 @@ public class GCSDatabase{
   private Bucket bucket;
 
   /* Primary bucketname.*/
-  private String bucketName = "Pose-3D-Viewer-1Bucket";
+  private String bucketName;
 
   /* Before we can use Google Cloud storage, we have to create a service object. */
   private Storage storage;
 
-  /* Makes GCS name. */
-  private String name;
- 
-  /* List of all files stored in Database.*/
-  private ArrayList<String> files;
  
   /* ProjectID. */ 
   private String projectId = "Pose-3D-Viewer";
 
-  /* These two variables are copied from GCS tutorials. */
-  // See the StorageClass documentation for other valid storage classes:
-  // https://googleapis.dev/java/google-cloud-clients/latest/com/google/cloud/storage/StorageClass.html
-  private StorageClass storageClass = StorageClass.COLDLINE;
+  /* These two next variables are copied from GCS tutorials. */
 
-  // See this documentation for other valid locations:
-  // http://g.co/cloud/storage/docs/bucket-locations#location-mr
-  private String location = "ASIA";
+  /*
+  * See the StorageClass documentation for other valid storage classes:
+  * https://googleapis.dev/java/google-cloud-clients/latest/com/google/cloud/storage/StorageClass.html
+  */
+  private StorageClass storageClass = StorageClass.STANDARD;
+
+  /*
+  * See this documentation for other valid locations:
+  * http://g.co/cloud/storage/docs/bucket-locations#location-mr
+  */
+  private String location = "US";
 
   /* Initiates GCSDatabase. */
   public GCSDatabase(String name){
-    this.name = name; 
-    files = new ArrayList<String>();
+    bucketName = name; 
 
     storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     bucket = storage.create(BucketInfo.newBuilder(bucketName)
@@ -53,13 +53,13 @@ public class GCSDatabase{
   }  
  
   /* Returns the appropiate and unique name for a particular file. */
-  private String name(String runId, String type){
+    private String name(String runId, String type){
     return  bucketName + "/" + runId + "_" + type;
   }
 
   /* Writes file into GCSDatabase. */
   public OutputStream writeData(String runId, String type){
-     String objectName = name(String runId, String type);
+     String objectName = name(runId, type);
      return uploadObject(objectName); 
   }
 
@@ -73,7 +73,7 @@ public class GCSDatabase{
 
   /* Reads file from GCSDatabase. */
   public InputStream readData(String runId, String type){
-    String objectName = name(String runId, String type);
+    String objectName = name(runId, type);
     return downloadObject(objectName);
   }
 
@@ -85,8 +85,9 @@ public class GCSDatabase{
   }
 
   /* Returns list of files in database. */
-  public Page<Blob> getAllBlobs() { 
+  public List<Blob> getAllBlobs() { 
     Page<Blob> blobs = bucket.list();
-    return blobs; 
+    List<Blob> blobList = blobs.getContent();
+    return blobList; 
   }
 }

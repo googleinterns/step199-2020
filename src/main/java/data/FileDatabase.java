@@ -17,7 +17,7 @@ public class FileDatabase {
   private ArrayList<String> files;
 
   /* Creates instance of a database with this name. */
-  public Database(String name) {
+  public FileDatabase(String name) {
     this.directory = name;
     files = new ArrayList<String>();
   }
