@@ -5,6 +5,11 @@ import IO.DbWriter;
 import data.Database;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.util.stream.Collectors;
+import java.io.InputStreamReader;
+import java.io.IOException;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,10 +51,19 @@ public final class ReaderWriterTest {
     System.out.println("validateReaderWriterDatabaseConnect()");
     /* Validate that what writer wrote to dtabase is what reader read. */
     output = writer.write();
+    String writeTest = "This is a test string";
+    byte[] b = writeTest.getBytes();
+
+    try {
+       output.write(b);}
+    catch(IOException e) {
+       e.printStackTrace();
+    }
+    
 
     input = reader.read();
 
-    /* TODO: put written contents in file and read contents in another file and compare. */
-    Assert.assertEquals(true, true);
+    String readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
+    Assert.assertEquals(writeTest, readTest);
   }
 }
