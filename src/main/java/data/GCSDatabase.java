@@ -85,7 +85,7 @@ public class GCSDatabase{
   }
 
   /* Returns list of files in database. */
-  public ArrayList<String> getAllFiles() { 
+  public Page<Blob> getAllBlobs() { 
     Page<Blob> blobs = bucket.list();
     return blobs; 
   }

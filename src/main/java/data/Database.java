@@ -21,7 +21,7 @@ public class Database {
 
   /* Returns name associated with Database. */
   public String getName() {
-    return fileDatabase.getDatabase();
+    return fileDatabase.getDatabaseName();
   }
 
   /*
@@ -41,7 +41,7 @@ public class Database {
   }
 
   /* Returns list of files in database. */
-  public ArrayList<String> getAllFiles() {
+  public List<File> getAllFiles() {
     return fileDatabase.getAllFiles();
   }
 }
