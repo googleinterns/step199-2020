@@ -1,5 +1,81 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+/*
+Purpose of this line it allows the background to extend throughout the whole page
+When only applied this padding rule to the body there was still an issue with
+the margin around the top by default.
+*/
+
+input:focus, select:focus, textarea:focus, button:focus {
+  outline: none;
+}
+
+input[type=text]{
+  width: auto;
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  box-sizing: border-box;
+  padding:5px;
+  /* Change the cursor color inside the text box when typing */
+  caret-color: navy;
+}
+
+#content {
+  width: 100%;
+  height: 100vh;
+  background-image: url("images/StellarPoint.png");
+  background-size: cover;
+  background-position: right 0;
+}
+
 h1 {
-  color: black;
-  font-size: 30px;
+  color: white;
+  font-size: 50px;
   text-align: center;
+  /* Setup gradient for header */
+  background-image: linear-gradient(#3f8b99, white, #3f8b99);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+  text-fill-color: transparent;
+}
+
+#customers {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#customers td, #customers th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#customers tr:nth-child(even){background-color: #f2f2f2;}
+
+#customers tr:hover {background-color: #ddd;}
+
+#customers th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #4CAF50;
+  color: white;
+}
+
+#myUL{
+  padding-top:10px;
+}
+li{
+  text-align:center;
 }
