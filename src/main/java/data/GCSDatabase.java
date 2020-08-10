@@ -5,9 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.util.List;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
@@ -54,33 +59,40 @@ public class GCSDatabase{
  
   /* Returns the appropiate and unique name for a particular file. */
     private String name(String runId, String type){
+    return   runId + "_" + type;
+  }
+
+ /* Returns the appropiate and unique name for a particular file. */
+    private String path(String runId, String type){
     return  bucketName + "/" + runId + "_" + type;
   }
 
   /* Writes file into GCSDatabase. */
   public OutputStream writeData(String runId, String type){
      String objectName = name(runId, type);
-     return uploadObject(objectName); 
+     String objectPath = path(runId, type);
+     return uploadObject(objectName, objectPath); 
   }
 
   /* uploads blob with objectname to GCSDatabase. */
-  private OutputStream uploadObject(String objectName){
+  private OutputStream uploadObject(String objectName, String objectPath){
     BlobId blobId = BlobId.of(bucketName, objectName);
     BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-    storage.create(blobInfo, Files.readAllBytes(Paths.get(filePath)));
+    storage.create(blobInfo, Files.readAllBytes(Paths.get(objectPath)));
     return blob.setBinaryStream(1);
   }
 
   /* Reads file from GCSDatabase. */
   public InputStream readData(String runId, String type){
     String objectName = name(runId, type);
-    return downloadObject(objectName);
+    String objectPath = path(runId, type);
+    return downloadObject(objectName, objectPath);
   }
 
   /* Downloads blob with objectname to GCSDatabase. */
-  private InputStream downloadObject(String objectName){
+  private InputStream downloadObject(String objectName, String objectPath){
     Blob blob = storage.get(BlobId.of(bucketName, objectName));
-    blob.downloadTo(destFilePath);
+    blob.downloadTo(objectPath);
     return blob.getBinaryStream();
   }
 

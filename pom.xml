@@ -18,10 +18,6 @@
 
 <dependencyManagement>
   <dependencies>
-   <dependency>
-    <groupId>com.google.cloud</groupId>
-    <artifactId>google-cloud-storage</artifactId>
-  </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>libraries-bom</artifactId>
@@ -40,18 +36,15 @@
       <artifactId>javax.servlet-api</artifactId>	
       <version>4.0.1</version>	
       <scope>provided</scope>	
-    </dependency>	
+    </dependency>
+     <dependency>
+    <groupId>com.google.cloud</groupId>
+    <artifactId>google-cloud-storage</artifactId>
+  </dependency>	
     <dependency>	
       <groupId>com.google.appengine</groupId>	
       <artifactId>appengine-api-1.0-sdk</artifactId>	
       <version>1.9.59</version>	
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>libraries-bom</artifactId>
-      <version>8.1.0</version>
-      <type>pom</type>
-      <scope>import</scope>
     </dependency>
   </dependencies>
 

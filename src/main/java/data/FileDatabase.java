@@ -1,30 +1,29 @@
 package data;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
 
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class FileDatabase {
   /* Place where files are stored.*/
-  private String directory;
-
-  /* List of all files stored in Database.*/
-  private ArrayList<String> files;
+  private File directoryName;
 
   /* Creates instance of a database with this name. */
-  public FileDatabase(String name) {
-    this.directory = name;
-    files = new ArrayList<String>();
+  public FileDatabase(String directoryName) {
+    this.directoryName = new File(directoryName);
+    this.directoryName.mkdir();
   }
 
-  /* Returns name associated with Database. */
-  public String getDatabase() {
-    return directory;
+  /* Returns name associated with Database, which is the directory of this filesystem. */
+  public String getDatabaseName() {
+    return directoryName.getName();
   }
 
   /*
@@ -56,24 +55,19 @@ public class FileDatabase {
   }
 
   private String makeFileName(String runId, String type){
-     return getDatabase() + "/" + runId + "_" + type;
+     return directoryName + "/" + runId + "_" + type;
   }
 
-  /* Adds file to database given its runid and type. */
-  private void newDatabaseEntry(String fileName) {
-    files.add(fileName);
-  }
 
   /* Return name of file with runid and type in database. */
   public String findName(String runId, String type) {
-    String fileName = getDatabase() + "/" + runId + "_" + type;
-    
-    // TODO: update 0 placeholder so it can actually return the run id and type of file.
-    return files.get(0);
+    String fileName = directoryName + "/" + runId + "_" + type;
+    return fileName;
   }
 
   /* Returns list of files in database. */
-  public ArrayList<String> getAllFiles() {
-    return files;
+  public List<File> getAllFiles() {
+    File[] files = directoryName.listFiles();
+    return Arrays.asList(files);
   }
 }
