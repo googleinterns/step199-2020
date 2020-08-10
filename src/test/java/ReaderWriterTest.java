@@ -4,8 +4,8 @@ import IO.DbReader;
 import IO.DbWriter;
 import data.Database;
 import data.DatabaseQuery;
-
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,14 +13,12 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import java.io.File;
-import java.util.List;
 
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database.  */
@@ -89,5 +87,5 @@ public final class ReaderWriterTest {
     List<File> files = DatabaseQuery.getAllFiles(database);
 
     Assert.assertTrue(true);
-}
+  }
 }

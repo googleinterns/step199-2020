@@ -76,5 +76,4 @@ public class Database {
     File[] files = getDatabase().listFiles();
     return Arrays.asList(files);
   }
-
 }
