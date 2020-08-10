@@ -3,13 +3,9 @@ package test;
 import IO.DbReader;
 import IO.DbWriter;
 import data.Database;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.util.stream.Collectors;
-import java.io.InputStreamReader;
-import java.io.IOException;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +43,7 @@ public final class ReaderWriterTest {
   }
 
   @Test
-  public void validateReaderWriterDatabaseConnect() throws IOException{
+  public void validateReaderWriterDatabaseConnect() throws IOException {
     System.out.println("validateReaderWriterDatabaseConnect()");
 
     String writeTest = "This is a test string";
@@ -57,14 +53,14 @@ public final class ReaderWriterTest {
           byte[] b = writeTest.getBytes();
           output1.write(b);
         }
-   
+
 
      String readTest = null;
     try (
       InputStream  input = reader.read()){
              readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
       }*/
-    
+
     Assert.assertEquals(true, true);
   }
 }
