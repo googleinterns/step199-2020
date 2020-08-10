@@ -23,6 +23,7 @@ public class DbWriter {
   public DbWriter(Database database, String runId, String type) {
     this.database = database;
     this.runId = runId;
+    this.type = type;
     database.newDatabaseEntry(this.runId, this.type);
   }
 

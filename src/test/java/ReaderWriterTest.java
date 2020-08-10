@@ -12,6 +12,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.stream.Collectors;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
+import java.io.Reader;
+
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database.  */
 public final class ReaderWriterTest {
@@ -45,22 +52,35 @@ public final class ReaderWriterTest {
   @Test
   public void validateReaderWriterDatabaseConnect() throws IOException {
     System.out.println("validateReaderWriterDatabaseConnect()");
+  Database database2 = new Database("test2");
+  DbWriter writer2 = new DbWriter(database, "test", "writingIn");
+  DbReader reader2 = new DbReader(database, "test", "writingIn");
 
+
+ 
     String writeTest = "This is a test string";
-    /* Validate that what writer wrote to dtabase is what reader reads. */
-    /*try (
-        OutputStream output1 = writer.write()){
+    /*Validate that what writer wrote to dtabase is what reader reads. */
+    try (
+        OutputStream output1 = writer2.write()){
           byte[] b = writeTest.getBytes();
           output1.write(b);
         }
 
 
      String readTest = null;
-    try (
-      InputStream  input = reader.read()){
-             readTest = new BufferedReader(new InputStreamReader(input)).lines().collect(Collectors.joining());
-      }*/
+     try (
+      InputStream  input = reader2.read()){
+         StringBuilder textBuilder = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader
+            (input, Charset.forName(StandardCharsets.UTF_8.name())))) {
+                int c = 0;
+                while ((c = reader.read()) != -1) {
+                     textBuilder.append((char) c);
+        }
+       }
+    readTest = textBuilder.toString();
+      }
 
-    Assert.assertEquals(true, true);
+    Assert.assertEquals(writeTest, readTest);
   }
 }
