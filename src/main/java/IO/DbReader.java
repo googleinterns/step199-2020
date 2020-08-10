@@ -41,7 +41,7 @@ public class DbReader {
 
   /*
    * Handle alls actions that are necessary when done using the DbReader
-   * Object.
+   * Object including closing inputstream from read.
    */
   public void finish() {
     try {
