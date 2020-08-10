@@ -60,6 +60,7 @@ public final class ReaderWriterTest {
       byte[] b = writeTest.getBytes();
       output1.write(b);
     }
+    writer2.finish();
 
     String readTest = null;
     try (InputStream input = reader2.read()) {
@@ -74,6 +75,7 @@ public final class ReaderWriterTest {
       }
       readTest = textBuilder.toString();
     }
+    reader2.finish();
 
     Assert.assertEquals(writeTest, readTest);
   }
