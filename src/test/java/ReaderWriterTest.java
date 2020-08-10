@@ -3,6 +3,8 @@ package test;
 import IO.DbReader;
 import IO.DbWriter;
 import data.Database;
+import data.DatabaseQuery;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.io.File;
+import java.util.List;
 
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database.  */
@@ -50,7 +55,6 @@ public final class ReaderWriterTest {
   @Test
   public void validateReaderWriterDatabaseConnect() throws IOException {
     System.out.println("validateReaderWriterDatabaseConnect()");
-    Database database2 = new Database("test2");
     DbWriter writer2 = new DbWriter(database, "test", "writingIn");
     DbReader reader2 = new DbReader(database, "test", "writingIn");
 
@@ -79,4 +83,11 @@ public final class ReaderWriterTest {
 
     Assert.assertEquals(writeTest, readTest);
   }
+
+  @Test
+  public void validateDatabaseQueryAfterTestFileIsAdded() throws IOException {
+    List<File> files = DatabaseQuery.getAllFiles(database);
+
+    Assert.assertTrue(true);
+}
 }

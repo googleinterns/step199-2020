@@ -37,7 +37,7 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public InputStream readData(String runID, String type) {
-    String fileName = makeFileName(runID, type);
+    String fileName = FileName(runID, type);
     try {
       return new FileInputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -51,7 +51,7 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public OutputStream writeData(String runId, String type) {
-    String fileName = makeFileName(runId, type);
+    String fileName = FileName(runId, type);
     try {
       return new FileOutputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -61,19 +61,14 @@ public class Database {
   }
 
   /*Returns appropiate file name for data with this runId and type. */
-  private String makeFileName(String runId, String type) {
+  private String FileName(String runId, String type) {
     return getDirectoryName() + "/" + runId + "_" + type;
   }
 
   /* Adds file to database given its runid and type. */
   public String newDatabaseEntry(String runId, String type) {
-    String fileName = makeFileName(runId, type);
+    String fileName = FileName(runId, type);
     return fileName;
-  }
-
-  /* Return name of file with runid and type in database. */
-  public String findName(String runId, String type) {
-    return makeFileName(runId, type);
   }
 
   /* Returns list of files in database. */
@@ -81,4 +76,5 @@ public class Database {
     File[] files = getDatabase().listFiles();
     return Arrays.asList(files);
   }
+
 }
