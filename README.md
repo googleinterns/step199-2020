@@ -13,8 +13,8 @@ the 3D scene. The pose trajectory is made up of latitude and longitude
 coordinates which, along with altitude, create a path of thousands of
 x, y, z points in our 3D space. Point cloud data is composed of hundreds
 of thousands of lidar data points describing their distance relative to
-the imu sensor. Inertial Measurement Unit (IMU) data is also an
-important part of our data visualization. Its data describe the linear
-and rotational acceleration of the lidar sensor using an accelerometer
+the lidar sensor. Inertial Measurement Unit (IMU) data is also an
+important part of our data visualization. Its data describes the linear
+and rotational acceleration of the IMU sensor using an accelerometer
 and gyroscope. The name is meant to accentuate how we manipulate these
 seemingly simple data points into such a stellar project.

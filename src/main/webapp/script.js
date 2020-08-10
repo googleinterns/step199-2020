@@ -9,7 +9,7 @@ let clock;
 let controls;
 const rotationData = new Map();
 const points = [];
-const numOfPoints = 15; // Arbitrary test number
+const numOfPoints = 15; // This is an arbitrary test number.
 /**
  * Initializes the scene, camera, renderer, and clock.
  */
@@ -63,13 +63,13 @@ function addPoseData() {
 
     const geometry = new THREE.CylinderGeometry(.02, .02, .5);
 
-    // The cylinder represents the orientation of each data point
+    // The cylinder represents the orientation of each data point.
     const cylinder = new THREE.Mesh(geometry, material);
     cylinder.rotateX(THREE.Math.degToRad(-90));
     cylinder.position.set(0, 0, -.25);
-    scene.add(cylinder); // Orientation indicator
+    scene.add(cylinder);
 
-    // The pivot sphere represents the position of each data point
+    // The pivot sphere represents the position of each data point.
     const pivot = new THREE.Group();
     pivot.position.set(Math.pow(-1, increment), .25, -increment);
     scene.add(pivot);
@@ -89,7 +89,7 @@ function addPoseData() {
 }
 
 /**
- * Creates a GUI for manipulating the orientation of each data point
+ * Creates a GUI for manipulating the orientation of each data point.
  */
 function gui() {
   const gui = new GUI();
