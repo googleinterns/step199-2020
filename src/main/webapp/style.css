@@ -13,7 +13,7 @@ input:focus, select:focus, textarea:focus, button:focus {
   outline: none;
 }
 
-input[type=text]{
+input[type=text] {
   width: auto;
   margin-top: 10px;
   margin-left: auto;
@@ -22,8 +22,8 @@ input[type=text]{
   border: 1px solid #ccc;
   border-radius: 20px;
   box-sizing: border-box;
-  padding:5px;
-  /* Change the cursor color inside the text box when typing */
+  padding: 5px;
+  /* Change the cursor color inside the text box when typing. */
   caret-color: navy;
 }
 
@@ -39,7 +39,7 @@ h1 {
   color: white;
   font-size: 50px;
   text-align: center;
-  /* Setup gradient for header */
+  /* Setup gradient for header. */
   background-image: linear-gradient(#3f8b99, white, #3f8b99);
   background-clip: text;
   -webkit-background-clip: text;
@@ -50,32 +50,98 @@ h1 {
   text-fill-color: transparent;
 }
 
-#customers {
+#pose-data {
   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
   border-collapse: collapse;
-  width: 100%;
+  width: 30%;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center
 }
 
-#customers td, #customers th {
+#pose-data td, #pose-data th {
   border: 1px solid #ddd;
   padding: 8px;
 }
 
-#customers tr:nth-child(even){background-color: #f2f2f2;}
+.visible.even {
+  background-color: #f2f2f2!important;
+}
 
-#customers tr:hover {background-color: #ddd;}
+#pose-data tr {
+  background-color: lightblue
+}
 
-#customers th {
+#pose-data th {
   padding-top: 12px;
   padding-bottom: 12px;
-  text-align: left;
-  background-color: #4CAF50;
+  background-color: lightslategray;
   color: white;
 }
 
-#myUL{
-  padding-top:10px;
+#myUL {
+  padding-top: 10px;
 }
-li{
-  text-align:center;
+
+li {
+  text-align: center;
+}
+
+.file-upload, .submit-file {
+  background-color: lightslategray;
+  border: none;
+  color: white;
+  padding: 13px 26px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 20px;
+  border-radius: 20px;
+}
+
+input[type="file"], input[type="submit"] {
+  display: none;
+}
+
+.buttons {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  text-align: center;
+  padding: 5px;
+}
+
+th {
+  position: sticky;
+  /* Set this value as -1px to account for the border of 1px around the elements. 
+  Without this attribute some text shows upon scroll. */
+  top: -1px;
+}
+
+/* To hide the scrollbar in Chrome. */
+
+#scroll-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* On overflow make the table scrollable. */
+
+#scroll-body {
+  -ms-overflow-style: none;
+  /* IE and Edge. */
+  scrollbar-width: none;
+  /* Firefox. */
+  overflow: auto;
+  height: 400px;
+  margin-bottom: 5px;
+  margin-top: 10px;
+}
+
+.visible{
+  display:"";
+}
+.hidden{
+  display:none;
+}
+
+table{
+  table-layout: fixed;
 }
