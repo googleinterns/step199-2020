@@ -14,7 +14,6 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -100,5 +99,4 @@ public final class ReaderWriterTest {
 
     /* Delete directory.*/
   }
-
 }

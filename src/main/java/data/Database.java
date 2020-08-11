@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
@@ -71,8 +69,7 @@ public class Database {
   public ArrayList<String> getAllFiles() {
     File[] files = folder.listFiles();
     ArrayList<String> filesAsStrings = new ArrayList<String>();
-    for (int i=0; i<files.length; i++)
-        filesAsStrings.add(files[i].getName());
+    for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
     return filesAsStrings;
   }
 }
