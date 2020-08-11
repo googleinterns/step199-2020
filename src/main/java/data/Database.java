@@ -69,10 +69,10 @@ public class Database {
 
   /* Returns list of files in database. */
   public ArrayList<String> getAllFiles() {
-    File[] files = getDatabase().listFiles();
-    List<File> filesAsFiles = Arrays.asList(files);
+    File[] files = folder.listFiles();
     ArrayList<String> filesAsStrings = new ArrayList<String>();
-    for (File file : filesAsFiles) filesAsStrings.add(file.getName());
+    for (int i=0; i<files.length; i++)
+        filesAsStrings.add(files[i].getName());
     return filesAsStrings;
   }
 }
