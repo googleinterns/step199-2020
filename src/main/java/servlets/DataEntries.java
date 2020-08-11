@@ -35,7 +35,7 @@ public class DataEntries extends HttpServlet {
       }
     }
     // Logic that goes here that calls two methods from the intermediate Database
-    // depending on what exactly
+    // depending on what exactly.
     String json = getJson();
     response.getWriter().println(json);
   }
@@ -46,13 +46,9 @@ public class DataEntries extends HttpServlet {
     // In the future this will be implemented by calling a method from the database
     // class. For now this is implemented as reading from a file.
 
-    // Example of sample Json format ~
-    /*
-     * [data: {runId: aks;ldfja entries: []}]
-     */
     String fileName = sharedObjects.dataInstance.getName() + "/";
+    // Remove extraneous whitespace from the name.
     fileName.trim();
-    System.out.println("The filename is " + fileName);
     File dir = new File(fileName);
     System.out.println(dir.getAbsolutePath());
     File[] dataEntries = dir.listFiles();
@@ -61,24 +57,26 @@ public class DataEntries extends HttpServlet {
       return "{}";
     }
 
+    // Associate a runID with a list (for json) of the entry types that are found
+    // for it.
     HashMap<String, TreeSet<String>> dataMap = new HashMap<String, TreeSet<String>>();
     for (File file : dataEntries) {
-      // Parse through all entries and write them as JSON
+      // Parse through all entries and write them as JSON.
       String name = file.getName();
-      System.out.println("The filename is " + name);
+      // Use regex to extract name and type from string.
       String[] params = name.split("[_.]");
       if (params.length != 3) {
         System.err.println("Invalid database entry format!");
         return "";
       }
-      String hash = params[0];
+      String runId = params[0];
       String type = params[1];
-      if (!dataMap.containsKey(hash)) {
+      if (!dataMap.containsKey(runId)) {
         TreeSet<String> toAdd = new TreeSet<String>();
-        toAdd.add(type);
-        dataMap.put(hash, toAdd);
+        toAdd.add(runId);
+        dataMap.put(runId, toAdd);
       } else {
-        dataMap.get(hash).add(type);
+        dataMap.get(runId).add(type);
       }
     }
     System.out.println(dataMap);
