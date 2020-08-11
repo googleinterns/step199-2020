@@ -20,7 +20,7 @@ import com.google.cloud.storage.StorageClass;
 import com.google.cloud.storage.StorageOptions;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
-public class GCSDatabase{
+public class GCSDatabase implements Database {
   /* Buckets are containers that hold objects. They can be used to organize and control data access. */
   private Bucket bucket;
 
@@ -68,6 +68,7 @@ public class GCSDatabase{
   }
 
   /* Writes file into GCSDatabase. */
+  @Override
   public OutputStream writeData(String runId, String type){
      String objectName = name(runId, type);
      String objectPath = path(runId, type);
@@ -83,6 +84,7 @@ public class GCSDatabase{
   }
 
   /* Reads file from GCSDatabase. */
+  @Override
   public InputStream readData(String runId, String type){
     String objectName = name(runId, type);
     String objectPath = path(runId, type);
@@ -97,6 +99,7 @@ public class GCSDatabase{
   }
 
   /* Returns list of files in database. */
+  @Override
   public List<Blob> getAllBlobs() { 
     Page<Blob> blobs = bucket.list();
     List<Blob> blobList = blobs.getContent();

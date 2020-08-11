@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
-public class FileDatabase {
+public class FileDatabase implements Database {
   /* Place where files are stored.*/
   private File directoryName;
 
@@ -22,6 +22,7 @@ public class FileDatabase {
   }
 
   /* Returns name associated with Database, which is the directory of this filesystem. */
+  @Override
   public String getDatabaseName() {
     return directoryName.getName();
   }
@@ -30,6 +31,7 @@ public class FileDatabase {
    * Attempt to open and return a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
+   @Override
   public InputStream readData(String runID, String type) {
       String fileName = makeFileName(runID, type);
     try {
@@ -44,6 +46,7 @@ public class FileDatabase {
    * Attempt to open a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
+   @Override
   public OutputStream writeData(String runId, String type) {
       String fileName = makeFileName(runId, type);
     try {  
@@ -66,6 +69,7 @@ public class FileDatabase {
   }
 
   /* Returns list of files in database. */
+  @Override
   public List<File> getAllFiles() {
     File[] files = directoryName.listFiles();
     return Arrays.asList(files);
