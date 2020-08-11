@@ -1,19 +1,14 @@
 package IO;
 
+import data.Database;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.util.Random;
-
-import data.Database;
 
 /* DbWriter class provides output stream from database to client.
- * If user makes DbWriter object and calls the write() function, 
- * user also must call close on the Outputstream returned. Instead, the user 
- * must use the finish() function to handle closing the inputstream and any 
+ * If user makes DbWriter object and calls the write() function,
+ * user also must call close on the Outputstream returned. Instead, the user
+ * must use the finish() function to handle closing the inputstream and any
  * other necessary end operations.  */
 public class DbWriter {
 
@@ -23,7 +18,6 @@ public class DbWriter {
   private String fileName;
   private static final int hashLength = 10;
   private OutputStream out;
-  
 
   /* Creates instance of a Writer with this runId. */
   public DbWriter(Database database, String runId, String type) {
@@ -48,12 +42,12 @@ public class DbWriter {
     out = database.writeData(runId, type);
     return out;
   }
-   
-   /* Returns unique runid. */
+
+  /* Returns unique runid. */
   private String generateRandomRunId() {
     return getRandomRunId();
   }
-  
+
   /* Returns and makes unique runid. */
   private String getRandomRunId() {
     String newRunId = getAlphaNumericString(hashLength);
@@ -86,12 +80,13 @@ public class DbWriter {
   /* Code from online to generate a random hash of length n.*/
   private static String getAlphaNumericString(int n) {
     /* Chose a Character random from this String.*/
-    String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
+    String AlphaNumericString =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789" + "abcdefghijklmnopqrstuvxyz";
     /* Create StringBuffer size of AlphaNumericString.*/
     StringBuilder sb = new StringBuilder(n);
     for (int i = 0; i < n; i++) {
       /* Generate a random number between
-       0 to AlphaNumericString variable length. */
+      0 to AlphaNumericString variable length. */
       int index = (int) (AlphaNumericString.length() * Math.random());
       /* Add Character one by one in end of sb.*/
       sb.append(AlphaNumericString.charAt(index));
@@ -101,7 +96,7 @@ public class DbWriter {
 
   /* Return file name that this Writer should write to. */
   private String constructName() {
-    String fileName = database.getName()+ "/" + runId + "_" + type;
+    String fileName = database.getName() + "/" + runId + "_" + type;
     return fileName;
-     }
+  }
 }
