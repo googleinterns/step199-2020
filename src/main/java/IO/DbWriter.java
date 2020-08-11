@@ -39,6 +39,11 @@ public class DbWriter {
     return runId;
   }
 
+  /* Returns type. */
+  public String getType() {
+    return type;
+  }
+
   /* Gets an outputstream from the database. */
   public OutputStream write() {
     out = database.writeData(runId, type);

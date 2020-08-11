@@ -23,7 +23,7 @@ public class Database {
   }
 
   /* Returns name associated with Database. */
-  private File getDatabase() {
+  public File getDatabase() {
     return folder;
   }
 
