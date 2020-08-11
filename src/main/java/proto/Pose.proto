@@ -1,10 +1,7 @@
 /*
-Instead of encoding all data in one proto, we will instead preface the proto
-with a header field containing the number of total bytes in the proto. This will
-be a configurable value that will be computed where the biggest possible Data
-division below the maximum threshold is used. This will allow for easy chunking
-when reading in messages etc.
-*/
+ * This proto format is used along with the delimited methods to
+ * store message size for easy decoding/encoding.
+ */
 syntax = "proto3";
 
 package formats;
@@ -12,11 +9,12 @@ option java_package = "proto";
 option java_outer_classname = "SensorData";
 
 message Pose{
-  double gps_timestamp = 1;
-  double lat = 2;
-  double lng = 3;
-  double alt = 4;
-  float roll_deg = 5;
-  float pitch_deg = 6;
-  float yaw_deg = 7;
+  // Position is in WGS84 latitude, longitude, altitude.
+  double gps_timestamp = 1; // Time in seconds.
+  double lat = 2;  // Degrees in [-90, 90].
+  double lng = 3;  // Degrees in [-180,180].
+  double alt = 4; // Meters
+  float roll_deg = 5; // Degrees per second in [-180, 180]
+  float pitch_deg = 6; // Degrees per second in [-180, 180]
+  float yaw_deg = 7; // Degrees per second in [-180, 180]
 }

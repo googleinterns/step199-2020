@@ -12,7 +12,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Validate that decoding the protobuf file to json works properly. */
+/*
+* Validate that decoding the protobuf file to json works properly. 
+*/
 @RunWith(JUnit4.class)
 public final class DecodeTest {
   private static String inputFile;
@@ -48,8 +50,8 @@ public final class DecodeTest {
 
   @Test
   /**
-   * Convert the encoded .sstable file (proto format) into json. Basic sanity checks, up to the user
-   * to make sure the output is indeed as expected.
+   * Convert the encoded .sstable file (proto format) into json. Basic sanity
+   * checks, up to the user to make sure the output is indeed as expected.
    */
   public void validateDecoding() {
     Decoder.decode(input, output);

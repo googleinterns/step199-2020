@@ -60,8 +60,8 @@
         <artifactId>appengine-maven-plugin</artifactId>
         <version>2.2.0</version>
         <configuration>
-          <!-- TODO: Set project ID. -->
-          <deploy.projectId></deploy.projectId>
+          
+          <deploy.projectId>Pose-3D-Viewer</deploy.projectId>
           <deploy.version>1</deploy.version>
         </configuration>
       </plugin>
@@ -96,7 +96,6 @@
                 <outputTarget>
                   <type>java</type>
                   <outputDirectory>src/main/java</outputDirectory>
-                  <!-- Output directory is already determined by the package in the .proto file. -->
                 </outputTarget>
               </outputTargets>
             </configuration>

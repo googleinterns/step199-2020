@@ -9,10 +9,7 @@ import proto.SensorData.Pose;
 /** Decode data from the proto format to JSON. */
 public class Decoder {
   public static void decode(InputStream dataStream, OutputStream outputStream) {
-
-    // At some point it would make sense to have this data read in chunks of the
-    // data file and include headers in the proto definitions so we could
-    // address issues with large files, stuff not fitting into RAM, etc.
+   // TODO(morleyd): buffer reading for large files.
     try {
       PrintWriter output = new PrintWriter(outputStream);
       Pose currentPose = Pose.parseDelimitedFrom(dataStream);
