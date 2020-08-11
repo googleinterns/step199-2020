@@ -14,7 +14,7 @@ message Pose{
   double lat = 2;  // Degrees in [-90, 90].
   double lng = 3;  // Degrees in [-180,180].
   double alt = 4; // Meters
-  float roll_deg = 5; // Degrees per second in [-180, 180]
-  float pitch_deg = 6; // Degrees per second in [-180, 180]
-  float yaw_deg = 7; // Degrees per second in [-180, 180]
+  float roll_deg = 5; // Degrees per second
+  float pitch_deg = 6; // Degrees per second
+  float yaw_deg = 7; // Degrees per second
 }
