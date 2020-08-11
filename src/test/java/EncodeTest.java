@@ -27,8 +27,6 @@ public final class EncodeTest {
   public void setUp() throws SecurityException, FileNotFoundException, IOException {
     outputFile = "testOutput";
     // Attempt to open both the input and output streams for testing.
-    // Will throw the appropriate exceptions upon finding the
-
     // Now initialize this temporary file with the following data.
     testInputArray =
         new String[] {
@@ -67,17 +65,16 @@ public final class EncodeTest {
     Pose secondLine = Pose.parseDelimitedFrom(readTestOutput);
     verifyLine(secondLine, secondLineString);
 
-    // Validate the outputFile was generated
+    // Validate the outputFile was generated.
     File verifyFile = new File(outputFile);
     Assert.assertEquals(verifyFile.exists(), true);
-
-    // Delete the output file
+    // Delete the output file.
     verifyFile.delete();
   }
 
   private void verifyLine(Pose readInLine, String[] expectedLine) {
     // The amount to allow for rounding when Double conversions are taking place in
-    // the JUnit assertEquals for Double documentation
+    // the JUnit assertEquals for Double documentation.
     Double epsilon = .01;
     Assert.assertEquals(readInLine.getGpsTimestamp(), Double.parseDouble(expectedLine[0]), epsilon);
     Assert.assertEquals(readInLine.getLat(), Double.parseDouble(expectedLine[1]), epsilon);

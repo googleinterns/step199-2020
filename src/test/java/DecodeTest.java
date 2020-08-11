@@ -35,7 +35,6 @@ public final class DecodeTest {
     decoderOutputFile = "decodeTestOutput.json";
     decoderInputFile = "testProtoFile";
     // Attempt to open both the input and output streams for testing.
-    // Will throw the appropriate exceptions upon finding the
     testInputArray =
         new String[] {
           "gps_timestamp lat lng alt roll_deg pitch_deg yaw_deg",
@@ -93,7 +92,7 @@ public final class DecodeTest {
 
   private void verifyLine(JsonObject readInLine, String[] expectedLine) {
     // The amount to allow for rounding when Double conversions are taking place in
-    // the JUnit assertEquals for Double documentation
+    // the JUnit assertEquals for Double documentation.
     Double epsilon = .1;
     Assert.assertEquals(
         readInLine.get("gpsTimestamp").getAsDouble(), Double.parseDouble(expectedLine[0]), epsilon);
