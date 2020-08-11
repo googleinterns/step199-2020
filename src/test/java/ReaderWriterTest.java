@@ -1,21 +1,20 @@
 package test;
 
+import static org.junit.Assert.assertEquals;
+
 import IO.DbReader;
 import IO.DbWriter;
 import data.Database;
 import data.DatabaseQuery;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.ArrayList;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,69 +22,70 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database.  */
 public final class ReaderWriterTest {
-  private static String inputFile;
-  private static String outputFile;
-  private static InputStream input;
-  private static OutputStream output;
-
-  private Database database = new Database("test");
-  private DbWriter writer = new DbWriter(database, "test", "writingIn");
-  private DbReader reader = new DbReader(database, "test", "writingIn");
-
-  @Before
-  public void setUp() {}
 
   @Test
-  public void validateDatabaseName() {
+  public void validateDatabaseName() throws IOException {
     System.out.println("validateDatabaseName()");
+    Database database = new Database("test");
     /* Validate that place where data is stored is named test. */
-    System.out.println("test = " + database.getDatabase());
-    Assert.assertEquals(database.getDirectoryName(), "test");
+    System.out.println("test = " + database.getDatabaseName());
+    Assert.assertEquals(database.getDatabaseName(), "test");
   }
 
   @Test
-  public void validateWriterRunId() {
+  public void validateWriterRunId() throws IOException {
     System.out.println("validateWriterRunId()");
+    Database database = new Database("test");
     /* Validate that writer's runId is test. */
-    Assert.assertEquals(writer.getRunId(), "test");
+    DbWriter writer = new DbWriter(database, "test", "writingIn");
+    assertEquals(writer.getRunId(), "test");
   }
 
   @Test
   public void validateReaderWriterDatabaseConnect() throws IOException {
     System.out.println("validateReaderWriterDatabaseConnect()");
-    DbWriter writer2 = new DbWriter(database, "test", "writingIn");
-    DbReader reader2 = new DbReader(database, "test", "writingIn");
+
+    /*Validate that what writer wrote to database is what reader reads. */
+    /* Initialize Database, reader, and writer. */
+    Database database2 = new Database("test2");
+    DbWriter writer2 = new DbWriter(database2, "test", "writingIn");
+    DbReader reader2 = new DbReader(database2, "test", "writingIn");
 
     String writeTest = "This is a test string";
-    /*Validate that what writer wrote to dtabase is what reader reads. */
+
+    /* Write writeTest into database.*/
     try (OutputStream output1 = writer2.write()) {
       byte[] b = writeTest.getBytes();
       output1.write(b);
     }
+    /* Close outputStream. */
     writer2.finish();
 
     String readTest = null;
-    try (InputStream input = reader2.read()) {
+
+    /* Read contents of file written to database. */
+    try (Reader reader =
+        new BufferedReader(
+            new InputStreamReader(
+                reader2.read(), Charset.forName(StandardCharsets.UTF_8.name())))) {
+      /*Convert inputStream to Stringbuilder*/
       StringBuilder textBuilder = new StringBuilder();
-      try (Reader reader =
-          new BufferedReader(
-              new InputStreamReader(input, Charset.forName(StandardCharsets.UTF_8.name())))) {
-        int c = 0;
-        while ((c = reader.read()) != -1) {
-          textBuilder.append((char) c);
-        }
-      }
+      int c = 0;
+      while ((c = reader.read()) != -1) textBuilder.append((char) c);
+      /* Convert Stringbuilder to a string. */
       readTest = textBuilder.toString();
     }
+    /* Close inputStream. */
     reader2.finish();
 
-    Assert.assertEquals(writeTest, readTest);
+    assertEquals(writeTest, readTest);
   }
 
   @Test
   public void validateDatabaseQueryAfterTestFileIsAdded() throws IOException {
-    List<File> files = DatabaseQuery.getAllFiles(database);
-
+    /* TODO: Test if DatabaseQuery method returns all files stored in the database.*/
+    Database database = new Database("test");
+    ArrayList<String> files = DatabaseQuery.getAllFiles(database);
     Assert.assertTrue(true);
   }
 }

@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,18 +19,18 @@ public class Database {
   File folder;
 
   /* Creates instance of a database with this name. */
-  public Database(String name) {
+  public Database(String name) throws IOException {
     folder = new File(name);
     folder.mkdir();
   }
 
   /* Returns name associated with Database. */
-  public File getDatabase() {
+  private File getDatabase() {
     return folder;
   }
 
   /* Returns name of database. */
-  public String getDirectoryName() {
+  public String getDatabaseName() {
     return folder.getName();
   }
 
@@ -37,7 +39,7 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public InputStream readData(String runID, String type) {
-    String fileName = FileName(runID, type);
+    String fileName = fileName(runID, type);
     try {
       return new FileInputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -51,7 +53,7 @@ public class Database {
    * file. only reaches null return if attempt fails.
    */
   public OutputStream writeData(String runId, String type) {
-    String fileName = FileName(runId, type);
+    String fileName = fileName(runId, type);
     try {
       return new FileOutputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -61,19 +63,16 @@ public class Database {
   }
 
   /*Returns appropiate file name for data with this runId and type. */
-  private String FileName(String runId, String type) {
-    return getDirectoryName() + "/" + runId + "_" + type;
-  }
-
-  /* Adds file to database given its runid and type. */
-  public String newDatabaseEntry(String runId, String type) {
-    String fileName = FileName(runId, type);
-    return fileName;
+  private String fileName(String runId, String type) {
+    return getDatabaseName() + "/" + runId + "_" + type;
   }
 
   /* Returns list of files in database. */
-  public List<File> getAllFiles() {
+  public ArrayList<String> getAllFiles() {
     File[] files = getDatabase().listFiles();
-    return Arrays.asList(files);
+    List<File> filesAsFiles = Arrays.asList(files);
+    ArrayList<String> filesAsStrings = new ArrayList<String>();
+    for (File file : filesAsFiles) filesAsStrings.add(file.getName());
+    return filesAsStrings;
   }
 }

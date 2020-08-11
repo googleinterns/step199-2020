@@ -7,9 +7,9 @@ import java.io.InputStream;
 /*
  * DbReader class accesses blob information to read its contents with an
  * InputStream. If user makes DbReader object and calls the read() function,
- * user SHOULD NOT close the Inputstream returned directly. Instead, the user
- * must use the finish() function to handle closing the inputstream and any
- * other necessary end operations.
+ * user either close the Inputstream returned directly with the close() method
+ * or use the finish() function to handle closing the inputstream and any
+ * other necessary end operations, but DO NOT CALL BOTH.
  */
 public class DbReader {
 

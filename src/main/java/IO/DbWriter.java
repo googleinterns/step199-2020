@@ -7,9 +7,10 @@ import java.io.OutputStream;
 
 /* DbWriter class provides output stream from database to client.
  * If user makes DbWriter object and calls the write() function,
- * user SHOULD NOT close the Outputstream returned directly. Instead, the user
- * must use the finish() function to handle closing the inputstream and any
- * other necessary end operations.  */
+ * user either close the Outputstream returned directly or
+ * use the finish() function to handle closing the inputstream and any
+ * other necessary end operations, BUT DO NOT CALL BOTH.
+ */
 public class DbWriter {
 
   private String runId;
@@ -24,7 +25,6 @@ public class DbWriter {
     this.database = database;
     this.runId = runId;
     this.type = type;
-    database.newDatabaseEntry(this.runId, this.type);
   }
 
   /* Creates instance of a Writer that doesnt have a runId yet. */
@@ -32,7 +32,6 @@ public class DbWriter {
     this.database = database;
     this.type = type;
     runId = generateRandomRunId();
-    database.newDatabaseEntry(this.runId, this.type);
   }
 
   /* Returns runId. */
@@ -99,7 +98,7 @@ public class DbWriter {
 
   /* Return file name that this Writer should write to. */
   private String constructName() {
-    String fileName = database.getDatabase() + "/" + runId + "_" + type;
+    String fileName = database.getDatabaseName() + "/" + runId + "_" + type;
     return fileName;
   }
 }
