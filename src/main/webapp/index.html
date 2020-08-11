@@ -9,15 +9,28 @@
 </head>
 <div id="content">
 
-	<body onload="loadUrls()">
+	<body onload="createTable();">
 		<h1>StellarPoint</h1>
-		<form action="/upload" method="post" enctype="multipart/form-data">
-			<!--	<input type="file" name="file" id="fileToUpload">
-			<input type="submit" value="Upload Image" name="submit">-->
-			<div id="search"> <input type="text"></div>
+		<form action="/upload" method="post" enctype="multipart/form-data" id="uploadData">
+			<div id="search"> <input id="searchQuery" type="text" onkeyup="filterTable();"></div>
 		</form>
-		<ul id="myUL">
-		</ul>
+		<div id="scroll-body">
+			<table id="pose-data">
+			</table>
+		</div>
+		<div class="buttons">
+			<label class="file-upload">
+				<input type="file" form="uploadData" name="file" />
+				Choose File
+			</label>
+		</div>
+		<div class="buttons">
+			<label class="submit-file">
+				<input type="submit" name="submit" form="uploadData" />
+				Upload Pose Data
+			</label>
+		</div>
+
 </div>
 
 </body>

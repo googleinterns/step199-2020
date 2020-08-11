@@ -30,6 +30,9 @@ public class Upload extends HttpServlet {
     Part filePart = null;
 
     filePart = request.getPart("file");
+    if(filePart ==null){
+      response.sendRedirect("/index.html");
+    }
     // Get the input stream and encode it/store it in the given OutputStream.
     InputStream uploadedFile = filePart.getInputStream();
     Encoder.encode(uploadedFile, dataWriter.write());
