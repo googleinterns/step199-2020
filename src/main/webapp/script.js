@@ -7,7 +7,7 @@ function loadUrls() {
             let li = document.createElement('li');
             let att = document.createElement('a');
             att.textContent = key + ":" + json[key];
-            att.setAttribute('href', "/getrun?id=" + key + "&dataType=" + json[key]);
+            att.setAttribute('href', "/home.html?id=" + key + "&dataType=" + json[key]);
             console.log(att);
             li.appendChild(att);
             links.appendChild(li);
@@ -49,7 +49,7 @@ function createTable() {
                 console.log(type.toUpperCase())
                 if ((type.toUpperCase() === "POSE" && index === 0) || (type.toUpperCase() === "POINTCLOUD" && index === 1)) {
                     let link = document.createElement("a");
-                    link.href = "/getrun?id=" + key + "&dataType=" + json[key];
+                    link.href = "/home.html?id=" + key + "&dataType=" + json[key];
                     link.innerText = type;
                     columnEntry.appendChild(link);
                 }
