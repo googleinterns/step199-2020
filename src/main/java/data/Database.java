@@ -65,9 +65,4 @@ public class Database{
     public ArrayList<String> getAllFiles(){
         return files; 
     }
-
-
-
-
-   
 }

@@ -1,23 +1,25 @@
-
 import {FlyControls} from 'https://threejs.org/examples/jsm/controls/FlyControls.js';
 import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
-
 // Initialization of global objects.
 let scene;
 let camera;
 let renderer;
 let clock;
 let controls;
+let direction;
+let line;
+let pose;
+let poseScalar = {value: 25000};
+let posePosition = {x: 0, z: 0};
 let count;
-var pose;
+const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 const rotationData = new Map();
-const path = [];
-
+let path = [];
 
 /**
  * Initializes the scene, camera, renderer, and clock.
  */
-function init(data) {
+function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
       /* fov =*/ 75,
@@ -36,78 +38,95 @@ function init(data) {
   controls.rollSpeed = Math.PI / 10;
   controls.autoForward = false;
   controls.dragToLook = true;
-  
-  fetchData();
-//   addPoseData();
+
+  fetchData();// calls addPoseData()
 }
 
 /**
  * Creates all the objects from pose data and adds them to the scene.
 */
 function addPoseData() {
-  console.log(pose);
-  count = pose.length;
-  let dummy = new THREE.Object3D;
-  dummy.matrixAutoUpdate = false;
-  let geometry = new THREE.PlaneGeometry(5, 25, 1);
-  let material =
-      new THREE.MeshBasicMaterial({color: 'pink', side: THREE.DoubleSide});
-  const plane = new THREE.Mesh(geometry, material);
-  plane.rotation.x = Math.PI / 2;
-  plane.position.z = -10;
-  scene.add(plane);
+  let loader = new THREE.TextureLoader();
+  let material = new THREE.MeshLambertMaterial(
+    {map: loader.load(
+      'https://maps.googleapis.com/maps/api/staticmap?format=png&center=48.129872,11.582905&zoom=18&size=500x500&key=' + apiKey)
+    });
+  let geometry = new THREE.PlaneGeometry(50,50);
+  let map = new THREE.Mesh(geometry, material);
+  map.position.set(0,0,0);
+  map.rotation.x = -Math.PI / 2;
+  scene.add(map);
 
+  let light = new THREE.PointLight( 0xffffff, 1, 0 );
+  // Specify the light's position
+  light.position.set(0, 100, 0);
+  // Add the light to the scene
+  scene.add(light)
+
+  // Adds pose trajectory line
+  plotPath();
+  
   // Adds test pose data as one Geometry instance
-  for (let increment = 0; increment < count; increment++) {
-    path.push(new THREE.Vector3(
-        (pose[increment].lat-48.12)*10000,
-        pose[increment].alt,
-        (pose[increment].lng-11.58)*10000));// GPS points
-  }
-  geometry = new THREE.BufferGeometry().setFromPoints(path);
-  material = new THREE.LineBasicMaterial({color: 'blue'});
-  const line = new THREE.Line(geometry, material);
-  scene.add(line);
-
-  let points = [];
-  points.push(new THREE.Vector3(0, 0, 0))
-  points.push(new THREE.Vector3(0, .5, 0));
   material = new THREE.MeshBasicMaterial({color: 'red'});
-  geometry = new THREE.CylinderBufferGeometry(.02, .02, 1);
-  const direction = new THREE.InstancedMesh(geometry, material, count);
+  geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
+  direction = new THREE.InstancedMesh(geometry, material, count);
   direction.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(direction);// Orientation indicator
-
+  plotOrientation();
+    
+}
+function plotPath() {
+  scene.remove(line);
+  path=[];
+  for (let increment = 0; increment < count; increment++) {
+    path.push(new THREE.Vector3(
+      (pose[increment].lat-48.129872)*poseScalar.value,
+      (pose[increment].alt - 6.582905)/4,
+      (pose[increment].lng-11.582905)*poseScalar.value));// GPS points
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(path);
+  const material = new THREE.LineBasicMaterial({color: 'blue'});
+  line = new THREE.Line(geometry, material);
+  scene.add(line);
+  line.position.x = posePosition.x;
+  line.position.z = posePosition.z;
+}
+function plotOrientation() {
+  let dummy = new THREE.Object3D;
+  dummy.matrixAutoUpdate = false;
   for(let i = 0; i < count; i++){
-    // var pivotSphereGeo = new THREE.SphereGeometry(.02); // Small sphere indicating pivot point
-    // var pivotSphere = new THREE.Mesh(pivotSphereGeo);
-    // pivotSphere.position.set(
-    //   (test[i].pose.lat/1000) - 1140885,
-    //   test[i].alt,
-    //   test.data[i].pose.long * 100);
-    // scene.add(pivotSphere);
-
     let matrix = new THREE.Matrix4();
     dummy.matrix.identity();
     matrix.makeTranslation(
-      (pose[i].lat-48.12)*10000,
-      pose[i].alt,
-      (pose[i].lng-11.58)*10000);
+      (pose[i].lat-48.129872)*poseScalar.value,
+      (pose[i].alt - 6.582905)/4,
+      (pose[i].lng-11.582905)*poseScalar.value);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(pose[i].pitchDeg)));
-    matrix.multiply(new THREE.Matrix4().makeRotationY(
-       THREE.Math.degToRad(pose[i].yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
+       THREE.Math.degToRad(pose[i].yawDeg)));
+    matrix.multiply(new THREE.Matrix4().makeRotationY(
         THREE.Math.degToRad(pose[i].rollDeg)));
-    matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .5, 0.0));
+    matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     dummy.applyMatrix4(matrix);
     dummy.updateMatrix();
     direction.setMatrixAt(i, dummy.matrix);
   }
-  direction.instanceMatrix.needsUpdate = true;   
+  direction.instanceMatrix.needsUpdate = true; 
+  direction.position.x = posePosition.x;
+  direction.position.z = posePosition.z;
 }
 
+function gui() {
+  var gui = new GUI();
+  gui.add(posePosition, 'x', -10, 10,.025).onChange(plotOrientation)
+  .onFinishChange(plotPath);;
+  gui.add(posePosition, 'z', -10, 10,.025).onChange(plotOrientation)
+  .onFinishChange(plotPath);;
+  gui.add(poseScalar, 'value', 10000, 50000, 500).onChange(plotOrientation)
+  .onFinishChange(plotPath);
+}
 
 /**
  * This is the animation loop which continually updates the scene.
@@ -122,13 +141,20 @@ function animate() {
 };
 
 function fetchData() {
-    fetch('/getrun?id=aILTJfpbhZ&dataType=pose')
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const id = urlParams.get('id');
+    const type = urlParams.get('dataType');
+    fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
     .then(data => pose = data)
     .then(() => {
+      count=pose.length;
       addPoseData();
-      qqanimate();
     })
 }
 
 init();
+gui();
+animate();
+
