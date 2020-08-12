@@ -1,5 +1,6 @@
 package data;
 
+import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -8,13 +9,11 @@ import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.cloud.storage.StorageOptions;
-import com.google.api.gax.paging.Page;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
@@ -31,8 +30,10 @@ public class GCSDatabase implements Database {
   /* ProjectID. */
   private String projectId = "Pose-3D-Viewer";
 
-  /* These two next variables are copied from GCS tutorials. */
+  /* Used below to determine the size of chucks to read in. Should be > 1kb and < 10MB. */
+  private static final int BUFFER_SIZE = 2 * 1024 * 1024;
 
+  /* These two next variables are copied from GCS tutorials. */
   /*
    * See the StorageClass documentation for other valid storage classes:
    * https://googleapis.dev/java/google-cloud-clients/latest/com/google/cloud/storage/StorageClass.html
@@ -58,11 +59,11 @@ public class GCSDatabase implements Database {
                 .build());
   }
 
-/* Returns database name.*/
-@Override
-public String getDatabaseName(){
+  /* Returns database name.*/
+  @Override
+  public String getDatabaseName() {
     return bucketName;
-}
+  }
 
   /* Returns the appropiate and unique name for a particular file. */
   private String name(String runId, String type) {
@@ -90,6 +91,15 @@ public String getDatabaseName(){
     return blob.setBinaryStream(1);
   }
 
+    /* uploads file with objectpath to GCSDatabase. */
+  private OutputStream uploadFile(String objectName) throws IOException {
+    GCSFileName filename = new GCSFileName(bucketName, objectName);
+    GcsFileOptions instance = GcsFileOptions.getDefaultInstance();
+    GcsOutputChannel outputChannel;
+    outputChannel = gcsService.createOrReplace(filename, instance);
+    return Channels.newOutputStream(outputChannel);
+  }
+
   /* Reads file from GCSDatabase. */
   @Override
   public InputStream readData(String runId, String type) {
@@ -106,11 +116,20 @@ public String getDatabaseName(){
     return blob.getBinaryStream();
   }
 
+  /* Downloads file with objectpath from GCSDatabase. */
+  private InputStream downloadFile(String objectName) throws IOException {
+    GCSFileName filename = new GCSFileName(bucketName, objectName);
+    GcsInputChannel readChannel = gcsService.openPrefetchingReadChannel(objectName, 0, BUFFER_SIZE);
+      copy(Channels.newInputStream(readChannel), resp.getOutputStream());
+  }
+
+
+
   /* Returns list of files in database. */
   public ArrayList<String> getAllFiles() {
     Page<Blob> blobs = bucket.list();
     ArrayList<String> blobList = new ArrayList<String>();
-     for (Blob blob : blobs.iterateAll()) {
+    for (Blob blob : blobs.iterateAll()) {
       blobList.add(blob.getName());
     }
     return blobList;
