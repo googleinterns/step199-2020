@@ -11,7 +11,7 @@ let line;
 let pose;
 let poseScalar = {value: 25000};
 let posePosition = {x: 0, z: 0};
-let count = pose.length;
+let count;
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 const rotationData = new Map();
 let path = [];
@@ -143,12 +143,13 @@ function animate() {
 function fetchData() {
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const product = urlParams.get('id');
-    const color = urlParams.get('dataType');
+    const id = urlParams.get('id');
+    const type = urlParams.get('dataType');
     fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
     .then(data => pose = data)
     .then(() => {
+      count=pose.length;
       addPoseData();
     })
 }
