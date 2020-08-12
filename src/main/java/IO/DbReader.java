@@ -9,7 +9,7 @@ import java.io.InputStream;
  * InputStream. If user makes DbReader object and calls the read() function,
  * user either close the Inputstream returned directly with the close() method
  * or use the finish() function to handle closing the inputstream and any
- * other necessary end operations. If both are called there should be no 
+ * other necessary end operations. If both are called there should be no
  * problems as the close() method does nothing on an InputStream.
  */
 public class DbReader {

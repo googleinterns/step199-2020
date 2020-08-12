@@ -9,7 +9,7 @@ import java.io.OutputStream;
  * If user makes DbWriter object and calls the write() function,
  * user either close the Outputstream returned directly or
  * use the finish() function to handle closing the inputstream and any
- * other necessary end operations. If both are called there should be no 
+ * other necessary end operations. If both are called there should be no
  * problems as the close() method does nothing on an OutputStream.
  */
 public class DbWriter {
