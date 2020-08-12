@@ -9,8 +9,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-/* This class creates an instance of a database that a file can be written to and read from.
-Assumptions: for each runID, only 1 of each datatype can be associated with it. */
+/*
+ * This class creates an instance of a database that a file can
+ * be written to and read from. Assumptions: for each runID, only
+ * 1 of each datatype can be associated with it.
+ */
 public class Database {
 
   /* Folder for Database. */
@@ -60,7 +63,7 @@ public class Database {
     return null;
   }
 
-  /*Returns appropiate file name for data with this runId and type. */
+  /* Returns appropiate file name for data with this runId and type. */
   private String fileName(String runId, String type) {
     return getDatabaseName() + "/" + runId + "_" + type;
   }
