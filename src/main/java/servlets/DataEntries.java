@@ -2,6 +2,7 @@ package servlets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import data.Database;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -44,9 +45,12 @@ public class DataEntries extends HttpServlet {
   // future.
   private String getJson() {
     // In the future this will be implemented by calling a method from the database
-    // class. For now this is implemented as reading from a file.
-
-    String fileName = sharedObjects.dataInstance.getName() + "/";
+    // class. For now this is implemented as reading from a file. Although the name
+    // could be recovered from the shared instance, this implementation will be
+    // changed when merged into Frelica's database implementation and this function
+    // will no longer be called.
+    Database dataInstance = new Database(sharedObjects.databaseName);
+    String fileName = dataInstance.getName() + "/";
     // Remove extraneous whitespace from the name.
     fileName.trim();
     File dir = new File(fileName);
@@ -59,7 +63,7 @@ public class DataEntries extends HttpServlet {
 
     // Associate a runID with a list (for json) of the entry types that are found
     // for it.
-    HashMap<String, TreeSet<String>> dataMap = new HashMap<String, TreeSet<String>>();
+    HashMap<String, TreeSet<String>> idToDataTypes = new HashMap<String, TreeSet<String>>();
     for (File file : dataEntries) {
       // Parse through all entries and write them as JSON.
       String name = file.getName();
@@ -71,17 +75,15 @@ public class DataEntries extends HttpServlet {
       }
       String runId = params[0];
       String type = params[1];
-      if (!dataMap.containsKey(runId)) {
-        TreeSet<String> toAdd = new TreeSet<String>();
-        toAdd.add(runId);
-        dataMap.put(runId, toAdd);
-      } else {
-        dataMap.get(runId).add(type);
-      }
+
+      // Add empty TreeSet to map if none is present.
+      idToDataTypes.computeIfAbsent(runId, id -> new TreeSet<String>());
+      // Add specific entry.
+      idToDataTypes.get(runId).add(type);
     }
-    System.out.println(dataMap);
+    System.out.println(idToDataTypes);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    String json = gson.toJson(dataMap);
+    String json = gson.toJson(idToDataTypes);
     System.out.println(json);
     return json;
   }

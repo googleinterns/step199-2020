@@ -1,6 +1,7 @@
 package servlets;
 
 import IO.WriterSimple;
+import data.Database;
 import encoder.Encoder;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +12,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import shared.sharedObjects;
 
 /** Fetch the given data points for a specific run based on its runId and the dataType. */
 @MultipartConfig
@@ -24,9 +24,10 @@ public class Upload extends HttpServlet {
       throws IOException, ServletException, IllegalStateException {
     response.setContentType("text/html;");
 
+    Database dataInstance = new Database(sharedObjects.databaseName);
     String dataType = "pose";
     // Should take in database instance, along with data type.
-    WriterSimple dataWriter = new WriterSimple(sharedObjects.dataInstance, dataType);
+    WriterSimple dataWriter = new WriterSimple(dataInstance, dataType);
     Part filePart = null;
 
     filePart = request.getPart("file");

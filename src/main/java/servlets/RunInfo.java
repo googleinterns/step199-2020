@@ -1,6 +1,7 @@
 package servlets;
 
 import IO.ReaderSimple;
+import data.Database;
 import decoder.Decoder;
 import java.io.IOException;
 import javax.servlet.annotation.WebServlet;
@@ -16,12 +17,13 @@ public class RunInfo extends HttpServlet {
   // Optional numEntries parameter limits the number of returned values.
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    Database dataInstance = new Database(sharedObjects.databaseName);
     response.setContentType("text/html;");
     String runId = request.getParameter("id");
     System.out.println("The run id is " + runId);
     String dataType = request.getParameter("dataType");
     System.out.println("The dataType is " + dataType);
-    ReaderSimple dataReader = new ReaderSimple(sharedObjects.dataInstance, runId, dataType);
+    ReaderSimple dataReader = new ReaderSimple(dataInstance, runId, dataType);
     Decoder.decode(dataReader.read(), response.getOutputStream());
   }
 }
