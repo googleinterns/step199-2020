@@ -6,6 +6,7 @@ import IO.DbReader;
 import IO.DbWriter;
 import data.Database;
 import data.DatabaseQuery;
+import data.FileDatabase;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +28,7 @@ public final class ReaderWriterTest {
   @Test
   public void validateDatabaseName() throws IOException {
     System.out.println("validateDatabaseName()");
-    Database database = new Database("validateDatabaseName");
+    Database database = new FileDatabase("validateDatabaseName");
     /* Validate that place where data is stored is named test. */
     System.out.println("test = " + database.getDatabaseName());
     assertEquals("validateDatabaseName", database.getDatabaseName());
@@ -39,7 +40,7 @@ public final class ReaderWriterTest {
   @Test
   public void validateWriterRunId() throws IOException {
     System.out.println("validateWriterRunId()");
-    Database database = new Database("validateWriterRunId");
+    Database database = new FileDatabase("validateWriterRunId");
     /* Validate that writer's runId is test. */
     DbWriter writer = new DbWriter(database, "2ndTestRunId", "writingIn");
     assertEquals("2ndTestRunId", writer.getRunId());
@@ -54,7 +55,7 @@ public final class ReaderWriterTest {
 
     /*Validate that what writer wrote to database is what reader reads. */
     /* Initialize Database, reader, and writer. */
-    Database database = new Database("validateConnect");
+    Database database = new FileDatabase("validateConnect");
     DbWriter writer = new DbWriter(database, "3rdTestRunId", "writingIn");
     DbReader reader = new DbReader(database, "3rdTestRunId", "writingIn");
 
@@ -95,7 +96,7 @@ public final class ReaderWriterTest {
   @Test
   public void validateDatabaseQuery() throws IOException {
     /* TODO: Test if DatabaseQuery method returns all files stored in the database.*/
-    Database database = new Database("validateDatabaseQuery");
+    Database database = new FileDatabase("validateDatabaseQuery");
     ArrayList<String> expectedFiles = new ArrayList<String>();
 
     /* Add files to Database.*/
