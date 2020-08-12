@@ -8,11 +8,14 @@ import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.cloud.storage.StorageOptions;
+import com.google.api.gax.paging.Page;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
 public class GCSDatabase implements Database {
@@ -55,6 +58,12 @@ public class GCSDatabase implements Database {
                 .build());
   }
 
+/* Returns database name.*/
+@Override
+public String getDatabaseName(){
+    return bucketName;
+}
+
   /* Returns the appropiate and unique name for a particular file. */
   private String name(String runId, String type) {
     return runId + "_" + type;
@@ -77,7 +86,7 @@ public class GCSDatabase implements Database {
   private OutputStream uploadObject(String objectName, String objectPath) {
     BlobId blobId = BlobId.of(bucketName, objectName);
     BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-    storage.create(blobInfo, Files.readAllBytes(Paths.get(objectPath)));
+    Blob blob = storage.create(blobInfo, Files.readAllBytes(Paths.get(objectPath)));
     return blob.setBinaryStream(1);
   }
 
@@ -92,15 +101,18 @@ public class GCSDatabase implements Database {
   /* Downloads blob with objectname to GCSDatabase. */
   private InputStream downloadObject(String objectName, String objectPath) {
     Blob blob = storage.get(BlobId.of(bucketName, objectName));
-    blob.downloadTo(objectPath);
+    Path path = Paths.get(objectPath);
+    blob.downloadTo(path);
     return blob.getBinaryStream();
   }
 
   /* Returns list of files in database. */
-  @Override
-  public List<Blob> getAllBlobs() {
+  public ArrayList<String> getAllFiles() {
     Page<Blob> blobs = bucket.list();
-    List<Blob> blobList = blobs.getContent();
+    ArrayList<String> blobList = new ArrayList<String>();
+     for (Blob blob : blobs.iterateAll()) {
+      blobList.add(blob.getName());
+    }
     return blobList;
   }
 }

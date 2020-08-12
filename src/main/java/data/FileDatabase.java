@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /* This class creates an instance of a database that a file can be written to and read from.
@@ -69,8 +70,10 @@ public class FileDatabase implements Database {
 
   /* Returns list of files in database. */
   @Override
-  public List<File> getAllFiles() {
+  public ArrayList<String> getAllFiles() {
     File[] files = directoryName.listFiles();
-    return Arrays.asList(files);
+    ArrayList<String> filesAsStrings = new ArrayList<String>();
+    for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
+    return filesAsStrings;
   }
 }
