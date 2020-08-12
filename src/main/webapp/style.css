@@ -1,6 +1,6 @@
 * {
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
 }
 
 /*
@@ -9,7 +9,10 @@ When only applied this padding rule to the body there was still an issue with
 the margin around the top by default.
 */
 
-input:focus, select:focus, textarea:focus, button:focus {
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
   outline: none;
 }
 
@@ -23,6 +26,7 @@ input[type=text] {
   border-radius: 20px;
   box-sizing: border-box;
   padding: 5px;
+
   /* Change the cursor color inside the text box when typing. */
   caret-color: navy;
 }
@@ -39,15 +43,17 @@ h1 {
   color: white;
   font-size: 50px;
   text-align: center;
+
   /* Setup gradient for header. */
   background-image: linear-gradient(#3f8b99, white, #3f8b99);
   background-clip: text;
   -webkit-background-clip: text;
   -moz-background-clip: text;
-  background-clip: text;
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
-  text-fill-color: transparent;
+
+  /* Not supported on all sites, stylelint doesn't recognize */
+  text-fill-color: transparent; /* stylelint-disable-line */
 }
 
 #pose-data {
@@ -56,20 +62,29 @@ h1 {
   width: 30%;
   margin-right: auto;
   margin-left: auto;
-  text-align: center
+  text-align: center;
 }
 
-#pose-data td, #pose-data th {
+th {
+  position: sticky;
+
+  /* Set this value as -1px to account for the border of 1px around the elements.
+  Without this attribute some text shows upon scroll. */
+  top: -1px;
+}
+
+#pose-data td,
+#pose-data th {
   border: 1px solid #ddd;
   padding: 8px;
 }
 
 .visible.even {
-  background-color: #f2f2f2!important;
+  background-color: #f2f2f2 !important;
 }
 
 #pose-data tr {
-  background-color: lightblue
+  background-color: lightblue;
 }
 
 #pose-data th {
@@ -87,7 +102,8 @@ li {
   text-align: center;
 }
 
-.file-upload, .submit-file {
+.file-upload,
+.submit-file {
   background-color: lightslategray;
   border: none;
   color: white;
@@ -99,7 +115,8 @@ li {
   border-radius: 20px;
 }
 
-input[type="file"], input[type="submit"] {
+input[type="file"],
+input[type="submit"] {
   display: none;
 }
 
@@ -109,11 +126,19 @@ input[type="file"], input[type="submit"] {
   padding: 5px;
 }
 
-th {
-  position: sticky;
-  /* Set this value as -1px to account for the border of 1px around the elements. 
-  Without this attribute some text shows upon scroll. */
-  top: -1px;
+/* On overflow make the table scrollable. */
+
+#scroll-body {
+  -ms-overflow-style: none;
+
+  /* IE and Edge. */
+  scrollbar-width: none;
+
+  /* Firefox. */
+  overflow: auto;
+  height: 400px;
+  margin-bottom: 5px;
+  margin-top: 10px;
 }
 
 /* To hide the scrollbar in Chrome. */
@@ -122,26 +147,14 @@ th {
   display: none;
 }
 
-/* On overflow make the table scrollable. */
-
-#scroll-body {
-  -ms-overflow-style: none;
-  /* IE and Edge. */
-  scrollbar-width: none;
-  /* Firefox. */
-  overflow: auto;
-  height: 400px;
-  margin-bottom: 5px;
-  margin-top: 10px;
+.visible {
+  display: "";
 }
 
-.visible{
-  display:"";
-}
-.hidden{
-  display:none;
+.hidden {
+  display: none;
 }
 
-table{
+table {
   table-layout: fixed;
 }
