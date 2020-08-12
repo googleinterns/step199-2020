@@ -49,7 +49,7 @@ function createTable() {
                 console.log(type.toUpperCase())
                 if ((type.toUpperCase() === "POSE" && index === 0) || (type.toUpperCase() === "POINTCLOUD" && index === 1)) {
                     let link = document.createElement("a");
-                    link.href = "/home.html?id=" + key + "&dataType=" + json[key];
+                    link.href = "/2DVisual.html?id=" + key + "&dataType=" + json[key];
                     link.innerText = type;
                     columnEntry.appendChild(link);
                 }

@@ -8,13 +8,15 @@ let clock;
 let controls;
 let direction;
 let line;
+let count;
 let pose;
+let poseRotation = {value: 0};
 let poseScalar = {value: 25000};
 let posePosition = {x: 0, z: 0};
-let count;
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 const rotationData = new Map();
 let path = [];
+
 
 /**
  * Initializes the scene, camera, renderer, and clock.
@@ -39,13 +41,14 @@ function init() {
   controls.autoForward = false;
   controls.dragToLook = true;
 
-  fetchData();// calls addPoseData()
+  fetchData();
 }
 
 /**
  * Creates all the objects from pose data and adds them to the scene.
 */
 function addPoseData() {
+  count = pose.length;
   let loader = new THREE.TextureLoader();
   let material = new THREE.MeshLambertMaterial(
     {map: loader.load(
@@ -80,9 +83,9 @@ function plotPath() {
   path=[];
   for (let increment = 0; increment < count; increment++) {
     path.push(new THREE.Vector3(
-      (pose[increment].lat-48.129872)*poseScalar.value,
+      (pose[increment].lng-11.582905)*poseScalar.value,
       (pose[increment].alt - 6.582905)/4,
-      (pose[increment].lng-11.582905)*poseScalar.value));// GPS points
+      (pose[increment].lat-48.129872)*-poseScalar.value));// GPS points
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(path);
   const material = new THREE.LineBasicMaterial({color: 'blue'});
@@ -90,6 +93,7 @@ function plotPath() {
   scene.add(line);
   line.position.x = posePosition.x;
   line.position.z = posePosition.z;
+  line.rotation.y = THREE.Math.degToRad(poseRotation.value);
 }
 function plotOrientation() {
   let dummy = new THREE.Object3D;
@@ -98,9 +102,9 @@ function plotOrientation() {
     let matrix = new THREE.Matrix4();
     dummy.matrix.identity();
     matrix.makeTranslation(
-      (pose[i].lat-48.129872)*poseScalar.value,
+      (pose[i].lng-11.582905)*poseScalar.value,
       (pose[i].alt - 6.582905)/4,
-      (pose[i].lng-11.582905)*poseScalar.value);
+      (pose[i].lat-48.129872)*-poseScalar.value);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(pose[i].pitchDeg)));
@@ -116,14 +120,17 @@ function plotOrientation() {
   direction.instanceMatrix.needsUpdate = true; 
   direction.position.x = posePosition.x;
   direction.position.z = posePosition.z;
+  direction.rotation.y = THREE.Math.degToRad(poseRotation.value);
 }
 
 function gui() {
   var gui = new GUI();
+  gui.add(poseRotation, 'value', 0, 360,1).onChange(plotOrientation)
+  .onFinishChange(plotPath);
   gui.add(posePosition, 'x', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotPath);;
+  .onFinishChange(plotPath);
   gui.add(posePosition, 'z', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotPath);;
+  .onFinishChange(plotPath);
   gui.add(poseScalar, 'value', 10000, 50000, 500).onChange(plotOrientation)
   .onFinishChange(plotPath);
 }
@@ -145,13 +152,11 @@ function fetchData() {
     const urlParams = new URLSearchParams(queryString);
     const id = urlParams.get('id');
     const type = urlParams.get('dataType');
+    console.log(id + type);
     fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
     .then(data => pose = data)
-    .then(() => {
-      count=pose.length;
-      addPoseData();
-    })
+    .then(() => addPoseData());
 }
 
 init();
