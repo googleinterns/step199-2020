@@ -65,8 +65,6 @@ public final class ReaderWriterTest {
       byte[] b = writeTest.getBytes();
       output1.write(b);
     }
-    /* Close outputStream. */
-    writer.finish();
 
     String readTest = null;
 
@@ -81,8 +79,6 @@ public final class ReaderWriterTest {
       /* Convert Stringbuilder to a string. */
       readTest = textBuilder.toString();
     }
-    /* Close inputStream. */
-    reader.finish();
 
     assertEquals(writeTest, readTest);
 
