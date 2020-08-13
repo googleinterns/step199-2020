@@ -70,10 +70,10 @@ public class Database {
     for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
     return filesAsStrings;
   }
-  
+
   /* Delete database. */
-  public void delete(){
-      /* Delete directory recursively. */
+  public void delete() {
+    /* Delete directory recursively. */
     File[] allContents = folder.listFiles();
     if (allContents != null) {
       for (File file : allContents) {
