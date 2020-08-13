@@ -25,11 +25,6 @@ public class Database {
     folder.mkdir();
   }
 
-  /* Returns name associated with Database. */
-  public File getDatabase() {
-    return folder;
-  }
-
   /* Returns name of database. */
   public String getDatabaseName() {
     return folder.getName();
@@ -74,5 +69,17 @@ public class Database {
     ArrayList<String> filesAsStrings = new ArrayList<String>();
     for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
     return filesAsStrings;
+  }
+  
+  /* Delete database. */
+  public void delete(){
+      /* Delete directory recursively. */
+    File[] allContents = folder.listFiles();
+    if (allContents != null) {
+      for (File file : allContents) {
+        file.delete();
+      }
+    }
+    folder.delete();
   }
 }

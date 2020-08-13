@@ -1,6 +1,7 @@
 package test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import IO.DbReader;
 import IO.DbWriter;
@@ -15,7 +16,6 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,7 +33,7 @@ public final class ReaderWriterTest {
     assertEquals("validateDatabaseName", database.getDatabaseName());
 
     /* Delete directory. */
-    database.getDatabase().delete();
+    database.delete();
   }
 
   @Test
@@ -45,7 +45,7 @@ public final class ReaderWriterTest {
     assertEquals("2ndTestRunId", writer.getRunId());
 
     /* Delete directory. */
-    database.getDatabase().delete();
+    database.delete();
   }
 
   @Test
@@ -82,14 +82,8 @@ public final class ReaderWriterTest {
 
     assertEquals(writeTest, readTest);
 
-    /* Delete directory  recursively. */
-    File[] allContents = database.getDatabase().listFiles();
-    if (allContents != null) {
-      for (File file : allContents) {
-        file.delete();
-      }
-    }
-    database.getDatabase().delete();
+    /* Delete directory. */
+    database.delete();
   }
 
   @Test
@@ -104,22 +98,16 @@ public final class ReaderWriterTest {
     for (int i = 0; i < numOfFiles; i++) {
       tempRunId = "FileNo." + i;
       tempType = "test";
-      DbWriter writer1 = new DbWriter(database, tempRunId, tempType);
-      writer1.write();
-      expectedFiles.add(writer1.getRunId() + "_" + writer1.getType());
+      DbWriter writer = new DbWriter(database, tempRunId, tempType);
+      writer.write();
+      expectedFiles.add(writer.getRunId() + "_" + writer.getType());
     }
 
     /* Checks to see if all files are in Database. */
     ArrayList<String> files = DatabaseQuery.getAllFiles(database);
-    Assert.assertTrue(expectedFiles.containsAll(files));
+    assertTrue(expectedFiles.containsAll(files));
 
-    /* Delete directory recursively. */
-    File[] allContents = database.getDatabase().listFiles();
-    if (allContents != null) {
-      for (File file : allContents) {
-        file.delete();
-      }
-    }
-    database.getDatabase().delete();
+    /* Delete directory. */
+    database.delete();
   }
 }
