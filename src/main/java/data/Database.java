@@ -15,4 +15,5 @@ public interface Database {
   public ArrayList<String> getAllFiles();
 
   public void delete();
+
 }

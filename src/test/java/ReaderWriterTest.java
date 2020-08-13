@@ -1,6 +1,7 @@
 package test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import IO.DbReader;
 import IO.DbWriter;
@@ -15,13 +16,12 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-/* Validate that a .txt file can be properly be stored written and read from database.  */
+/* Validate that a .txt file can be properly be stored written and read from database. */
 public final class ReaderWriterTest {
 
   @Test
@@ -32,7 +32,8 @@ public final class ReaderWriterTest {
     System.out.println("test = " + database.getDatabaseName());
     assertEquals("validateDatabaseName", database.getDatabaseName());
 
-    /* Delete directory.*/
+
+    /* Delete directory. */
     database.delete();
   }
 
@@ -44,7 +45,8 @@ public final class ReaderWriterTest {
     DbWriter writer = new DbWriter(database, "2ndTestRunId", "writingIn");
     assertEquals("2ndTestRunId", writer.getRunId());
 
-    /* Delete directory.*/
+
+    /* Delete directory. */
     database.delete();
   }
 
@@ -60,7 +62,7 @@ public final class ReaderWriterTest {
 
     String writeTest = "This is a test string";
 
-    /* Write writeTest into database.*/
+    /* Write writeTest into database. */
     try (OutputStream output1 = writer.write()) {
       byte[] b = writeTest.getBytes();
       output1.write(b);
@@ -72,7 +74,7 @@ public final class ReaderWriterTest {
     try (Reader reads =
         new BufferedReader(
             new InputStreamReader(reader.read(), Charset.forName(StandardCharsets.UTF_8.name())))) {
-      /*Convert inputStream to Stringbuilder*/
+      /* Convert inputStream to Stringbuilder. */
       StringBuilder textBuilder = new StringBuilder();
       int c = 0;
       while ((c = reads.read()) != -1) textBuilder.append((char) c);
@@ -82,31 +84,34 @@ public final class ReaderWriterTest {
 
     assertEquals(writeTest, readTest);
 
+
+    /* Delete directory. */
     database.delete();
   }
 
   @Test
   public void validateDatabaseQuery() throws IOException {
-    /* TODO: Test if DatabaseQuery method returns all files stored in the database.*/
     Database database = new FileDatabase("validateDatabaseQuery");
     ArrayList<String> expectedFiles = new ArrayList<String>();
 
-    /* Add files to Database.*/
-    DbWriter writer1 = new DbWriter(database, "1stFile", "");
-    writer1.write();
-    expectedFiles.add(writer1.getRunId() + "_" + writer1.getType());
+    /* Add files to Database. */
+    int numOfFiles = 3;
+    String tempRunId;
+    String tempType;
+    for (int i = 0; i < numOfFiles; i++) {
+      tempRunId = "FileNo." + i;
+      tempType = "test";
+      DbWriter writer = new DbWriter(database, tempRunId, tempType);
+      writer.write();
+      expectedFiles.add(writer.getRunId() + "_" + writer.getType());
+    }
 
-    DbWriter writer2 = new DbWriter(database, "2ndFile", "");
-    writer2.write();
-    expectedFiles.add(writer2.getRunId() + "_" + writer2.getType());
-
-    DbWriter writer3 = new DbWriter(database, "3rdFile", "");
-    writer3.write();
-    expectedFiles.add(writer3.getRunId() + "_" + writer3.getType());
-
+    /* Checks to see if all files are in Database. */
     ArrayList<String> files = DatabaseQuery.getAllFiles(database);
-    Assert.assertTrue(expectedFiles.containsAll(files));
 
+    assertTrue(expectedFiles.containsAll(files));
+
+    /* Delete directory. */
     database.delete();
   }
 }
