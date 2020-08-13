@@ -8,7 +8,6 @@ import data.Database;
 import data.DatabaseQuery;
 import data.FileDatabase;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -34,7 +33,7 @@ public final class ReaderWriterTest {
     assertEquals("validateDatabaseName", database.getDatabaseName());
 
     /* Delete directory.*/
-    database.getDatabase().delete();
+    database.delete();
   }
 
   @Test
@@ -46,7 +45,7 @@ public final class ReaderWriterTest {
     assertEquals("2ndTestRunId", writer.getRunId());
 
     /* Delete directory.*/
-    database.getDatabase().delete();
+    database.delete();
   }
 
   @Test
@@ -83,14 +82,7 @@ public final class ReaderWriterTest {
 
     assertEquals(writeTest, readTest);
 
-    /* Delete directory  recursively. */
-    File[] allContents = database.getDatabase().listFiles();
-    if (allContents != null) {
-      for (File file : allContents) {
-        file.delete();
-      }
-    }
-    database.getDatabase().delete();
+    database.delete();
   }
 
   @Test
@@ -115,13 +107,6 @@ public final class ReaderWriterTest {
     ArrayList<String> files = DatabaseQuery.getAllFiles(database);
     Assert.assertTrue(expectedFiles.containsAll(files));
 
-    /* Delete directory recursively.*/
-    File[] allContents = database.getDatabase().listFiles();
-    if (allContents != null) {
-      for (File file : allContents) {
-        file.delete();
-      }
-    }
-    database.getDatabase().delete();
+    database.delete();
   }
 }
