@@ -1,4 +1,6 @@
 import {FlyControls} from 'https://threejs.org/examples/jsm/controls/FlyControls.js';
+import {OrbitControls} from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
+
 import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 // Initialization of global objects.
 let scene;
@@ -11,7 +13,7 @@ let line;
 let count;
 let pose;
 let poseRotation = {value: 0};
-let poseScalar = {value: 25000};
+let poseScalar = {value: 1};
 let posePosition = {x: 0, z: 0};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 const rotationData = new Map();
@@ -35,11 +37,13 @@ function init() {
   clock = new THREE.Clock();
 
   // The camera controls allows the user to fly with the camera.
-  controls = new FlyControls(camera, renderer.domElement);
-  controls.movementSpeed = 5;
-  controls.rollSpeed = Math.PI / 10;
-  controls.autoForward = false;
-  controls.dragToLook = true;
+//   controls = new FlyControls(camera, renderer.domElement);
+//   controls.movementSpeed = 5;
+//   controls.rollSpeed = Math.PI / 10;
+//   controls.autoForward = false;
+//   controls.dragToLook = true;
+
+  controls = new OrbitControls(camera, renderer.domElement );
 
   fetchData();
 }
@@ -83,9 +87,9 @@ function plotPath() {
   path=[];
   for (let increment = 0; increment < count; increment++) {
     path.push(new THREE.Vector3(
-      (pose[increment].lng-11.582905)*poseScalar.value,
+      (pose[increment].lng-11.582905) * 25000 * poseScalar.value,
       (pose[increment].alt - 6.582905)/4,
-      (pose[increment].lat-48.129872)*-poseScalar.value));// GPS points
+      (pose[increment].lat-48.129872) * 25000 * -poseScalar.value));// GPS points
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(path);
   const material = new THREE.LineBasicMaterial({color: 'blue'});
@@ -102,9 +106,9 @@ function plotOrientation() {
     let matrix = new THREE.Matrix4();
     dummy.matrix.identity();
     matrix.makeTranslation(
-      (pose[i].lng-11.582905)*poseScalar.value,
+      (pose[i].lng-11.582905) * 25000 * poseScalar.value,
       (pose[i].alt - 6.582905)/4,
-      (pose[i].lat-48.129872)*-poseScalar.value);
+      (pose[i].lat-48.129872) * 25000 * -poseScalar.value);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(pose[i].pitchDeg)));
@@ -126,13 +130,13 @@ function plotOrientation() {
 function gui() {
   var gui = new GUI();
   gui.add(poseRotation, 'value', 0, 360,1).onChange(plotOrientation)
-  .onFinishChange(plotPath);
+  .onFinishChange(plotPath).name('Pose Rotation (degrees)');
   gui.add(posePosition, 'x', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotPath);
+  .onFinishChange(plotPath).name('X Axis Translation');
   gui.add(posePosition, 'z', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotPath);
-  gui.add(poseScalar, 'value', 10000, 50000, 500).onChange(plotOrientation)
-  .onFinishChange(plotPath);
+  .onFinishChange(plotPath).name('Y Axis Translation');
+  gui.add(poseScalar, 'value',.5, 2,.25).onChange(plotOrientation)
+  .onFinishChange(plotPath).name('Pose Scale Multiplier');
 }
 
 /**
