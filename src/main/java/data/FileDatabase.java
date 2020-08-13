@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -11,28 +12,31 @@ import java.util.ArrayList;
 /* This class creates an instance of a database that a file can be written to and read from.
 Assumptions: for each runID, only 1 of each datatype can be associated with it. */
 public class FileDatabase implements Database {
-  /* Place where files are stored.*/
-  private File directoryName;
+  /* Folder for Database. */
+  File folder;
 
   /* Creates instance of a database with this name. */
-  public FileDatabase(String directoryName) {
-    this.directoryName = new File(directoryName);
-    this.directoryName.mkdir();
+  public FileDatabase(String name) throws IOException {
+    folder = new File(name);
+    folder.mkdir();
   }
 
-  /* Returns name associated with Database, which is the directory of this filesystem. */
-  @Override
+  /* Returns name associated with Database. */
+  public File getDatabase() {
+    return folder;
+  }
+
+  /* Returns name of database. */
   public String getDatabaseName() {
-    return directoryName.getName();
+    return folder.getName();
   }
 
   /*
    * Attempt to open and return a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
-  @Override
   public InputStream readData(String runID, String type) {
-    String fileName = makeFileName(runID, type);
+    String fileName = fileName(runID, type);
     try {
       return new FileInputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -45,9 +49,8 @@ public class FileDatabase implements Database {
    * Attempt to open a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
-  @Override
   public OutputStream writeData(String runId, String type) {
-    String fileName = makeFileName(runId, type);
+    String fileName = fileName(runId, type);
     try {
       return new FileOutputStream(fileName);
     } catch (FileNotFoundException e) {
@@ -56,22 +59,27 @@ public class FileDatabase implements Database {
     return null;
   }
 
-  private String makeFileName(String runId, String type) {
-    return directoryName + "/" + runId + "_" + type;
-  }
-
-  /* Return name of file with runid and type in database. */
-  public String findName(String runId, String type) {
-    String fileName = directoryName + "/" + runId + "_" + type;
-    return fileName;
+  /*Returns appropiate file name for data with this runId and type. */
+  private String fileName(String runId, String type) {
+    return getDatabaseName() + "/" + runId + "_" + type;
   }
 
   /* Returns list of files in database. */
-  @Override
   public ArrayList<String> getAllFiles() {
-    File[] files = directoryName.listFiles();
+    File[] files = folder.listFiles();
     ArrayList<String> filesAsStrings = new ArrayList<String>();
     for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
     return filesAsStrings;
+  }
+
+  public void delete() {
+    /* Delete directory recursively.*/
+    File[] allContents = folder.listFiles();
+    if (allContents != null) {
+      for (File file : allContents) {
+        file.delete();
+      }
+    }
+    folder.delete();
   }
 }

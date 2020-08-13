@@ -132,4 +132,6 @@ public class GCSDatabase implements Database {
     }
     return blobList;
   }
+
+  public void delete() {}
 }

@@ -14,4 +14,6 @@ public interface Database {
   public OutputStream writeData(String runId, String type) throws IOException;
 
   public ArrayList<String> getAllFiles();
+
+  public void delete();
 }
