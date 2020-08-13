@@ -34,7 +34,7 @@ public class DbReader {
    * Returns a stream object for reading from the file, eventually from the
    * database, right now reading a file that includes the database name.
    */
-  public InputStream read() {
+  public InputStream read() throws IOException {
     in = database.readData(runId, type);
     return in;
   }

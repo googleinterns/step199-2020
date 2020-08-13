@@ -46,6 +46,12 @@
       <artifactId>appengine-api-1.0-sdk</artifactId>	
       <version>1.9.59</version>	
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.google.appengine.tools/appengine-gcs-client -->
+<dependency>
+    <groupId>com.google.appengine.tools</groupId>
+    <artifactId>appengine-gcs-client</artifactId>
+    <version>0.8.1</version>
+</dependency>
   </dependencies>
 
   	

@@ -1,19 +1,23 @@
 package data;
 
 import com.google.api.gax.paging.Page;
+import com.google.appengine.tools.cloudstorage.GcsFileOptions;
+import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.appengine.tools.cloudstorage.GcsInputChannel;
+import com.google.appengine.tools.cloudstorage.GcsOutputChannel;
+import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageClass;
 import com.google.cloud.storage.StorageOptions;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.Channels;
 import java.util.ArrayList;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
@@ -39,6 +43,18 @@ public class GCSDatabase implements Database {
    * https://googleapis.dev/java/google-cloud-clients/latest/com/google/cloud/storage/StorageClass.html
    */
   private StorageClass storageClass = StorageClass.STANDARD;
+
+  /**
+   * This is where backoff parameters are configured. Here it is aggressively retrying with backoff,
+   * up to 10 times but taking no more that 15 seconds total to do so.
+   */
+  private final GcsService gcsService =
+      GcsServiceFactory.createGcsService(
+          new RetryParams.Builder()
+              .initialRetryDelayMillis(10)
+              .retryMaxAttempts(10)
+              .totalRetryPeriodMillis(15000)
+              .build());
 
   /*
    * See this documentation for other valid locations:
@@ -77,23 +93,15 @@ public class GCSDatabase implements Database {
 
   /* Writes file into GCSDatabase. */
   @Override
-  public OutputStream writeData(String runId, String type) {
+  public OutputStream writeData(String runId, String type) throws IOException {
     String objectName = name(runId, type);
     String objectPath = path(runId, type);
-    return uploadObject(objectName, objectPath);
+    return uploadFile(objectName);
   }
 
-  /* uploads blob with objectname to GCSDatabase. */
-  private OutputStream uploadObject(String objectName, String objectPath) {
-    BlobId blobId = BlobId.of(bucketName, objectName);
-    BlobInfo blobInfo = BlobInfo.newBuilder(blobId).build();
-    Blob blob = storage.create(blobInfo, Files.readAllBytes(Paths.get(objectPath)));
-    return blob.setBinaryStream(1);
-  }
-
-    /* uploads file with objectpath to GCSDatabase. */
+  /* uploads file with objectname to GCSDatabase. */
   private OutputStream uploadFile(String objectName) throws IOException {
-    GCSFileName filename = new GCSFileName(bucketName, objectName);
+    GcsFilename filename = new GcsFilename(bucketName, objectName);
     GcsFileOptions instance = GcsFileOptions.getDefaultInstance();
     GcsOutputChannel outputChannel;
     outputChannel = gcsService.createOrReplace(filename, instance);
@@ -102,28 +110,18 @@ public class GCSDatabase implements Database {
 
   /* Reads file from GCSDatabase. */
   @Override
-  public InputStream readData(String runId, String type) {
+  public InputStream readData(String runId, String type) throws IOException {
     String objectName = name(runId, type);
     String objectPath = path(runId, type);
-    return downloadObject(objectName, objectPath);
-  }
-
-  /* Downloads blob with objectname to GCSDatabase. */
-  private InputStream downloadObject(String objectName, String objectPath) {
-    Blob blob = storage.get(BlobId.of(bucketName, objectName));
-    Path path = Paths.get(objectPath);
-    blob.downloadTo(path);
-    return blob.getBinaryStream();
+    return downloadFile(objectName);
   }
 
   /* Downloads file with objectpath from GCSDatabase. */
   private InputStream downloadFile(String objectName) throws IOException {
-    GCSFileName filename = new GCSFileName(bucketName, objectName);
-    GcsInputChannel readChannel = gcsService.openPrefetchingReadChannel(objectName, 0, BUFFER_SIZE);
-      copy(Channels.newInputStream(readChannel), resp.getOutputStream());
+    GcsFilename filename = new GcsFilename(bucketName, objectName);
+    GcsInputChannel readChannel = gcsService.openPrefetchingReadChannel(filename, 0, BUFFER_SIZE);
+    return Channels.newInputStream(readChannel);
   }
-
-
 
   /* Returns list of files in database. */
   public ArrayList<String> getAllFiles() {

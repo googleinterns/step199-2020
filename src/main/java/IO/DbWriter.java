@@ -38,7 +38,7 @@ public class DbWriter {
   }
 
   /* Gets an outputstream from the database. */
-  public OutputStream write() {
+  public OutputStream write() throws IOException {
     out = database.writeData(runId, type);
     return out;
   }
