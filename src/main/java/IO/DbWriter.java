@@ -46,7 +46,9 @@ public class DbWriter {
 
   /* Gets an outputstream from the database. */
   public OutputStream write() throws IOException {
+    if (database == null) System.out.println("Database is null");
     out = database.writeData(runId, type);
+     System.out.println("returns outputstream");
     return out;
   }
 

@@ -21,12 +21,8 @@ public class FileDatabase implements Database {
     folder.mkdir();
   }
 
-  /* Returns name associated with Database. */
-  public File getDatabase() {
-    return folder;
-  }
-
   /* Returns name of database. */
+  @Override
   public String getDatabaseName() {
     return folder.getName();
   }
@@ -35,6 +31,7 @@ public class FileDatabase implements Database {
    * Attempt to open and return a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
+  @Override
   public InputStream readData(String runID, String type) {
     String fileName = fileName(runID, type);
     try {
@@ -49,6 +46,7 @@ public class FileDatabase implements Database {
    * Attempt to open a stream to the data, normally to database, in this case to
    * file. only reaches null return if attempt fails.
    */
+  @Override
   public OutputStream writeData(String runId, String type) {
     String fileName = fileName(runId, type);
     try {
@@ -65,6 +63,7 @@ public class FileDatabase implements Database {
   }
 
   /* Returns list of files in database. */
+  @Override
   public ArrayList<String> getAllFiles() {
     File[] files = folder.listFiles();
     ArrayList<String> filesAsStrings = new ArrayList<String>();

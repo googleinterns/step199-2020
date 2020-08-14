@@ -36,7 +36,7 @@ public class Upload extends HttpServlet {
     // Get the input stream and encode it/store it in the given OutputStream.
     InputStream uploadedFile = filePart.getInputStream();
     Encoder.encode(uploadedFile, dataWriter.write());
-    System.out.println("We whould now be done");
+    System.out.println("finishes encoding");
     // We now make would make an instance of the reader object to get a stream from
     // the database, then pass this value to the decoder, with a string as our ouput
     // stream.

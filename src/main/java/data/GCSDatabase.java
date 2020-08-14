@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.UUID;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
 public class GCSDatabase implements Database {
@@ -32,7 +33,7 @@ public class GCSDatabase implements Database {
   private Storage storage;
 
   /* ProjectID. */
-  private String projectId = "Pose-3D-Viewer";
+  private String projectId = "pose-3d-viewer-step-2020";
 
   /* Used below to determine the size of chucks to read in. Should be > 1kb and < 10MB. */
   private static final int BUFFER_SIZE = 2 * 1024 * 1024;
@@ -56,6 +57,8 @@ public class GCSDatabase implements Database {
               .totalRetryPeriodMillis(15000)
               .build());
 
+//  private Credentials credentials;
+
   /*
    * See this documentation for other valid locations:
    * http://g.co/cloud/storage/docs/bucket-locations#location-mr
@@ -64,15 +67,27 @@ public class GCSDatabase implements Database {
 
   /* Initiates GCSDatabase. */
   public GCSDatabase(String name) {
-    bucketName = name;
+    System.out.println("in constructor");
 
+    System.out.println("initializing storage");
+    //credentials = GoogleCredentials.fromStream(new FileInputStream("path/to/file"));
+    /*storage =
+        StorageOptions.newBuilder()
+            .setCredentials(credentials)
+            .setProjectId(projectId)
+            .build()
+            .getService(); */
     storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
-    bucket =
-        storage.create(
-            BucketInfo.newBuilder(bucketName)
-                .setStorageClass(storageClass)
-                .setLocation(location)
-                .build());
+    System.out.println("making bucket");
+    bucketName = name;
+    try{
+        bucket = storage.create(BucketInfo.of(bucketName));
+    }catch (Exception e){
+       bucket = storage.create(BucketInfo.of("newbucket-" + UUID.randomUUID().toString()));
+       Bucket bucketToDelete = storage.get(bucketName);
+      bucketToDelete.delete();
+    }
+    System.out.println("Created bucket " + bucket.getName());
   }
 
   /* Returns database name.*/
