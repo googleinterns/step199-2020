@@ -8,18 +8,18 @@ let dataType;
 fetchData();
 /**
  * This function fetchs pose data from the RunInfo servlet,
- * it is an asynchronous call requiring initMap() to be 
+ * it is an asynchronous call requiring initMap() to be
  * called after the data is fully loaded.
  */
 function fetchData() {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    runId = urlParams.get('id');
-    dataType = urlParams.get('dataType');
-    fetch('/getrun?id=' + runId + '&dataType=' + dataType)
-    .then(response => response.json())
-    .then(data => pose = data)
-    .then(() => initMap())
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  runId = urlParams.get('id');
+  dataType = urlParams.get('dataType');
+  fetch('/getrun?id=' + runId + '&dataType=' + dataType)
+      .then(response => {response.json()})
+      .then(data => {pose = data})
+      .then(() => {initMap()});
 }
 
 /**
