@@ -19,12 +19,12 @@ import javax.servlet.http.Part;
 public class Upload extends HttpServlet {
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
+  private Database dataInstance = new Database(sharedObjects.databaseName);
+
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException, IllegalStateException {
     response.setContentType("text/html;");
-
-    Database dataInstance = new Database(sharedObjects.databaseName);
     String dataType = "pose";
     // Should take in database instance, along with data type.
     WriterSimple dataWriter = new WriterSimple(dataInstance, dataType);

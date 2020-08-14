@@ -4,5 +4,5 @@ package shared;
 // variable).
 public class sharedObjects {
   // public static
-  public static String databaseName = "testDB";
+  public static final String databaseName = "testDB";
 }

@@ -21,6 +21,8 @@ import shared.sharedObjects;
 public class DataEntries extends HttpServlet {
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
+  private Database dataInstance = new Database(sharedObjects.databaseName);
+
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
     response.setContentType("text/html;");
@@ -49,10 +51,8 @@ public class DataEntries extends HttpServlet {
     // could be recovered from the shared instance, this implementation will be
     // changed when merged into Frelica's database implementation and this function
     // will no longer be called.
-    Database dataInstance = new Database(sharedObjects.databaseName);
     String fileName = dataInstance.getName() + "/";
     // Remove extraneous whitespace from the name.
-    fileName.trim();
     File dir = new File(fileName);
     System.out.println(dir.getAbsolutePath());
     File[] dataEntries = dir.listFiles();
@@ -77,9 +77,9 @@ public class DataEntries extends HttpServlet {
       String type = params[1];
 
       // Add empty TreeSet to map if none is present.
-      idToDataTypes.computeIfAbsent(runId, id -> new TreeSet<String>());
+      TreeSet<String> typeList = idToDataTypes.computeIfAbsent(runId, id -> new TreeSet<String>());
       // Add specific entry.
-      idToDataTypes.get(runId).add(type);
+      typeList.add(type);
     }
     System.out.println(idToDataTypes);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();

@@ -28,30 +28,40 @@ function createTable() { // eslint-disable-line no-unused-vars
         keyEntry.innerText = key;
         currentRow.appendChild(keyEntry);
         console.log('The key is ' + key);
-        let index = 0;
-        for (const type of json[key]) {
-          const columnEntry = document.createElement('td');
-          console.log(type);
-          console.log(type.toUpperCase());
-          if ((type.toUpperCase() === 'POSE' && index === 0) ||
-                        (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
-            const link = document.createElement('a');
-            link.href = '/getrun?id=' + key + '&dataType=' + json[key];
-            link.innerText = type;
-            columnEntry.appendChild(link);
-          } else {
-            columnEntry.innerText = '';
-          }
-          currentRow.appendChild(columnEntry);
-          index++;
-        }
+        // Create row goes here
+        initializeRow(json, key, currentRow);
         table.appendChild(currentRow);
         even = !even;
       }
-      // Loop through all the keys and add those as a table element, then add
-      // all their respective keys.
     }
   });
+}
+/**
+ * Create a row in the given table.
+ * @param {Object} json The JSON that is currently being parsed.
+ * @param {String} key The key to lookup in the JSON element.
+ * @param {Object} currentRow The currentRow to append the new elements too.
+ * @return {Element}
+ */
+function initializeRow(json, key, currentRow) {
+  const index = 0;
+  for (const type of json[key]) {
+    const columnEntry = document.createElement('td');
+    console.log(type);
+    console.log(type.toUpperCase());
+    if ((type.toUpperCase() === 'POSE' && index === 0) ||
+      (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
+      const link = document.createElement('a');
+      link.href = '/getrun?id=' + key + '&dataType=' + json[key];
+      link.innerText = type;
+      columnEntry.appendChild(link);
+    } else {
+      columnEntry.innerText = '';
+    }
+    currentRow.appendChild(columnEntry);
+    index++;
+  }
+  return currentRow;
 }
 /**
 * Filter table to only show elements that start with the input value
