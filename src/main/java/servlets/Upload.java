@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-
 import shared.sharedObjects;
 
 /** Fetch the given data points for a specific run based on its runId and the dataType. */
@@ -25,13 +24,13 @@ public class Upload extends HttpServlet {
       throws IOException, ServletException, IllegalStateException {
     response.setContentType("text/html;");
 
-        String dataType = "pose";
-        // Should take in database instance, along with data type.
-        DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, dataType);
-        Part filePart = null;
+    String dataType = "pose";
+    // Should take in database instance, along with data type.
+    DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, dataType);
+    Part filePart = null;
 
     filePart = request.getPart("file");
-    if(filePart ==null){
+    if (filePart == null) {
       response.sendRedirect("/index.html");
     }
     // Get the input stream and encode it/store it in the given OutputStream.

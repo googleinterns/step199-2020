@@ -50,7 +50,7 @@ public class DataEntries extends HttpServlet {
     /*
      * [data: {runId: aks;ldfja entries: []}]
      */
-    String fileName = sharedObjects.dataInstance.getName() + "/";
+    String fileName = sharedObjects.dataInstance.getDatabaseName() + "/";
     fileName.trim();
     System.out.println("The filename is " + fileName);
     File dir = new File(fileName);
