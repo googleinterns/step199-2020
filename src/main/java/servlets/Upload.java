@@ -13,12 +13,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
-/** Fetch the given data points for a specific run based on its runId and the dataType. */
+/** Upload a .txt file, call encoder, save to database. */
 @MultipartConfig
 @WebServlet("/upload")
 public class Upload extends HttpServlet {
-  // Return numEntries runId and name pairs for getting urls to load viewer data.
-  // Optional numEntries parameter limits the number of returned values.
+
   private Database dataInstance = new Database(sharedObjects.databaseName);
 
   @Override

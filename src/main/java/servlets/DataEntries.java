@@ -1,7 +1,7 @@
 package servlets;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.appengine.repackaged.com.google.gson.Gson;
+import com.google.appengine.repackaged.com.google.gson.GsonBuilder;
 import data.Database;
 import java.io.File;
 import java.io.IOException;
@@ -19,20 +19,20 @@ import shared.sharedObjects;
  */
 @WebServlet("/data")
 public class DataEntries extends HttpServlet {
-  // Return numEntries runId and name pairs for getting urls to load viewer data.
-  // Optional numEntries parameter limits the number of returned values.
   private Database dataInstance = new Database(sharedObjects.databaseName);
 
+  // Get a list of the data values that are currently in the database. Take an optional number of
+  // entries parameter.
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    response.setContentType("text/html;");
+    response.setContentType("text/html");
     String entriesUnparsed = request.getParameter("numEntries");
     // If the numEntries value is not set default to getting all the entries.
     int numEntries = -1;
     if (entriesUnparsed != null) {
       try {
         numEntries = Integer.parseInt(entriesUnparsed);
-      } catch (Exception e) {
+      } catch (NumberFormatException e) {
         System.err.println("Invalid value provided stick to default");
         numEntries = -1;
       }

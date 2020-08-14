@@ -15,8 +15,7 @@ import shared.sharedObjects;
 public class RunInfo extends HttpServlet {
   private Database dataInstance = new Database(sharedObjects.databaseName);
 
-  // Return numEntries runId and name pairs for getting urls to load viewer data.
-  // Optional numEntries parameter limits the number of returned values.
+  // Uses runId and dataType parameters to get the data for a specific run.
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
     response.setContentType("text/html;");
