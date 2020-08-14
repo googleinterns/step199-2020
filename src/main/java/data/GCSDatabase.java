@@ -86,16 +86,10 @@ public class GCSDatabase implements Database {
     return runId + "_" + type;
   }
 
-  /* Returns the appropiate and unique name for a particular file. */
-  private String path(String runId, String type) {
-    return bucketName + "/" + runId + "_" + type;
-  }
-
   /* Writes file into GCSDatabase. */
   @Override
   public OutputStream writeData(String runId, String type) throws IOException {
     String objectName = name(runId, type);
-    String objectPath = path(runId, type);
     return uploadFile(objectName);
   }
 
@@ -112,7 +106,6 @@ public class GCSDatabase implements Database {
   @Override
   public InputStream readData(String runId, String type) throws IOException {
     String objectName = name(runId, type);
-    String objectPath = path(runId, type);
     return downloadFile(objectName);
   }
 
