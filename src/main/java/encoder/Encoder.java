@@ -16,7 +16,8 @@ public class Encoder {
   public static void encode(InputStream inStream, OutputStream outStream) {
     // Set an upper threshold by default on the maximum number of fields, this
     // will make the call to split faster.
-    int maxFields = 20;
+    // The expected number of fields in our pose format.
+    final int maxFields = 7;
     // Split the input based on spaces, any number of spaces is allowed.
 
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "UTF-8"))) {
@@ -30,7 +31,11 @@ public class Encoder {
         return;
       }
       String[] header = parseFields(headLine, maxFields);
-      maxFields = header.length;
+      if (maxFields != header.length) {
+        System.err.println("Invalid header provided");
+        closeStream(outStream);
+        return;
+      }
       String nextLine = null;
       while ((nextLine = reader.readLine()) != null) {
 
@@ -53,17 +58,11 @@ public class Encoder {
     }
   }
 
-  private static String[] parseFields(String currentLine, int maxFields, String regex) {
+  private static String[] parseFields(String currentLine, int maxFields) {
+    final String regex = " +";
     // Split all the files based on a RegEx.
     String[] fields = currentLine.split(regex, maxFields);
     return fields;
-  }
-
-  private static String[] parseFields(String currentLine, int maxFields) {
-    // Provide overloading to give default regex value, reduce scope of regex
-    // variable.
-    final String regex = " +";
-    return parseFields(currentLine, maxFields, regex);
   }
 
   private static Pose parsePose(String[] input) {
