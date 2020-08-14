@@ -18,10 +18,7 @@ import org.junit.runners.JUnit4;
 public final class DecodeTest {
 
   @Test
-  /**
-   * Convert the encoded .sstable file (proto format) into json. Basic sanity checks, up to the user
-   * to make sure the output is indeed as expected.
-   */
+  /** Convert the encoded the proto file into json. Ensure user output is as expected. */
   public void validateDecoding() throws Exception {
     // Attempt to open both the input and output streams for testing.
     String[] testInputArray =

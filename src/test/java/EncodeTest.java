@@ -10,7 +10,10 @@ import org.junit.runners.JUnit4;
 import proto.SensorData.Pose;
 
 @RunWith(JUnit4.class)
-/** Validate that a .txt file can be properly encoded into a .proto file. */
+/**
+ * Validate that a .txt file can be properly encoded into a .proto file. Check to make sure encoded
+ * format values are correct.
+ */
 public final class EncodeTest {
 
   @Test
