@@ -16,9 +16,9 @@ function fetchData() {
   runId = urlParams.get('id');
   dataType = urlParams.get('dataType');
   fetch('/getrun?id=' + runId + '&dataType=' + dataType)
-      .then(response => {response.json()})
-      .then(data => {pose = data})
-      .then(() => {initMap()});
+      .then((response) => response.json())
+      .then((data) => pose = data)
+      .then(() => initMap());
 }
 
 /**
