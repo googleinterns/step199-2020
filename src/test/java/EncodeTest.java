@@ -23,7 +23,7 @@ public final class EncodeTest {
           "1140885738.407125 48.129872 11.582905 10.015034 -177.971817 -3.228588 10.700191",
           "1140885738.475212 48.129872 11.582905 10.014367 -177.982559 -3.510518 10.743480"
         };
-    String testInput = testInputArray[0] + "\n" + testInputArray[1] + "\n" + testInputArray[2];
+    String testInput = String.join("\n", testInputArray);
     InputStream input = new ByteArrayInputStream(testInput.getBytes());
     ByteArrayOutputStream output = new ByteArrayOutputStream();
 

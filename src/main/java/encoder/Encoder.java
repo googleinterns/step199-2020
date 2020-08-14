@@ -7,19 +7,19 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import proto.SensorData.Pose;
 
-/** Change file format from .txt to proto format. */
+/**
+ * Change file format from .txt to proto format. Expected file format consists of the following
+ * lines in order of the header: gps_timestamp lat lng alt roll_deg pitch_deg yaw_deg
+ */
 public class Encoder {
   /*
    * Convert a given .txt that contains a header line specifying file contents
    * into the defined protobuf format.
    */
-  public static void encode(InputStream inStream, OutputStream outStream) {
-    // Set an upper threshold by default on the maximum number of fields, this
-    // will make the call to split faster.
-    // The expected number of fields in our pose format.
-    final int maxFields = 7;
-    // Split the input based on spaces, any number of spaces is allowed.
+  // The expected number of fields in our input format.
+  static final int maxFields = 7;
 
+  public static void encode(InputStream inStream, OutputStream outStream) {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "UTF-8"))) {
       // The first thing we want to do is read the header line, this will tell
       // us the names of the fields, and how many input fields that there are.
