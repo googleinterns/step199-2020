@@ -1,4 +1,3 @@
-const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 // These are gobal variables.
 let map;
 let pose;
