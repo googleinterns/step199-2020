@@ -2,7 +2,6 @@ package shared;
 
 import data.Database;
 import data.GCSDatabase;
-import data.FileDatabase;
 
 // Variables that need to be accessed between multiple class instances (i.e. Database initialization
 // variable).

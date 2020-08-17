@@ -13,14 +13,14 @@ public class DatabaseQuery {
     return database.getAllFiles();
   }
 
-  // A temporary method to replace the database until it is added in the near
-  // future.
+  // returns json format of database entries
   public static String getJson(Database database) {
 
     // Example of sample Json format ~
     /*
      * [data: {runId: aks;ldfja entries: []}]
      */
+
     String fileName = database.getDatabaseName() + "/";
     fileName.trim();
     /*System.out.println("The filename is " + fileName);

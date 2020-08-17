@@ -1,13 +1,11 @@
 package data;
 
 import com.google.api.gax.paging.Page;
-import com.google.appengine.tools.cloudstorage.GcsFileOptions;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsInputChannel;
-import com.google.appengine.tools.cloudstorage.GcsOutputChannel;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.RetryParams;
+import com.google.cloud.ReadChannel;
+import com.google.cloud.WriteChannel;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.BucketInfo;
@@ -19,7 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
-import java.util.UUID;
 
 /* Class for creating, reading and modifying text blobs on Google Cloud. */
 public class GCSDatabase implements Database {
@@ -57,7 +54,7 @@ public class GCSDatabase implements Database {
               .totalRetryPeriodMillis(15000)
               .build());
 
-//  private Credentials credentials;
+  //  private Credentials credentials;
 
   /*
    * See this documentation for other valid locations:
@@ -70,23 +67,13 @@ public class GCSDatabase implements Database {
     System.out.println("in constructor");
 
     System.out.println("initializing storage");
-    //credentials = GoogleCredentials.fromStream(new FileInputStream("path/to/file"));
-    /*storage =
-        StorageOptions.newBuilder()
-            .setCredentials(credentials)
-            .setProjectId(projectId)
-            .build()
-            .getService(); */
+
     storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     System.out.println("making bucket");
     bucketName = name;
-    try{
-        bucket = storage.create(BucketInfo.of(bucketName));
-    }catch (Exception e){
-       bucket = storage.create(BucketInfo.of("newbucket-" + UUID.randomUUID().toString()));
-       Bucket bucketToDelete = storage.get(bucketName);
-      bucketToDelete.delete();
-    }
+    bucket = storage.get(bucketName);
+
+    if (bucket == null) bucket = storage.create(BucketInfo.of(bucketName));
     System.out.println("Created bucket " + bucket.getName());
   }
 
@@ -109,13 +96,36 @@ public class GCSDatabase implements Database {
   }
 
   /* uploads file with objectname to GCSDatabase. */
-  private OutputStream uploadFile(String objectName) throws IOException {
+  /*private OutputStream uploadFile(String objectName) throws IOException {
     GcsFilename filename = new GcsFilename(bucketName, objectName);
     GcsFileOptions instance = GcsFileOptions.getDefaultInstance();
     GcsOutputChannel outputChannel;
     outputChannel = gcsService.createOrReplace(filename, instance);
     return Channels.newOutputStream(outputChannel);
+  }*/
+  private OutputStream uploadFile(String objectName) throws IOException {
+
+    Blob blob = bucket.create(objectName, new byte[0]);
+    WriteChannel writeChannel = blob.writer();
+    OutputStream out = Channels.newOutputStream(writeChannel);
+    System.out.println(out);
+    blob = blob.reload();
+    return out;
   }
+
+  /* private OutputStream uploadFile(String objectName) throws IOException {
+         BlobId blobId = BlobId.of(bucketName, objectName);
+         BlobInfo objectInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build();
+         Blob objectCreated = bucket.create(objectInfo, topicMessagesMap.get(topicName).getBytes());
+         Blob blob = bucket.create(objectName, new byte[0]);
+         WriteChannel writeChannel = blob.writer();
+         OutputStream out = Channels.newOutputStream(writeChannel);
+         System.out.println(out);
+         out.write(5);
+         blob = blob.reload();
+         return out;
+    }
+  */
 
   /* Reads file from GCSDatabase. */
   @Override
@@ -125,9 +135,15 @@ public class GCSDatabase implements Database {
   }
 
   /* Downloads file with objectpath from GCSDatabase. */
-  private InputStream downloadFile(String objectName) throws IOException {
+  /*private InputStream downloadFile(String objectName) throws IOException {
     GcsFilename filename = new GcsFilename(bucketName, objectName);
     GcsInputChannel readChannel = gcsService.openPrefetchingReadChannel(filename, 0, BUFFER_SIZE);
+    return Channels.newInputStream(readChannel);
+  }*/
+
+  private InputStream downloadFile(String objectName) throws IOException {
+    Blob blob = bucket.get(objectName);
+    ReadChannel readChannel = blob.reader();
     return Channels.newInputStream(readChannel);
   }
 
@@ -141,5 +157,9 @@ public class GCSDatabase implements Database {
     return blobList;
   }
 
+  /*
+   * No need to delete GCS right now as these entries and bucket should be permanent,
+   * but needed as an overide method.
+   */
   public void delete() {}
 }

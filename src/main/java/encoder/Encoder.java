@@ -58,6 +58,7 @@ public class Encoder {
       System.out.println("An exception occurred");
     }
     try {
+      outStream.flush();
       outStream.close();
     } catch (Exception e) {
       System.out.println("Unable to close the stream properly");
