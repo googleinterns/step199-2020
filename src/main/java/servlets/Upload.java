@@ -23,7 +23,7 @@ public class Upload extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException, IllegalStateException {
     response.setContentType("text/html;");
-
+    
     String dataType = "pose";
     // Should take in database instance, along with data type.
     DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, dataType);
