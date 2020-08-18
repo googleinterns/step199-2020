@@ -98,7 +98,7 @@ public class DbWriter {
 
   /* Return file name that this Writer should write to. */
   private String constructName() {
-    String fileName = database.getDatabase() + "/" + runId + "_" + type;
+    String fileName = database.getDatabaseName() + "/" + runId + "_" + type;
     return fileName;
   }
 }

@@ -44,6 +44,5 @@ public class Upload extends HttpServlet {
     // As reader object is not yet defined instead get the file input stream
     // directly
     response.sendRedirect("/index.html");
-
   }
 }

@@ -23,7 +23,7 @@ public class Database {
   }
 
   /* Returns name associated with Database. */
-  public String getDatabase() {
+  public String getDatabaseName() {
     return directory;
   }
 
@@ -56,7 +56,7 @@ public class Database {
   }
 
   private String makeFileName(String runId, String type) {
-    return getDatabase() + "/" + runId + "_" + type;
+    return getDatabaseName() + "/" + runId + "_" + type;
   }
 
   /* Adds file to database given its runid and type. */
@@ -68,7 +68,7 @@ public class Database {
 
   /* Return name of file with runid and type in database. */
   public String findName(String runId, String type) {
-    String fileName = getDatabase() + "/" + runId + "_" + type;
+    String fileName = getDatabaseName() + "/" + runId + "_" + type;
     return files.get(0);
   }
 
