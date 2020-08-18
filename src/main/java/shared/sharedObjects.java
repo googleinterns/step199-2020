@@ -1,6 +1,7 @@
 package shared;
 
 import data.Database;
+import data.GCSDatabase;
 
 // Variables that need to be accessed between multiple class instances (i.e. Database initialization
 // variable).
@@ -9,7 +10,7 @@ public class sharedObjects extends Exception {
   // public static
   static {
     try {
-      dataInstance = new Database("testdb-pose-3d-viewer-step");
+      dataInstance = new GCSDatabase("testdb-pose-3d-viewer-step");
     } catch (Exception e) {
       System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
       System.out.println("Exception while initializing" + e.getMessage());
