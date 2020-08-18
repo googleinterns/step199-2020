@@ -23,10 +23,10 @@ public class Upload extends HttpServlet {
   public void doPost(HttpServletRequest request, HttpServletResponse response)
       throws IOException, ServletException, IllegalStateException {
     response.setContentType("text/html;");
-
+    String runid = request.getParameter("runID");
     String dataType = "pose";
     // Should take in database instance, along with data type.
-    DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, dataType);
+    DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, runid, dataType);
     Part filePart = null;
 
     filePart = request.getPart("file");
@@ -43,5 +43,7 @@ public class Upload extends HttpServlet {
     // stream.
     // As reader object is not yet defined instead get the file input stream
     // directly
+    response.sendRedirect("/index.html");
+
   }
 }

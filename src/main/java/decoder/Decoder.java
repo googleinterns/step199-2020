@@ -22,6 +22,7 @@ public class Decoder {
         output.write(JsonFormat.printer().print(currentPose));
         currentPose = Pose.parseDelimitedFrom(dataStream);
         // Write ',' on all but last entry.
+        System.out.println("**" + currentPose + "**" );
         if (currentPose != null) output.write(",");
       }
       output.write("]");

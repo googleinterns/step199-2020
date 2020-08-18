@@ -146,3 +146,10 @@ th {
 table{
   table-layout: fixed;
 }
+
+.runID-name {
+   
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  text-align: center;
+  padding: 5px;
+}

@@ -12,7 +12,9 @@
 	<body onload="createTable();">
 		<h1>StellarPoint</h1>
 		<form action="/upload" method="post" enctype="multipart/form-data" id="uploadData">
-			<div id="search"> <input id="searchQuery" type="text" onkeyup="filterTable();"></div>
+			<div id="search"><input id="searchQuery" type="text" onkeyup="filterTable();"></div>
+            <div id = "runID-name"><textarea name="runID">put runID of uploaded file here</textarea></div>
+         <br/><br/>
 		</form>
 		<div id="scroll-body">
 			<table id="pose-data">
