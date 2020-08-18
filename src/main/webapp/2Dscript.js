@@ -1,4 +1,4 @@
-// These are gobal variables.
+// Gobal variables.
 let map;
 let pose;
 let runId;
@@ -6,7 +6,7 @@ let dataType;
 
 fetchData();
 /**
- * This function fetchs pose data from the RunInfo servlet,
+ * Fetchs pose data from the RunInfo servlet,
  * it is an asynchronous call requiring initMap() to be
  * called after the data is fully loaded.
  */
@@ -22,16 +22,16 @@ function fetchData() {
 }
 
 /**
- * This function embeds the Google map interface within the html
+ * Embeds the Google map interface within the html
  * along with drawing the pose trajectory and adding a button link.
  */
 function initMap() {
-  // This intitalizes the map.
+  // Intitalizes the map.
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: pose[0].lat, lng: pose[0].lng},
     zoom: 18,
   });
-  // This draws the pose trejectory.
+  // Draws the pose trajectory.
   const poseTrajectory = new google.maps.Polyline({
     path: formatPoseData(),
     geodesic: true,
@@ -40,7 +40,7 @@ function initMap() {
     strokeWeight: 2,
   });
   poseTrajectory.setMap(map);
-  // This adds the button called from CenterControl().
+  // Adds the button called from CenterControl().
   const centerControlDiv = document.createElement('div');
   addCenterControl(centerControlDiv, map);
   centerControlDiv.index = 1;
@@ -48,20 +48,20 @@ function initMap() {
 }
 
 /**
- * This function changes the pose data to a format
+ * Changes the pose data to a format
  * the Google maps javascript api can read.
  * @return {dictionary} Returns the formatted pose data dictionary.
  */
 function formatPoseData() {
   const poseCoordinates = [];
-  for (let i = 0; i<pose.length; i++) {
-    poseCoordinates.push({lat: pose[i].lat, lng: pose[i].lng});
+  for (point of pose) {
+    poseCoordinates.push({lat: point.lat, lng: point.lng});
   }
   return poseCoordinates;
 }
 
 /**
- * This function creates the html elements inside of the button,
+ * Creates the html elements inside of the button,
  * along with adding a link to the 3DVisual.html page.
  * @param {Element} controlDiv This is the main/parent element of the button.
  */
