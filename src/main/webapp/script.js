@@ -68,7 +68,6 @@ function createTable() {
          var checkbox = document.createElement("INPUT");
             checkbox.type = "checkbox";
             checkbox.setAttribute('name', 'check');
-            checkbox.setAttribute('value', 'true');
              currentRow.appendChild(checkbox);
                 index++;
             }
@@ -84,6 +83,27 @@ function toggle(source) {
   for(var i=0, n=checkboxes.length;i<n;i++) {
     checkboxes[i].checked = source.checked;
   }
+}
+
+/* 
+ * Make url for multiple runs selected. should be in the style of 
+ ** link.href = "/home.html?id=" + key + "&dataType=" + json[key]
+ */
+function makeURL(){
+    var checkboxes = document.getElementsByName('check');
+    var boxesPicked = new Array();
+    for(var i=0, n=checkboxes.length;i<n;i++) { 
+       if (checkboxes[i].checked)
+          boxesPicked[boxesPicked.length] = checkboxes[i];       
+    }
+
+    let count = boxesPicked.length;
+    let link = document.createElement("a");
+    link.href =  "/home.html?count=" + count;
+    for (var i = 0 ; i < count ; i++){
+        link.href += "id" + i + "=" + /**** +*/ "&type" + i + "=" /*+ ****/; 
+    }
+
 }
 
 function filterTable() {
@@ -112,4 +132,11 @@ function filterTable() {
             }
         }
     }
+}
+
+function makeURL(){
+var loader = document.getElementById("loader");
+window.onload = function() {
+ loader.style.display = 'none';
+}
 }
