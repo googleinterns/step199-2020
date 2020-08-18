@@ -65,7 +65,7 @@ function createTable() {
                 currentRow.appendChild(columnEntry);
 
                 /* Makes checkboxes for each data entry. */
-         var checkbox = document.createElement("INPUT");
+            var checkbox = document.createElement("INPUT");
             checkbox.type = "checkbox";
             checkbox.setAttribute('name', 'check');
              currentRow.appendChild(checkbox);
@@ -101,6 +101,7 @@ function makeURL(){
     let link = document.createElement("a");
     link.href =  "/home.html?count=" + count;
     for (var i = 0 ; i < count ; i++){
+        let currentRow = document.createElement('tr');
         link.href += "id" + i + "=" + /**** +*/ "&type" + i + "=" /*+ ****/; 
     }
 
