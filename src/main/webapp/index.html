@@ -1,11 +1,38 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Stellarpoint Concept Demo</title>
-        <link rel="stylesheet" href="style.css">
-	</head>
-	<body>
-		<script src="https://threejs.org/build/three.js"></script>
-		<script type="module" src="script.js"></script>
-	</body>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>StellarPoint 3D Viewer</title>
+	<link rel="stylesheet" href="style.css">
+	<script src="script.js"></script>
+</head>
+<div id="content">
+
+	<body onload="createTable();">
+		<h1>StellarPoint</h1>
+		<form action="/upload" method="post" enctype="multipart/form-data" id="uploadData">
+			<div id="search"> <input id="searchQuery" type="text" onkeyup="filterTable();"></div>
+		</form>
+		<div id="scroll-body">
+			<table id="pose-data">
+			</table>
+		</div>
+		<div class="buttons">
+			<label class="file-upload">
+				<input type="file" form="uploadData" name="file" />
+				Choose File
+			</label>
+		</div>
+		<div class="buttons">
+			<label class="submit-file">
+				<input type="submit" name="submit" form="uploadData" />
+				Upload Pose Data
+			</label>
+		</div>
+
+</div>
+
+</body>
+
 </html>
