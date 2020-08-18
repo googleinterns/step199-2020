@@ -22,15 +22,20 @@ function loadUrls() {
 // At some point likely will not load all entries as there will be too many for this to be efficient, find better way to handle this.
 function createTable() {
     fetch('\data').then(response => response.json()).then(json => {
+        /* Make header row. */
         const table = document.getElementById('pose-data');
         let headerRow = document.createElement('tr');
         let columnOne = document.createElement("th");
         columnOne.innerText = "RunID";
         let columnTwo = document.createElement("th");
         columnTwo.innerText = "DataType";
+        let columnThree = document.createElement("th");
+        columnThree.innerText = "View";
         headerRow.appendChild(columnOne);
         headerRow.appendChild(columnTwo);
+        headerRow.appendChild(columnThree);
         table.appendChild(headerRow);
+
         let even = false;
         for (const key in json) {
             let currentRow = document.createElement('tr');
@@ -42,6 +47,7 @@ function createTable() {
             keyEntry.innerText = key;
             currentRow.appendChild(keyEntry);
             console.log("The key is " + key);
+            
             let index = 0;
             for (const type of json[key]) {
                 let columnEntry = document.createElement("td");
@@ -57,6 +63,13 @@ function createTable() {
                     columnEntry.innerText = "";
                 }
                 currentRow.appendChild(columnEntry);
+
+                /* Makes checkboxes for each data entry. */
+         var checkbox = document.createElement("INPUT");
+            checkbox.type = "checkbox";
+            checkbox.setAttribute('name', 'check');
+            checkbox.setAttribute('value', 'true');
+             currentRow.appendChild(checkbox);
                 index++;
             }
             table.appendChild(currentRow);
@@ -64,6 +77,13 @@ function createTable() {
         }
         // Loop through all the keys and add those as a table element, then add all their respective keys.
     })
+}
+/* Select all Checkboxes function. */
+function toggle(source) {
+  checkboxes = document.getElementsByName('check');
+  for(var i=0, n=checkboxes.length;i<n;i++) {
+    checkboxes[i].checked = source.checked;
+  }
 }
 
 function filterTable() {

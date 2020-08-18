@@ -104,11 +104,6 @@ input[type="file"], input[type="submit"] {
   display: none;
 }
 
-.buttons {
-  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-  text-align: center;
-  padding: 5px;
-}
 
 th {
   position: sticky;
@@ -148,8 +143,17 @@ table{
 }
 
 .runID-name {
-   
   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-  text-align: center;
-  padding: 5px;
+  display: inline-block;
+  padding: 2px;
+}
+
+#outer
+{
+    width:100%;
+    text-align: center;
+}
+.buttons1, .buttons2
+{
+    display: inline-block;
 }
