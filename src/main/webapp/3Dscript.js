@@ -11,11 +11,11 @@ let controls;
 let orientation;
 let trajectory;
 let pose;
-let poseTransform = {
-  translateX: 0,
-  translateZ: 0,
-  rotate: 0,
-  scale: 0};
+let poseTr23ansform = {
+  /* Unit: 4 meters*/ translateX: 0,
+  /* Unit: 4 meters*/ translateZ: 0,
+  /* Unit: degrees*/ rotate: 0,
+  /* Scalar*/ scale: 1};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 initThreeJs();
@@ -46,7 +46,7 @@ function initThreeJs() {
 
 /**
  * This function fetchs pose data from the RunInfo servlet,
- * it is an asynchronous call requiring addTerrain() to be 
+ * it is an asynchronous call requiring addMap() to be 
  * called after the data is fully loaded.
  */
 function fetchData() {
@@ -174,13 +174,17 @@ function plotOrientation() {
 function gui() {
   const gui = new GUI();
   gui.add(poseTransform, 'rotate', 0, 360,1).onChange(plotOrientation)
-  .onFinishChange(plotTrajectory).name('Pose Rotation (degrees)');
-  gui.add(poseTransform, 'translateX', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotTrajectory).name('X Axis Translation');
-  gui.add(poseTransform, 'translateZ', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotTrajectory).name('Z Axis Translation');
-  gui.add(poseTransform, 'scale',.5, 2,.25).onChange(plotOrientation)
-  .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
+      .onFinishChange(plotTrajectory)
+      .name('Pose Rotation (degrees)');
+  gui.add(poseTransform, 'translateX', -10, 10,.025)
+      .onChange(plotOrientation)
+      .onFinishChange(plotTrajectory).name('X Axis Translation');
+  gui.add(poseTransform, 'translateZ', -10, 10,.025)
+      .onChange(plotOrientation)
+      .onFinishChange(plotTrajectory).name('Z Axis Translation');
+  gui.add(poseTransform, 'scale',.5, 2,.25)
+      .onChange(plotOrientation)
+      .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
 }
 
 /**
