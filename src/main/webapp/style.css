@@ -27,7 +27,7 @@ input[type=text] {
   box-sizing: border-box;
   padding: 5px;
 
-  /* Change the cursor color inside the text box when typing. */
+  /* Change the cursor color inside the text box when typing */
   caret-color: navy;
 }
 
@@ -37,6 +37,8 @@ input[type=text] {
   background-image: url("images/StellarPoint.png");
   background-size: cover;
   background-position: right 0;
+
+  /* background-attachment: fixed; */
 }
 
 h1 {
@@ -44,7 +46,7 @@ h1 {
   font-size: 50px;
   text-align: center;
 
-  /* Setup gradient for header. */
+  /* Setup gradient for header */
   background-image: linear-gradient(#3f8b99, white, #3f8b99);
   background-clip: text;
   -webkit-background-clip: text;
@@ -54,6 +56,21 @@ h1 {
 
   /* Not supported on all sites, stylelint doesn't recognize */
   text-fill-color: transparent; /* stylelint-disable-line */
+}
+
+/* On overflow make the table scrollable. */
+
+#scroll-body {
+  -ms-overflow-style: none;
+
+  /* IE and Edge. */
+  scrollbar-width: none;
+
+  /* Firefox. */
+  overflow: auto;
+  height: 400px;
+  margin-bottom: 5px;
+  margin-top: 10px;
 }
 
 #pose-data {

@@ -27,3 +27,17 @@ body {
   padding-left: 5px;
   padding-right: 5px;
 }
+<<<<<<< HEAD
+=======
+
+.wrapper {
+  position: relative;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.widget {
+  display: block;
+  position: absolute;
+}
+>>>>>>> 6bd8dcc... Adding selection pane feature
