@@ -23,15 +23,7 @@ public class DatabaseQuery {
 
     String fileName = database.getDatabaseName() + "/";
     fileName.trim();
-    /*System.out.println("The filename is " + fileName);
-    File dir = new File(fileName);
-    System.out.println(dir.getAbsolutePath());
-    */
     ArrayList<String> filenames = getAllFiles(database);
-    if (filenames == null) {
-      System.out.println("Directory is empty");
-      return "{}";
-    }
 
     HashMap<String, TreeSet<String>> dataMap = new HashMap<String, TreeSet<String>>();
     for (String file : filenames) {
@@ -41,7 +33,7 @@ public class DatabaseQuery {
       for (String param : params) System.out.println(param);
       if (params.length != 2) {
         System.err.println("Invalid database entry format!");
-        return "";
+        return "{}";
       }
       String hash = params[0];
       String type = params[1];
