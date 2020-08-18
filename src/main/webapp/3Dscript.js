@@ -13,7 +13,7 @@ let trajectory;
 let pose;
 let poseTransform = {
   translateX: 0,
-  translateY: 0,
+  translateZ: 0,
   rotate: 0,
   scale: 0};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
@@ -103,12 +103,25 @@ function addMap() {
 function plotTrajectory() {
   // Removes any existing trajectory objects for repositioning.
   scene.remove(trajectory);
+  /**
+   * The x axis controls the left and right direction, the y axis controls
+   * up and down movement, and the z axis controls forward and back movement.
+   */
   let coordinates=[];
   for (point of pose) {
     coordinates.push(new THREE.Vector3(
+      /**
+       * Subtracting each point by the first point starts the pose
+       * at coordinates (0, 0, 0). Each unit in the 3D scene is 4
+       * meters while the 6th decimal point in GPS coordinates represents
+       * .11 meters. This is why we multiple the lat/lng by 25000, an
+       * increment in the 6th decimal place equates to a 0.025 unit
+       * change in our 3D space. Since altitude is already represented in
+       * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
+       */
       (point.lng - pose[0].lng) * 25000 * poseTransform.scale,
       (point.alt - pose[0].alt)/4,
-      (point.lat - pose[0].lat) *25000 * -poseTransform.scale)
+      (point.lat - pose[0].lat) * 25000 * -poseTransform.scale)
     );
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
@@ -116,7 +129,7 @@ function plotTrajectory() {
   trajectory = new THREE.Line(geometry, material);
   scene.add(trajectory);
   trajectory.position.x = poseTransform.translateX;
-  trajectory.position.z = poseTransform.translateY;
+  trajectory.position.z = poseTransform.translateZ;
   trajectory.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
 }
 
@@ -150,7 +163,7 @@ function plotOrientation() {
   }
   orientation.instanceMatrix.needsUpdate = true; 
   orientation.position.x = poseTransform.translateX;
-  orientation.position.z = poseTransform.translateY;
+  orientation.position.z = poseTransform.translateZ;
   orientation.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
 }
 
@@ -164,8 +177,8 @@ function gui() {
   .onFinishChange(plotTrajectory).name('Pose Rotation (degrees)');
   gui.add(poseTransform, 'translateX', -10, 10,.025).onChange(plotOrientation)
   .onFinishChange(plotTrajectory).name('X Axis Translation');
-  gui.add(poseTransform, 'transformY', -10, 10,.025).onChange(plotOrientation)
-  .onFinishChange(plotTrajectory).name('Y Axis Translation');
+  gui.add(poseTransform, 'translateZ', -10, 10,.025).onChange(plotOrientation)
+  .onFinishChange(plotTrajectory).name('Z Axis Translation');
   gui.add(poseTransform, 'scale',.5, 2,.25).onChange(plotOrientation)
   .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
 }
