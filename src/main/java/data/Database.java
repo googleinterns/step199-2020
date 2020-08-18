@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+/* Interface for dealing with any database. */
 public interface Database {
   /* Abstract methods. */
   public String getDatabaseName();
