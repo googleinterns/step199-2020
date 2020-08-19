@@ -53,22 +53,27 @@ function createTable() {
                 let columnEntry = document.createElement("td");
                 console.log(type);
                 console.log(type.toUpperCase())
+            
                 if ((type.toUpperCase() === "POSE" && index === 0) || (type.toUpperCase() === "POINTCLOUD" && index === 1)) {
                     let link = document.createElement("a");
                     link.href = "/home.html?id=" + key + "&dataType=" + json[key];
                     link.innerText = type;
+                    link.setAttribute('name', key + '_' + json[key]);
+                    console.log(link.getAttribute('name'));
                     columnEntry.appendChild(link);
-                }
-                else {
-                    columnEntry.innerText = "";
-                }
-                currentRow.appendChild(columnEntry);
-
-                /* Makes checkboxes for each data entry. */
+                    currentRow.appendChild(columnEntry);
+                        /* Makes checkboxes for each data entry. */
             var checkbox = document.createElement("INPUT");
             checkbox.type = "checkbox";
             checkbox.setAttribute('name', 'check');
+            checkbox.setAttribute('value', link.getAttribute('name'));
+            console.log(checkbox.getAttribute('value'));
              currentRow.appendChild(checkbox);
+                }
+                else {
+                    columnEntry.innerText = "";
+                    currentRow.appendChild(columnEntry);
+                }
                 index++;
             }
             table.appendChild(currentRow);
@@ -89,22 +94,39 @@ function toggle(source) {
  * Make url for multiple runs selected. should be in the style of 
  ** link.href = "/home.html?id=" + key + "&dataType=" + json[key]
  */
-function makeURL(){
+function makeMultiRunURL(){
     var checkboxes = document.getElementsByName('check');
-    var boxesPicked = new Array();
-    for(var i=0, n=checkboxes.length;i<n;i++) { 
-       if (checkboxes[i].checked)
-          boxesPicked[boxesPicked.length] = checkboxes[i];       
-    }
-
-    let count = boxesPicked.length;
+    var count =0; 
     let link = document.createElement("a");
-    link.href =  "/home.html?count=" + count;
-    for (var i = 0 ; i < count ; i++){
-        let currentRow = document.createElement('tr');
-        link.href += "id" + i + "=" + /**** +*/ "&type" + i + "=" /*+ ****/; 
-    }
+    link.href =  "/home.html?";
 
+    for(var i=0, n=checkboxes.length;i<n;i++) { 
+       if (checkboxes[i].checked){
+           count++;
+           console.log("here what we are splitting!" + checkboxes[i].getAttribute('value'));
+        var splitInfo = checkboxes[i].getAttribute('value').split('_');
+        link.href += "id" + count + "=" + splitInfo[0] + "&type" + count + "=" + splitInfo[1]+ "-"; 
+       }
+    }
+    link.href += "count=" + count;
+       console.log(link);
+}
+
+function makeMultiRunJson(){
+    var checkboxes = document.getElementsByName('check');
+    var count =0; 
+    var str= "{";
+    for(var i=0, n=checkboxes.length;i<n;i++) { 
+       if (checkboxes[i].checked){
+           count++;
+           console.log("here what we are splitting!" + checkboxes[i].getAttribute('value'));
+        var splitInfo = checkboxes[i].getAttribute('value').split('_');
+        str += "\n" + "\"" + splitInfo[0] + "\": [" + "\n \"" + splitInfo[1] +  "\" \n ], \n";
+       }
+    }
+    str += "}";
+    console.log(str);
+    sessionStorage.setItem("selected", str);
 }
 
 function filterTable() {
@@ -133,11 +155,4 @@ function filterTable() {
             }
         }
     }
-}
-
-function makeURL(){
-var loader = document.getElementById("loader");
-window.onload = function() {
- loader.style.display = 'none';
-}
 }

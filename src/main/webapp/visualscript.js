@@ -12,10 +12,11 @@ let pose;
 let poseScalar = {value: 25000};
 let posePosition = {x: 0, z: 0};
 let count;
+let bool =1; 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 const rotationData = new Map();
 let path = [];
-
+let materialLine;
 /**
  * Initializes the scene, camera, renderer, and clock.
  */
@@ -67,9 +68,9 @@ function addPoseData() {
   plotPath();
   
   // Adds test pose data as one Geometry instance
-  material = new THREE.MeshBasicMaterial({color: 'red'});
+  materialLine = new THREE.MeshBasicMaterial({color: 'red'});
   geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
-  direction = new THREE.InstancedMesh(geometry, material, count);
+  direction = new THREE.InstancedMesh(geometry, materialLine, count);
   direction.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(direction);// Orientation indicator
   plotOrientation();
@@ -112,6 +113,9 @@ function plotOrientation() {
     dummy.applyMatrix4(matrix);
     dummy.updateMatrix();
     direction.setMatrixAt(i, dummy.matrix);
+
+    /*TODO: give every point some info to show */
+    let info = document.createElement('button');
   }
   direction.instanceMatrix.needsUpdate = true; 
   direction.position.x = posePosition.x;
@@ -157,4 +161,14 @@ function fetchData() {
 init();
 gui();
 animate();
+
+/*changes colors of cylinders. TODO: add text box show metadata of run. */
+document.getElementById("myBtn").addEventListener("click", function() {
+    if (bool ==1 ){
+  materialLine.color.setHex( 0x008000);
+  bool=0;
+  }
+  else {bool =1; materialLine.color.setHex( 0x00ffff ); 
+  }
+});
 
