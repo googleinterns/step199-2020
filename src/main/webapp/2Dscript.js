@@ -49,9 +49,15 @@ function initMap() {
   });
 
   flightPath.setMap(map);
+  const sideControlDiv = document.createElement("div");
+  SelectionPane(sideControlDiv);
+  console.log(sideControlDiv);
+  sideControlDiv.index = 1;
+  map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
+
 
   const centerControlDiv = document.createElement('div');
-  const centerControl = new CenterControl(centerControlDiv, map);
+  CenterControl(centerControlDiv);
   centerControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
 
@@ -64,8 +70,21 @@ function initMap() {
 
 }
 
+function SelectionPane(sideControlDiv) {
+  // Set CSS for the selection pane border.
+  const selectionUI = document.createElement('div');
+  selectionUI.className = 'selectionUI';
+  selectionUI.title = 'Select the pose runs to view/render in 3D.';
+  sideControlDiv.appendChild(selectionUI);
 
-function CenterControl(controlDiv, map) {
+  // Set CSS for the selectin pane interior.
+  const selectionText = document.createElement('div');
+  selectionText.className = 'selectionText';
+  selectionText.innerHTML = '<table id="pose-data"> <tr><th>RunID</th><th>DataType</th></tr><tr class="visible"><td>qKuu3BFO7R</td><td><a href="/2DVisual.html?id=qKuu3BFO7R&amp;dataType=pose">pose</a></td></tr></table>';
+  selectionUI.appendChild(selectionText);
+}
+
+function CenterControl(controlDiv) {
 
   // Set CSS for the control border.
   const controlUI = document.createElement('div');
@@ -187,7 +206,7 @@ $(function () {
               const latLng = event.latLng;
               console.log("Polyline clicked at lat: " + latLng.lat() + " lng: " + latLng.lng());
               infoWindow = new google.maps.InfoWindow({
-                content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber +"&stored=true"+ "> View in 3D </a>",
+                content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber + "&stored=true" + "> View in 3D </a>",
                 position: latLng
               });
               infoWindow.setMap(map);
