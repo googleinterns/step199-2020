@@ -96,6 +96,10 @@ $(function () {
   let priorLat;
   let priorLng;
   let ismousedown = false;
+  let markerBottom;
+  let markerTop;
+  let subPath;
+  let infoWindow;
 
   $(document).on({
     mousedown: function (event) {
@@ -120,6 +124,9 @@ $(function () {
         // On the left click action.
         if (event.which === 1) {
           if (ismousedown) {
+            $('.widget').remove();
+            if (infoWindow !== undefined)
+              infoWindow.setMap(null);
             console.log("Mousedown set to false");
             ismousedown = false;
             // Here check the intersection by looping over the current different bounding rectangles and determining if they intersect.
@@ -128,14 +135,81 @@ $(function () {
             const maxLat = Math.max(currentLat, priorLat);
             const minLng = Math.min(currentLong, priorLng);
             const maxLng = Math.max(currentLong, priorLng);
+            const poseLength = pose.length;
+            // Lat can be from [-90,90]. 
+            let discoveredMinLat = 91;
+            let discoveredMinLatPair = 181;
+            // Lng can be from [-180,180].
 
-            withinBound(minLat, maxLat, minLng, maxLng, currentVal)
-            let marker = new google.maps.Marker({
-              position: { lat: currentLat, lng: currentLong },
+            let discoveredMaxLng = -181;
+            let discoveredMaxLngPair = -91;
+            subLine = [];
+            for (let i = 0; i < poseLength; i++) {
+              const loopLat = pose[i].lat;
+              const loopLng = pose[i].lng;
+              if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
+                // While iterating save the max and min lat, same for the lng.
+                if (discoveredMinLat > loopLat) {
+                  discoveredMinLatPair = loopLng;
+                  discoveredMinLat = loopLat;
+                }
+                if (discoveredMaxLng < loopLng) {
+                  discoveredMaxLngPair = loopLat;
+                  discoveredMaxLng = loopLng;
+                }
+                subLine.push(pose[i]);
+              }
+            }
+
+            // Clear prior markers/path if they exist.
+            if (markerBottom !== undefined) {
+              markerBottom.setMap(null);
+            }
+            if (markerTop !== undefined) {
+              markerTop.setMap(null);
+            }
+            if (subPath !== undefined) {
+              subPath.setMap(null);
+            }
+            const subSectionNumber = 1;
+            //   const subLine2D = subLine.filter((inputArray) => ();
+            // console.log(subLine2D);
+            // Can leave in extra parameters and that has no effect on the graphing.
+            subPath = new google.maps.Polyline({
+              path: subLine,
+              geodesic: true,
+              strokeColor: 'blue',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
             });
-            //at this point iterate through all the values to contruct a new line with the appropriate markers
+            // Setup event listener to show option for 3D window when polyline is clicked.
+            google.maps.event.addListener(subPath, 'click', function (event) {
+              const latLng = event.latLng;
+              console.log("Polyline clicked at lat: " + latLng.lat() + " lng: " + latLng.lng());
+              infoWindow = new google.maps.InfoWindow({
+                content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber +"&stored=true"+ "> View in 3D </a>",
+                position: latLng
+              });
+              infoWindow.setMap(map);
+            }
+            );
 
-            marker.setMap(map);
+            subPath.setMap(map);
+
+            markerBottom = new google.maps.Marker({
+              position: { lat: discoveredMinLat, lng: discoveredMinLatPair },
+              title: "Lat: " + discoveredMinLat + " Lng: " + discoveredMinLatPair
+            });
+            markerTop = new google.maps.Marker({
+              position: { lat: discoveredMaxLngPair, lng: discoveredMaxLng },
+              title: "Lat: " + discoveredMaxLngPair + " Lng: " + discoveredMaxLng
+            });
+            // At this point iterate through all the values to contruct a new line with the appropriate markers.
+            markerBottom.setMap(map);
+            markerTop.setMap(map);
+            // Constant to account for possibility of multiple subsections.
+
+            sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
 
           }
         }
@@ -162,6 +236,6 @@ $(function () {
 function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
   if ((valLat >= minLat && valLat <= maxLat) && (valLng >= minLng && valLng <= maxLng)) {
     return true;
-   }
-   return false;
+  }
+  return false;
 }
