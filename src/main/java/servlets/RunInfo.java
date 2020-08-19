@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import shared.sharedObjects;
 
-/** Fetch the given data points for a specific run based on its runId and the dataType. */
+/* Fetch the given data points for a specific run based on its runId and the dataType. */
 @WebServlet("/getrun")
 public class RunInfo extends HttpServlet {
 

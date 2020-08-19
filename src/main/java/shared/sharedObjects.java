@@ -3,8 +3,10 @@ package shared;
 import data.Database;
 import data.GCSDatabase;
 
-// Variables that need to be accessed between multiple class instances (i.e. Database initialization
-// variable).
+/*
+ * Variables that need to be accessed between multiple class instances (i.e. Database initialization
+ * variable).
+ */
 public class sharedObjects extends Exception {
   public static Database dataInstance;
   // public static

@@ -23,7 +23,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database. */
 public final class ReaderWriterTest {
-
+  /* These tests are specific to the file database implementation. */
   @Test
   public void validateDatabaseName() throws IOException {
     System.out.println("validateDatabaseName()");
@@ -67,7 +67,6 @@ public final class ReaderWriterTest {
     }
 
     String readTest = null;
-
     /* Read contents of file written to database. */
     try (Reader reads =
         new BufferedReader(
@@ -81,7 +80,6 @@ public final class ReaderWriterTest {
     }
 
     assertEquals(writeTest, readTest);
-
     /* Delete directory. */
     database.delete();
   }
@@ -107,7 +105,6 @@ public final class ReaderWriterTest {
     String files = DatabaseQuery.getJson(database);
 
     assertTrue(true);
-
     /* Delete directory. */
     database.delete();
   }
