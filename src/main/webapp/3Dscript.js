@@ -43,23 +43,6 @@ function initThreeJs() {
   fetchData();
 }
 
-
-/**
- * This function fetchs pose data from the RunInfo servlet,
- * it is an asynchronous call requiring addMap() to be
- * called after the data is fully loaded.
- */
-function fetchData() {
-  const queryString = window.location.search;
-  const urlParams = new URLSearchParams(queryString);
-  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
-  fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then((response) => response.json())
-      .then((data) => pose = data)
-      .then(() => addMap());
-}
-
 /**
  * Creates the 2D terrain and points a light at it.
  * It also calls two other functions so it can wait on the fetch
@@ -207,4 +190,34 @@ function animate() {
   controls.update(delta);
   renderer.render(scene, camera);
 };
+
+/**
+ * This function fetchs pose data from the RunInfo servlet,
+ * it is an asynchronous call requiring addMap() to be
+ * called after the data is fully loaded.
+ */
+function fetchData() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const id = urlParams.get('id');
+  const type = urlParams.get('dataType');
+  // Only need to refetch the data if it is not contained in local storage, in
+  // general it should be.
+  const isStored = urlParams.get('stored');
+  const subSectionNumber = urlParams.get('subSection');
+  console.log(id + type);
+  if (!isStored) {
+    fetch('/getrun?id=' + id + '&dataType=' + type)
+        .then((response) => response.json())
+        .then((data) => pose = data)
+        .then(() => addMap());
+  } else {
+    pose = JSON.parse(sessionStorage.getItem(id+'_'+type+'_'+subSectionNumber));
+    addMap();
+  }
+}
+
+initThreeJs();
+gui();
+animate();
 
