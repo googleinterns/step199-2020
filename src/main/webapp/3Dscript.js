@@ -104,10 +104,19 @@ function addMap() {
  * @return {array} An array returning gps coordinates.
  */
 function llaDegreeToLocal(lat, lng, alt) {
-  lng = (lng - pose[0].lng) * 25000 * poseTransform.scale;
-  alt = (alt - pose[0].alt)/4;
-  lat = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
-  return [lat, alt, lng];
+  /**
+   * Subtracting each point by the first point starts the pose
+   * at coordinates (0, 0, 0). Each unit in the 3D scene is 4
+   * meters while the 6th decimal point in GPS coordinates represents
+   * .11 meters. This is why we multiple the lat/lng by 25000, an
+   * increment in the 6th decimal place equates to a 0.025 unit
+   * change in our 3D space. Since altitude is already represented in
+   * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
+   */
+  const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
+  const y = (alt - pose[0].alt)/4;
+  const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
+  return [x, y, z];
 }
 /**
  * This uses the pose data to create a blue line representing the pose
@@ -122,20 +131,8 @@ function plotTrajectory() {
    */
   const coordinates=[];
   for (point of pose) {
-    const localCoords = llaDegreeToLocal(point.lat, point.alt, point.lng);
-    /**
-      * Subtracting each point by the first point starts the pose
-      * at coordinates (0, 0, 0). Each unit in the 3D scene is 4
-      * meters while the 6th decimal point in GPS coordinates represents
-      * .11 meters. This is why we multiple the lat/lng by 25000, an
-      * increment in the 6th decimal place equates to a 0.025 unit
-      * change in our 3D space. Since altitude is already represented in
-      * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
-      */
-    coordinates.push(new THREE.Vector3(
-        localCoords[0],
-        localCoords[1],
-        localCoords[0]));
+    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+    coordinates.push(new THREE.Vector3(x, y, z));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
   const material = new THREE.LineBasicMaterial({color: 'blue'});
@@ -160,11 +157,9 @@ function plotOrientation() {
      * not the center of the 3D scene.
      */
     const matrix = new THREE.Matrix4();
-    const localCoords = llaDegreeToLocal(point.lat, point.alt, point.lng);
-    matrix.makeTranslation(
-        localCoords[0],
-        localCoords[1],
-        localCoords[0]);
+    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+
+    matrix.makeTranslation(x, y, z);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(point.pitchDeg)));
