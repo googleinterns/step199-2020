@@ -16,6 +16,7 @@ html, body {
   cursor: pointer;
   margin-bottom: 22px;
   text-align: center;
+  margin-top: 10px;
 }
 
 .controlText {
@@ -35,6 +36,14 @@ html, body {
   cursor: pointer;
   text-align: center;
   margin-left: 11px;
+  max-height: 45vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* IE and Edge. */
+  scrollbar-width: none;
+  /* Firefox. */
+  overflow: auto;
+  padding-right:5px;
 }
 
 .selectionText {
@@ -44,6 +53,10 @@ html, body {
   line-height: 38px;
   padding-left: 5px;
   padding-right: 5px;
+  -ms-overflow-style: none;
+  height: min-height;
+  margin-bottom: 5px;
+  margin-top: 10px;
 }
 
 .wrapper {
@@ -55,4 +68,12 @@ html, body {
 .widget {
   display: block;
   position: absolute;
+}
+
+#selectionText::-webkit-scrollbar {
+  display: none;
+}
+
+#selectionUI::-webkit-scrollbar {
+  display: none;
 }
