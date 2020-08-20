@@ -1,6 +1,7 @@
 // Gobal variables.
 let map;
-let maps = {};
+let maps = {}; // Cache for map elements that have been loaded.
+let datas = {}; // Cache for data elements that have been loaded.
 let pose;
 let data;
 let id;
@@ -91,6 +92,7 @@ function initMap() {
   console.log(sideControlDiv);
   sideControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
+}
 
 /**
  * Changes the pose data to a format the Google maps javascript api can read.
@@ -182,27 +184,40 @@ function createSideTable(json) {
       // Get the necessary content for this runId if not stored in the local cache.
       console.log("Checkbox event");
       const checkboxElement = event.target;
-      // First check the localStorage cache. Instead of checking local storage, could instead fetch from the dictionary instead.
-      let dataEntries = JSON.parse(sessionStorage.getItem(event.target.id));
       console.log("The id is:" + event.target.id);
       console.log("The event is" + event.target.toString());
       console.log("The checkbox is " + this.checked);
       if (this.checked) {
-        if (dataEntries === null) {
+        // First check the cache for this value.
+        dataEntries = datas[event.target.id];
+        console.log("The value of dataentries is " + dataEntries);
+        // if the value is not found in the cache then fetch it.
+        if (dataEntries === undefined) {
+          console.log("Data Entries was false");
           console.log("The id is:" + event.target.id);
           fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
             .then(data => dataEntries = data).then(() => {
-              sessionStorage.setItem(event.target.id.toString(), JSON.stringify(dataEntries));
-              plotLine(dataEntries);
+              datas[event.target.id] = dataEntries;
+              const toGraph = plotLine(dataEntries);
+              maps[event.target.id] = toGraph;
+              toGraph.setMap(map);
             });
         }
         else {
-          // Unplot this line.
-          plotLine(dataEntries);
+          // Still plot the line, doesn't need to be asynchronous.
+          // TODO(morleyd): abstract this out into a function.
+          console.log("Dataentries was true");
+          const toGraph = plotLine(dataEntries);
+          maps[event.target.id] = toGraph
+          toGraph.setMap(map);
         }
       }
       else {
-        // Handle this behavior here.
+        // In this case the box has become unchecked. We want to remove this graph.
+        // We can only remove this box if it has been generated before and then can be removed appropriately.
+        const toRemove = maps[event.target.id];
+        if (toRemove)
+          toRemove.setMap(null);
       }
 
     });
@@ -233,7 +248,7 @@ function plotLine(dataEntries) {
   });
   flightPath.setMap(null);
   console.log("The value of map is " + map);
-  currentLineGraph.setMap(map);
+  return currentLineGraph;
 }
 
 // When finished drawing the box, instead of leaving the widget, create markers at the current lat and intersection with the line.
