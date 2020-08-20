@@ -3,11 +3,14 @@ const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 "use strict";
 let test;
 let map;
+let maps = {};
 let pose;
+let data;
 let id;
 let type;
 let currentLat;
 let currentLong;
+let flightPath;
 // Define bounding box around the different data sets to quickly determined whether they should be included in the calculation or not
 fetchData();
 function fetchData() {
@@ -18,8 +21,10 @@ function fetchData() {
   fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
     .then(data => pose = data)
+    .then(() => { return fetch('\data') })
+    .then(response => response.json())
+    .then(json => data = json)
     .then(() => {
-      console.log(pose);
       initMap();
     })
 }
@@ -40,7 +45,7 @@ function initMap() {
     zoom: 18
   });
 
-  let flightPath = new google.maps.Polyline({
+  flightPath = new google.maps.Polyline({
     path: poseCoordinates,
     geodesic: true,
     strokeColor: '#FF0000',
@@ -49,11 +54,7 @@ function initMap() {
   });
 
   flightPath.setMap(map);
-  const sideControlDiv = document.createElement("div");
-  SelectionPane(sideControlDiv);
-  console.log(sideControlDiv);
-  sideControlDiv.index = 1;
-  map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
+
 
 
   const centerControlDiv = document.createElement('div');
@@ -67,10 +68,17 @@ function initMap() {
     currentLat = latLng.lat();
     currentLong = latLng.lng();
   })
+  table = createSideTable(data);
+  console.log(table);
+  const sideControlDiv = document.createElement("div");
+  SelectionPane(sideControlDiv, table);
+  console.log(sideControlDiv);
+  sideControlDiv.index = 1;
+  map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
 
 }
 
-function SelectionPane(sideControlDiv) {
+function SelectionPane(sideControlDiv, innerContent) {
   // Set CSS for the selection pane border.
   const selectionUI = document.createElement('div');
   selectionUI.className = 'selectionUI';
@@ -80,7 +88,8 @@ function SelectionPane(sideControlDiv) {
   // Set CSS for the selectin pane interior.
   const selectionText = document.createElement('div');
   selectionText.className = 'selectionText';
-  selectionText.innerHTML = '<table id="pose-data"> <tr><th>RunID</th><th>DataType</th></tr><tr class="visible"><td>qKuu3BFO7R</td><td><a href="/2DVisual.html?id=qKuu3BFO7R&amp;dataType=pose">pose</a></td></tr></table>';
+  selectionText.appendChild(innerContent);
+  // Need to call a function to create a table with checkboxes here, likely write some generic function to do it with any JSON file possible. Also add checkbox as column and an eyeball icon with event listeners.
   selectionUI.appendChild(selectionText);
 }
 
@@ -103,6 +112,89 @@ function CenterControl(controlDiv) {
     window.location.href = "/home.html?id=" + id + "&dataType=" + type;
   });
 
+}
+
+function createSideTable(json) {
+  const table = document.createElement('table');
+  let headerRow = document.createElement('tr');
+  let columnOne = document.createElement("th");
+  columnOne.innerText = "RunID";
+  let columnTwo = document.createElement("th");
+  columnTwo.innerText = "Select";
+  headerRow.appendChild(columnOne);
+  headerRow.appendChild(columnTwo);
+  table.appendChild(headerRow);
+  let even = false;
+  for (const key in json) {
+    let currentRow = document.createElement('tr');
+    currentRow.className = "visible";
+    if (even) {
+      currentRow.className += " even";
+    }
+    let keyEntry = document.createElement('td');
+    keyEntry.innerText = key;
+    currentRow.appendChild(keyEntry);
+
+    let checkBoxEntry = document.createElement("td");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = key;
+    input.addEventListener("click", function (event) {
+      // Get the necessary content for this runId if not stored in the local cache.
+      console.log("Checkbox event");
+      const checkboxElement = event.target;
+      // First check the localStorage cache. Instead of checking local storage, could instead fetch from the dictionary instead.
+      let dataEntries = JSON.parse(sessionStorage.getItem(event.target.id));
+      console.log("The id is:" + event.target.id);
+      console.log("The event is" + event.target.toString());
+      console.log("The checkbox is " + this.checked);
+      if (this.checked) {
+        if (dataEntries === null) {
+          console.log("The id is:" + event.target.id);
+          fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
+            .then(data => dataEntries = data).then(() => {
+              sessionStorage.setItem(event.target.id.toString(), JSON.stringify(dataEntries));
+              plotLine(dataEntries);
+            });
+        }
+        else {
+          // Unplot this line.
+          plotLine(dataEntries);
+        }
+      }
+      else {
+        // Handle this behavior here.
+      }
+
+    });
+    checkBoxEntry.appendChild(input);
+    currentRow.appendChild(checkBoxEntry);
+    table.appendChild(currentRow);
+    console.log(currentRow);
+    even = !even;
+
+  }
+  return table;
+
+}
+
+function plotLine(dataEntries) {
+  let currentLine = [];
+  // now add the map with the selected color of the element
+  for (let i = 0; i < dataEntries.length; i++) {
+    currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
+  }
+  console.log(currentLine);
+  currentLineGraph = new google.maps.Polyline({
+    path: currentLine,
+    geodesic: true,
+    strokeColor: 'blue',
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  });
+  flightPath.setMap(null);
+  console.log("The value of map is " + map);
+  currentLineGraph.setMap(map);
 }
 
 // When finished drawing the box, instead of leaving the widget, create markers at the current lat and intersection with the line.
