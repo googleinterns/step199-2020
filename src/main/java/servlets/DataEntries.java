@@ -1,6 +1,8 @@
 package servlets;
 
+import data.Database;
 import data.DatabaseQuery;
+import data.GCSDatabase;
 import java.io.IOException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -30,9 +32,15 @@ public class DataEntries extends HttpServlet {
         numEntries = -1;
       }
     }
-    // Logic that goes here that calls two methods from the intermediate Database
-    // depending on what exactly
-    String json = DatabaseQuery.getJson(sharedObjects.dataInstance);
-    response.getWriter().println(json);
+    // get JSON from Database.
+    try {
+      Database database = new GCSDatabase(sharedObjects.databaseName);
+      String json = DatabaseQuery.getJson(database);
+      response.getWriter().println(json);
+    } catch (Exception e) {
+      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.out.println("Exception while initializing" + e.getMessage());
+      throw new RuntimeException(e.getMessage());
+    }
   }
 }

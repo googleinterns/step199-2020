@@ -1,6 +1,8 @@
 package servlets;
 
 import IO.DbWriter;
+import data.Database;
+import data.GCSDatabase;
 import encoder.Encoder;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,24 +27,29 @@ public class Upload extends HttpServlet {
     response.setContentType("text/html;");
     String runid = request.getParameter("runID");
     String dataType = "pose";
-    // Should take in database instance, along with data type.
-    DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, runid, dataType);
-    Part filePart = null;
 
-    filePart = request.getPart("file");
-    if (filePart == null) {
+    /*
+     * Make a database object and write file to it. redirect to index page.
+     */
+    try {
+      Database database = new GCSDatabase(sharedObjects.databaseName);
+      DbWriter dataWriter = new DbWriter(database, runid, dataType);
+      Part filePart = null;
+
+      filePart = request.getPart("file");
+      if (filePart == null) {
+        response.sendRedirect("/index.html");
+      }
+      // Get the input stream and encode it/store it in the given OutputStream.
+      InputStream uploadedFile = filePart.getInputStream();
+      // dataWriter.write();
+      Encoder.encode(uploadedFile, dataWriter.write());
+      System.out.println("finishes encoding");
       response.sendRedirect("/index.html");
+    } catch (Exception e) {
+      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.out.println("Exception while initializing" + e.getMessage());
+      throw new RuntimeException(e.getMessage());
     }
-    // Get the input stream and encode it/store it in the given OutputStream.
-    InputStream uploadedFile = filePart.getInputStream();
-    // dataWriter.write();
-    Encoder.encode(uploadedFile, dataWriter.write());
-    System.out.println("finishes encoding");
-    // We now make would make an instance of the reader object to get a stream from
-    // the database, then pass this value to the decoder, with a string as our ouput
-    // stream.
-    // As reader object is not yet defined instead get the file input stream
-    // directly
-    response.sendRedirect("/index.html");
   }
 }

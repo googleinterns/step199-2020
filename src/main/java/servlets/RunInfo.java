@@ -1,6 +1,8 @@
 package servlets;
 
 import IO.DbReader;
+import data.Database;
+import data.GCSDatabase;
 import decoder.Decoder;
 import java.io.IOException;
 import javax.servlet.annotation.WebServlet;
@@ -22,12 +24,18 @@ public class RunInfo extends HttpServlet {
     System.out.println("The run id is " + runId);
     String dataType = request.getParameter("dataType");
     System.out.println("The dataType is " + dataType);
-    DbReader dataReader = new DbReader(sharedObjects.dataInstance, runId, dataType);
-    Decoder.decode(dataReader.read(), response.getOutputStream());
-    // We now make would make an instance of the reader object to get a stream from
-    // the database, then pass this value to the decoder, with a string as our ouput
-    // stream.
-    // As reader object is not yet defined instead get the file input stream
-    // directly
+
+    try {
+      // We now make would make an instance of the reader object to get a stream from
+      // the database, then pass this value to the decoder, with a string as our ouput
+      // stream.
+      Database database = new GCSDatabase(sharedObjects.databaseName);
+      DbReader dataReader = new DbReader(database, runId, dataType);
+      Decoder.decode(dataReader.read(), response.getOutputStream());
+    } catch (Exception e) {
+      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.out.println("Exception while initializing" + e.getMessage());
+      throw new RuntimeException(e.getMessage());
+    }
   }
 }
