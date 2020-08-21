@@ -41,8 +41,6 @@ html, body {
   overflow-y: auto;
   /* IE and Edge. */
   scrollbar-width: none;
-  /* Firefox. */
-  overflow: auto;
   padding-right:5px;
 }
 
@@ -70,10 +68,10 @@ html, body {
   position: absolute;
 }
 
-#selectionText::-webkit-scrollbar {
+.selectionText::-webkit-scrollbar {
   display: none;
 }
 
-#selectionUI::-webkit-scrollbar {
+.selectionUI::-webkit-scrollbar {
   display: none;
 }

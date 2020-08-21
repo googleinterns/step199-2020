@@ -1,10 +1,18 @@
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 "use strict";
-let test;
 let map;
 let maps = {}; // Cache for map elements that have been loaded.
 let datas = {}; // Cache for data elements that have been loaded.
+let subsections ={} // An object in JSON format as follows:
+/*
+runId:{
+ color: colorValue in hex,
+ data: runData in (lat, lng)  Object
+}
+*/
+let selectedSubSections = [] // A list of all the subsections that have been selected and should thus be displayed.
+let boundingRectanges = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
 let pose;
 let data;
 let id;
@@ -117,13 +125,14 @@ function CenterControl(controlDiv) {
 
 function createSideTable(json) {
   const table = document.createElement('table');
-  let headerRow = document.createElement('tr');
-  let columnOne = document.createElement("th");
-  columnOne.innerText = "RunID";
-  let columnTwo = document.createElement("th");
-  columnTwo.innerText = "Select";
-  headerRow.appendChild(columnOne);
-  headerRow.appendChild(columnTwo);
+  const headerRow = document.createElement('tr');
+  const headerRowText = ["RunId", "Select", "Color", "View"];
+  for (header of headerRowText) {
+    let currentColumn = document.createElement("th");
+    currentColumn.innerText = header;
+    headerRow.appendChild(currentColumn);
+  }
+
   table.appendChild(headerRow);
   let even = false;
   for (const key in json) {
@@ -158,7 +167,8 @@ function createSideTable(json) {
           fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
             .then(data => dataEntries = data).then(() => {
               datas[event.target.id] = dataEntries;
-              const toGraph = plotLine(dataEntries);
+              const color = document.getElementById("color_" + event.target.id).value;
+              const toGraph = plotLine(dataEntries, color);
               maps[event.target.id] = toGraph;
               toGraph.setMap(map);
             });
@@ -167,7 +177,8 @@ function createSideTable(json) {
           // Still plot the line, doesn't need to be asynchronous.
           // TODO(morleyd): abstract this out into a function.
           console.log("Dataentries was true");
-          const toGraph = plotLine(dataEntries);
+          const color = document.getElementById("color_" + event.target.id).value;
+          const toGraph = plotLine(dataEntries, color);
           maps[event.target.id] = toGraph
           toGraph.setMap(map);
         }
@@ -181,8 +192,55 @@ function createSideTable(json) {
       }
 
     });
+    let colorPickerEntry = document.createElement("td");
+    const colorPicker = document.createElement("input");
+    colorPicker.type = "color";
+    colorPicker.id = "color_" + key;
+    // Initialize each value to a random starting color.
+    colorPicker.value = "#" + Math.floor(Math.random() * 16777215).toString(16);
+    // Change the map graph color whenever a different color is selected.
+    colorPicker.addEventListener("input", function (event) {
+      const colorId = event.target.id;
+      const runId = colorId.split("_")[1];
+      console.log("Parsed run id is " + runId);
+      const checkboxValue = document.getElementById(runId).checked;
+      // Only add the run if the checkbox is checked and we have selected a new color.
+      if (maps[runId] !== undefined && checkboxValue) {
+        maps[runId].setMap(null);
+        // Create plot with new color;
+        maps[runId] = plotLine(datas[runId], event.target.value);
+        maps[runId].setMap(map);
+      }
+    });
+    colorPickerEntry.appendChild(colorPicker)
+
+    let viewIconEntry = document.createElement("td");
+    const viewIcon = document.createElement("div");
+    viewIcon.id = "view_" + key;
+    viewIcon.innerHTML = "<i class='fa fa-eye'></i>";
+    viewIcon.addEventListener("click", function () {
+      const viewId = this.id;
+      const runId = viewId.split("_")[1];
+      console.log("run id is " + runId);
+      // Get latlng of the current element if there is one.
+      const checkbox = document.getElementById(runId).checked;
+      console.log("The checkbox value is " + checkbox);
+      if (checkbox && datas[runId] !== undefined && maps[runId] !== undefined) {
+        // Set the new center to be the first latlng value fetched from the data.
+        const mapObject = datas[runId][0];
+        map.setCenter({lat: mapObject.lat, lng: mapObject.lng});
+      }
+
+
+    });
+    viewIconEntry.appendChild(viewIcon);
+
+    // Create the color picker element to add to the table. Change color of the element (if it exists on its selection).
+
     checkBoxEntry.appendChild(input);
     currentRow.appendChild(checkBoxEntry);
+    currentRow.appendChild(colorPickerEntry);
+    currentRow.appendChild(viewIconEntry);
     table.appendChild(currentRow);
     console.log(currentRow);
     even = !even;
@@ -192,7 +250,7 @@ function createSideTable(json) {
 
 }
 
-function plotLine(dataEntries) {
+function plotLine(dataEntries, color) {
   let currentLine = [];
   // now add the map with the selected color of the element
   for (let i = 0; i < dataEntries.length; i++) {
@@ -202,7 +260,7 @@ function plotLine(dataEntries) {
   currentLineGraph = new google.maps.Polyline({
     path: currentLine,
     geodesic: true,
-    strokeColor: 'blue',
+    strokeColor: color,
     strokeOpacity: 1.0,
     strokeWeight: 2
   });
