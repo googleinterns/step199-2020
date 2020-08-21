@@ -187,7 +187,7 @@ function centerControl() {
  */
 function createSideTable(json) {
   const table = document.createElement('table');
-  const headerRowText = ['RunId', 'Select'];
+  const headerRowText = ['RunId', 'Select', 'Color', 'View'];
   const headerRow = generateHeaderRow(headerRowText, table);
   table.appendChild(headerRow);
   // Set the first entry class of the table to be noneven as 1 is odd.
@@ -203,18 +203,67 @@ function createSideTable(json) {
       }
       const keyEntry = generateKeyEntry(key);
       const checkBoxEntry = generateCheckBoxEntry(key);
+      /* This part won't compile and should be changed to new format in later
+      commmit.*/
+      const colorPickerEntry = document.createElement('td');
+      const colorPicker = document.createElement('input');
+      colorPicker.type = 'color';
+      colorPicker.id = 'color_' + key;
+      // Initialize each value to a random starting color.
+      colorPicker.value = '#' + Math.floor(
+          Math.random() * 16777215).toString(16);
+      // Change the map graph color whenever a different color is selected.
+      colorPicker.addEventListener('input', function(event) {
+        const colorId = event.target.id;
+        const runId = colorId.split('_')[1];
+        console.log('Parsed run id is ' + runId);
+        const checkboxValue = document.getElementById(runId).checked;
+        // Only add the run if the checkbox is checked and we have selected a
+        // new color.
+        if (maps[runId] !== undefined && checkboxValue) {
+          maps[runId].setMap(null);
+          // Create plot with new color;
+          maps[runId] = plotLine(datas[runId], event.target.value);
+          maps[runId].setMap(map);
+        }
+      });
+      colorPickerEntry.appendChild(colorPicker);
 
-      const columnElements = [keyEntry, checkBoxEntry];
+      const viewIconEntry = document.createElement('td');
+      const viewIcon = document.createElement('div');
+      viewIcon.id = 'view_' + key;
+      viewIcon.innerHTML = '<i class=\'fa fa-eye\'></i>';
+      viewIcon.addEventListener('click', function() {
+        const viewId = this.id;  // eslint-disable-line
+        const runId = viewId.split('_')[1];
+        console.log('run id is ' + runId);
+        // Get latlng of the current element if there is one.
+        const checkbox = document.getElementById(runId).checked;
+        console.log('The checkbox value is ' + checkbox);
+        if (checkbox && datas[runId] !== undefined &&
+          maps[runId] !== undefined) {
+          // Set the new center to be the first latlng value fetched from the
+          // data.
+          const mapObject = datas[runId][0];
+          map.setCenter({lat: mapObject.lat, lng: mapObject.lng});
+        }
+      });
+      viewIconEntry.appendChild(viewIcon);
+
+      // Create the color picker element to add to the table. Change color of
+      // the element (if it exists on its selection).
+      const columnElements = [keyEntry, checkBoxEntry, colorPickerEntry];
       updateRow(currentRow, columnElements);
       table.appendChild(currentRow);
+
+      table.appendChild(currentRow);
+      console.log(currentRow);
       // Toggle the value of even for every other row.
       even = !even;
     }
   }
   return table;
 }
-
-
 /**
  * Function to be called on a checkbox click events, attempts to grab data for
  * graphing from local cache. If the data can't be found it is fetched from the
@@ -316,7 +365,9 @@ function fetchAndGraphData(runId) {
  * @param {string} runId
  */
 function graphData(dataEntries, runId) {
-  const toGraph = plotLine(dataEntries);
+  const color = document.getElementById('color_' +
+    event.target.id).value;
+  const toGraph = plotLine(dataEntries, color);
   runs[runId].map = toGraph;
   toGraph.setMap(map);
 }
@@ -334,15 +385,16 @@ function updateRow(currentRow, columnElements) {
 /**
  * Generate a polyline from the given data points and return it.
  * @param {Array<Point>} dataEntries
+ * @param {string} color
  * @return {google.maps.Polyline}
  */
-function plotLine(dataEntries) {
+function plotLine(dataEntries, color) {
   const currentLine = [];
   for (point of dataEntries) {
     currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
-  currentLineGraph = getPolyLine(currentLine, 'blue', 1.0, 2);
+  currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
   initialPoseData.setMap(null);
   return currentLineGraph;
 }
@@ -414,12 +466,7 @@ function placeRectangleEnd() {
   if (infoWindow !== undefined) {
     infoWindow.setMap(null);
   }
-  // Clear other paths.
-  // line
-  // minLatPoint
-  // lat , lng
-  // minLngPoint
-  // lat, lng
+  // Clear other paths. line minLatPoint lat , lng minLngPoint lat, lng
   const subSectionData = computeSubSection(currentRun.data,
       currentLat, priorLat, currentLng, priorLng);
   // Choose a subSectionNumber, implement differently in future pr.
@@ -435,8 +482,7 @@ function placeRectangleEnd() {
     subPath.setMap(null);
   }
   subPath = getPolyLine(subLine, 'blue', 1.0, 2);
-  // Setup event listener to show option for 3D window when polyline is
-  // clicked.
+  // Setup event listener to show option for 3D window when polyline is clicked.
   google.maps.event.addListener(subPath, 'click', linkTo3D);
   subPath.setMap(map);
   markerBottom = genMarker(subSectionData.minLatPoint.lat,
