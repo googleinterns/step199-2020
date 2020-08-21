@@ -246,6 +246,14 @@ function createSideTable(json) {
           // data.
           const mapObject = datas[runId][0];
           map.setCenter({lat: mapObject.lat, lng: mapObject.lng});
+        } else {
+          // In this case the box has become unchecked. We want to remove this
+          // graph. We can only remove this box if it has been generated before
+          // and then can be removed appropriately.
+          const toRemove = maps[event.target.id];
+          if (toRemove) {
+            toRemove.setMap(null);
+          }
         }
       });
       viewIconEntry.appendChild(viewIcon);
@@ -635,4 +643,15 @@ function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
     return true;
   }
   return false;
+}
+/**
+ * For each parameter, set its current map to be our base map.
+ * @param {Array<google.map.InfoWindow | google.map.Marker |
+ * google.map.Polyline>} elems
+ */
+
+function showAll(elems) {  // eslint-disable-line
+  elems.forEach(function(current) {
+    current.setMap(map);
+  });
 }
