@@ -2,8 +2,21 @@ const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 "use strict";
 let map;
-let maps = {}; // Cache for map elements that have been loaded.
-let datas = {}; // Cache for data elements that have been loaded.
+// Maps and data to be to one variable associated with the runId
+let runs = {};
+/*
+runId:{
+  map
+  data
+  subsection
+  checkBox Element
+  colorElement
+}
+*/ 
+
+
+
+
 let subsections = {} // An object in JSON format as follows:
 /*
 runId:{
@@ -12,7 +25,7 @@ runId:{
 }
 */
 let selectedSubSections = [] // A list of all the subsections that have been selected and should thus be displayed.
-let boundingRectanges = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
+let boundingRectangles = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
 let pose;
 let data;
 let id;
@@ -20,7 +33,7 @@ let type;
 let currentLat;
 let currentLng;
 let flightPath;
-// Define bounding box around the different data sets to quickly determined whether they should be included in the calculation or not
+
 fetchData();
 function fetchData() {
   const queryString = window.location.search;
@@ -43,45 +56,37 @@ function initMap() {
   if (pose === undefined)
     return;
 
-  console.log("initMap called");
   let poseCoordinates = [];
   for (let i = 0; i < pose.length; i++) {
     poseCoordinates.push({ lat: pose[i].lat, lng: pose[i].lng });
   }
-
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: pose[0].lat, lng: pose[0].lng },
     zoom: 18
   });
-
-  flightPath = new google.maps.Polyline({
-    path: poseCoordinates,
-    geodesic: true,
-    strokeColor: '#FF0000',
-    strokeOpacity: 1.0,
-    strokeWeight: 2
-  });
-
+  flightPath = getPolyLine(poseCoordinates, '#FF0000', 1.0, 2);
   flightPath.setMap(map);
 
 
-
+  // Generate the central map button.
   const centerControlDiv = document.createElement('div');
   CenterControl(centerControlDiv);
   centerControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
-
-  // Add event listeners for selection box
-  map.addListener("mousemove", function (event) {
-    const latLng = event.latLng;
-    currentLat = latLng.lat();
-    currentLng = latLng.lng();
-  })
+  // Generate the side selection pane.
   table = createSideTable(data);
   const sideControlDiv = document.createElement("div");
   SelectionPane(sideControlDiv, table);
   sideControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
+
+  // Add event listener to globally update lat and lng variables.
+  map.addListener("mousemove", function (event) {
+    const latLng = event.latLng;
+    currentLat = latLng.lat();
+    currentLng = latLng.lng();
+  });
+
 
 }
 
@@ -134,6 +139,8 @@ function createSideTable(json) {
   table.appendChild(headerRow);
   let even = false;
   for (const key in json) {
+    // Initialize all runs in this loop.
+    runs[key] = {};
     let currentRow = document.createElement('tr');
     currentRow.className = "visible";
     if (even) {
@@ -144,10 +151,10 @@ function createSideTable(json) {
     currentRow.appendChild(keyEntry);
 
     let checkBoxEntry = document.createElement("td");
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.id = key;
-    input.addEventListener("click", function (event) {
+    const checkBox = document.createElement("input");
+    checkBox.type = "checkbox";
+    checkBox.id = key;
+    checkBox.addEventListener("click", function (event) {
       // Get the necessary content for this runId if not stored in the local cache.
       console.log("Checkbox event");
       const checkboxElement = event.target;
@@ -156,17 +163,17 @@ function createSideTable(json) {
       console.log("The checkbox is " + this.checked);
       if (this.checked) {
         // First check the cache for this value.
-        dataEntries = datas[event.target.id];
+        dataEntries = runs[event.target.id].data;
         // if the value is not found in the cache then fetch it.
         if (dataEntries === undefined) {
           console.log("Data Entries was false");
           console.log("The id is:" + event.target.id);
           fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
             .then(data => dataEntries = data).then(() => {
-              datas[event.target.id] = dataEntries;
-              const color = document.getElementById("color_" + event.target.id).value;
+              const color = runs[event.target.id].color.value;
               const toGraph = plotLine(dataEntries, color);
-              maps[event.target.id] = toGraph;
+              runs[event.target.id].data = dataEntries;
+              runs[event.target.id].map = toGraph;
               toGraph.setMap(map);
             });
         }
@@ -174,17 +181,17 @@ function createSideTable(json) {
           // Still plot the line, doesn't need to be asynchronous.
           // TODO(morleyd): abstract this out into a function.
           console.log("Dataentries was true");
-          const color = document.getElementById("color_" + event.target.id).value;
+          const color = runs[runId].color.value;
           const toGraph = plotLine(dataEntries, color);
-          maps[event.target.id] = toGraph
+          runs[event.target.id].map = toGraph
           toGraph.setMap(map);
         }
       }
       else {
         // In this case the box has become unchecked. We want to remove this graph.
         // We can only remove this box if it has been generated before and then can be removed appropriately.
-        const toRemove = maps[event.target.id];
-        if (toRemove)
+        const toRemove = runs[event.target.id].map;
+        if (toRemove !== undefined)
           toRemove.setMap(null);
       }
 
@@ -200,13 +207,13 @@ function createSideTable(json) {
       const colorId = event.target.id;
       const runId = colorId.split("_")[1];
       console.log("Parsed run id is " + runId);
-      const checkboxValue = document.getElementById(runId).checked;
+      const checkboxValue = runs[runId].checkBox.checked;
       // Only add the run if the checkbox is checked and we have selected a new color.
-      if (maps[runId] !== undefined && checkboxValue) {
-        maps[runId].setMap(null);
+      if (runs[runId].map !== undefined && checkboxValue) {
+        runs[runId].map.setMap(null);
         // Create plot with new color;
-        maps[runId] = plotLine(datas[runId], event.target.value);
-        maps[runId].setMap(map);
+        runs[runId].map = plotLine(runs[runId].data, event.target.value);
+        runs[runId].map.setMap(map);
       }
     });
     colorPickerEntry.appendChild(colorPicker)
@@ -220,27 +227,28 @@ function createSideTable(json) {
       const runId = viewId.split("_")[1];
       console.log("run id is " + runId);
       // Get latlng of the current element if there is one.
-      const checkbox = document.getElementById(runId).checked;
-      console.log("The checkbox value is " + checkbox);
-      if (checkbox && datas[runId] !== undefined && maps[runId] !== undefined) {
+      const isChecked = runs[runId].checkBox.checked;
+      console.log("The checkbox value is " + isChecked);
+      if (isChecked && runs[runId].data !== undefined && runs[runId].map !== undefined) {
         // Set the new center to be the first latlng value fetched from the data.
-        const mapObject = datas[runId][0];
+        const mapObject = runs[runId].data[0];
         map.setCenter({ lat: mapObject.lat, lng: mapObject.lng });
       }
 
 
     });
+
+    // Also save all these values to the object storing information on runId.
+    runs[key].color = colorPicker;
+    runs[key].checkBox = checkBox;
     viewIconEntry.appendChild(viewIcon);
-
     // Create the color picker element to add to the table. Change color of the element (if it exists on its selection).
-
-    checkBoxEntry.appendChild(input);
+    checkBoxEntry.appendChild(checkBox);
     currentRow.appendChild(checkBoxEntry);
     currentRow.appendChild(colorPickerEntry);
     currentRow.appendChild(viewIconEntry);
     table.appendChild(currentRow);
     even = !even;
-
   }
   return table;
 
@@ -352,6 +360,8 @@ function placeRectangleStart() {
 }
 function placeRectangleEnd() {
   $('.widget').remove();
+
+  // Iterate over all data values here, need to find a way to check the checkbox value, should likely store this in an object somewhere to prevent excess DOM queries.
   let { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair } = computeSubSection(pose, currentLat, priorLat, currentLng, priorLng);
   // Clear prior paths, only display newly selected ones.
   clearSelectedPaths([markerBottom, markerTop, infoWindow, subPath]);
