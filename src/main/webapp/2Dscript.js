@@ -4,6 +4,10 @@
 let map;
 // Store all information for every run (acts as cache), of @type{Run}
 const runs = {};
+/*
+runId:{map data subsection checkBox Element colorElement
+}
+*/
 // Stores JSON response giving allRuns with their associated runIds.
 let allRuns;
 
@@ -202,7 +206,7 @@ function createSideTable(json) {
         currentRow.className += ' even';
       }
       const keyEntry = generateKeyEntry(key);
-      const checkBoxEntry = generateCheckBoxEntry(key);
+      const {checkBoxEntry, checkBox} = generateCheckBoxEntry(key);
       /* This part won't compile and should be changed to new format in later
       commmit.*/
       const colorPickerEntry = document.createElement('td');
@@ -217,14 +221,14 @@ function createSideTable(json) {
         const colorId = event.target.id;
         const runId = colorId.split('_')[1];
         console.log('Parsed run id is ' + runId);
-        const checkboxValue = document.getElementById(runId).checked;
+        const checkboxValue = runs[runId].checkBox.checked;
         // Only add the run if the checkbox is checked and we have selected a
         // new color.
-        if (maps[runId] !== undefined && checkboxValue) {
-          maps[runId].setMap(null);
+        if (runs[runId].map !== undefined && checkboxValue) {
+          runs[runId].map.setMap(null);
           // Create plot with new color;
-          maps[runId] = plotLine(datas[runId], event.target.value);
-          maps[runId].setMap(map);
+          runs[runId].map = plotLine(datas[runId], event.target.value);
+          runs[runId].map.setMap(map);
         }
       });
       colorPickerEntry.appendChild(colorPicker);
@@ -237,20 +241,19 @@ function createSideTable(json) {
         const viewId = this.id;  // eslint-disable-line
         const runId = viewId.split('_')[1];
         console.log('run id is ' + runId);
-        // Get latlng of the current element if there is one.
-        const checkbox = document.getElementById(runId).checked;
-        console.log('The checkbox value is ' + checkbox);
-        if (checkbox && datas[runId] !== undefined &&
-          maps[runId] !== undefined) {
+        const isChecked = runs[runId].checkBox.checked;
+        console.log('The checkbox value is ' + isChecked);
+        if (isChecked && runs[runId].data !== undefined &&
+          runs[runId].map !== undefined) {
           // Set the new center to be the first latlng value fetched from the
           // data.
-          const mapObject = datas[runId][0];
-          map.setCenter({lat: mapObject.lat, lng: mapObject.lng});
+          const mapData = runs[runId].data[0];
+          map.setCenter({lat: mapData.lat, lng: mapData.lng});
         } else {
           // In this case the box has become unchecked. We want to remove this
           // graph. We can only remove this box if it has been generated before
           // and then can be removed appropriately.
-          const toRemove = maps[event.target.id];
+          const toRemove = runs[event.target.id].map;
           if (toRemove) {
             toRemove.setMap(null);
           }
@@ -260,6 +263,8 @@ function createSideTable(json) {
 
       // Create the color picker element to add to the table. Change color of
       // the element (if it exists on its selection).
+      runs[key].color = colorPicker;
+      runs[key].checkBox = checkBox;
       const columnElements = [keyEntry, checkBoxEntry, colorPickerEntry];
       updateRow(currentRow, columnElements);
       table.appendChild(currentRow);
@@ -340,7 +345,7 @@ function generateKeyEntry(runId) {
  * Generate a checkbox with appropriate event listener for insertion into a
  * table.
  * @param {string} runId
- * @return {HTMLElement}
+ * @return {Array<HTMLElement, HTMLElement>}
  */
 function generateCheckBoxEntry(runId) {
   const checkBoxEntry = document.createElement('td');
@@ -349,7 +354,7 @@ function generateCheckBoxEntry(runId) {
   input.id = runId;
   input.addEventListener('click', showPoseData);
   checkBoxEntry.appendChild(input);
-  return checkBoxEntry;
+  return {checkBoxEntry, input};
 }
 
 /**
@@ -373,8 +378,7 @@ function fetchAndGraphData(runId) {
  * @param {string} runId
  */
 function graphData(dataEntries, runId) {
-  const color = document.getElementById('color_' +
-    event.target.id).value;
+  const color = runs[runId].color.value;
   const toGraph = plotLine(dataEntries, color);
   runs[runId].map = toGraph;
   toGraph.setMap(map);
