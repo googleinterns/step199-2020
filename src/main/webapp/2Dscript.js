@@ -4,7 +4,7 @@ const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 let map;
 let maps = {}; // Cache for map elements that have been loaded.
 let datas = {}; // Cache for data elements that have been loaded.
-let subsections ={} // An object in JSON format as follows:
+let subsections = {} // An object in JSON format as follows:
 /*
 runId:{
  color: colorValue in hex,
@@ -18,7 +18,7 @@ let data;
 let id;
 let type;
 let currentLat;
-let currentLong;
+let currentLng;
 let flightPath;
 // Define bounding box around the different data sets to quickly determined whether they should be included in the calculation or not
 fetchData();
@@ -75,13 +75,11 @@ function initMap() {
   map.addListener("mousemove", function (event) {
     const latLng = event.latLng;
     currentLat = latLng.lat();
-    currentLong = latLng.lng();
+    currentLng = latLng.lng();
   })
   table = createSideTable(data);
-  console.log(table);
   const sideControlDiv = document.createElement("div");
   SelectionPane(sideControlDiv, table);
-  console.log(sideControlDiv);
   sideControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
 
@@ -159,7 +157,6 @@ function createSideTable(json) {
       if (this.checked) {
         // First check the cache for this value.
         dataEntries = datas[event.target.id];
-        console.log("The value of dataentries is " + dataEntries);
         // if the value is not found in the cache then fetch it.
         if (dataEntries === undefined) {
           console.log("Data Entries was false");
@@ -228,7 +225,7 @@ function createSideTable(json) {
       if (checkbox && datas[runId] !== undefined && maps[runId] !== undefined) {
         // Set the new center to be the first latlng value fetched from the data.
         const mapObject = datas[runId][0];
-        map.setCenter({lat: mapObject.lat, lng: mapObject.lng});
+        map.setCenter({ lat: mapObject.lat, lng: mapObject.lng });
       }
 
 
@@ -242,7 +239,6 @@ function createSideTable(json) {
     currentRow.appendChild(colorPickerEntry);
     currentRow.appendChild(viewIconEntry);
     table.appendChild(currentRow);
-    console.log(currentRow);
     even = !even;
 
   }
@@ -256,169 +252,166 @@ function plotLine(dataEntries, color) {
   for (let i = 0; i < dataEntries.length; i++) {
     currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
   }
-  console.log(currentLine);
-  currentLineGraph = new google.maps.Polyline({
-    path: currentLine,
+  const currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
+  flightPath.setMap(null);
+  return currentLineGraph;
+}
+
+function getPolyLine(linePoints, color, opacity, weight) {
+  const polyLine = new google.maps.Polyline({
+    path: linePoints,
     geodesic: true,
     strokeColor: color,
-    strokeOpacity: 1.0,
-    strokeWeight: 2
+    strokeOpacity: opacity,
+    strokeWeight: weight
   });
-  flightPath.setMap(null);
-  console.log("The value of map is " + map);
-  return currentLineGraph
+  return polyLine;
 }
+
+let widget;
+let x;
+let y;
+let finX;
+let finY;
+let priorLat;
+let priorLng;
+let isMouseDown = false;
+let markerBottom;
+let markerTop;
+let subPath;
+let infoWindow;
+const LEFTCLICK = 1;
+
 
 // When finished drawing the box, instead of leaving the widget, create markers at the current lat and intersection with the line.
 $(function () {
-  let widget;
-  let x;
-  let y;
-  let finX;
-  let finY;
-  let priorLat;
-  let priorLng;
-  let ismousedown = false;
-  let markerBottom;
-  let markerTop;
-  let subPath;
-  let infoWindow;
-
   $(document).on({
     mousedown: function (event) {
       console.log("event occurred");
+      // Inital selection to draw the box.
       if (event.ctrlKey) {
-        if (!ismousedown) {
+        if (!isMouseDown) {
           console.log("mousedown triggered");
-          x = event.pageX;
-          y = event.pageY;
-          priorLat = currentLat;
-          priorLng = currentLong;
-
-          console.log("Remove widget");
-          $('.widget').remove();
-          $('body').append('<div class="widget" style="top:' + y + 'px; left: ' + x + 'px;"></div>');
-          widget = $('.widget').last();
-          ismousedown = true;
+          placeRectangleStart();
         }
-        // Toggle the mouseDown state so same click used to set final.
       }
       else {
-        // On the left click action.
-        if (event.which === 1) {
-          if (ismousedown) {
-            $('.widget').remove();
-            if (infoWindow !== undefined)
-              infoWindow.setMap(null);
-            console.log("Mousedown set to false");
-            ismousedown = false;
-            // Here check the intersection by looping over the current different bounding rectangles and determining if they intersect.
-            // Assume that the selection window doesn't contain any multiple parallel lines for simplicity (only chooose to display top if this is the case).
-            const minLat = Math.min(currentLat, priorLat);
-            const maxLat = Math.max(currentLat, priorLat);
-            const minLng = Math.min(currentLong, priorLng);
-            const maxLng = Math.max(currentLong, priorLng);
-            const poseLength = pose.length;
-            // Lat can be from [-90,90]. 
-            let discoveredMinLat = 91;
-            let discoveredMinLatPair = 181;
-            // Lng can be from [-180,180].
-
-            let discoveredMaxLng = -181;
-            let discoveredMaxLngPair = -91;
-            subLine = [];
-            for (let i = 0; i < poseLength; i++) {
-              const loopLat = pose[i].lat;
-              const loopLng = pose[i].lng;
-              if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
-                // While iterating save the max and min lat, same for the lng.
-                if (discoveredMinLat > loopLat) {
-                  discoveredMinLatPair = loopLng;
-                  discoveredMinLat = loopLat;
-                }
-                if (discoveredMaxLng < loopLng) {
-                  discoveredMaxLngPair = loopLat;
-                  discoveredMaxLng = loopLng;
-                }
-                subLine.push(pose[i]);
-              }
-            }
-
-            // Clear prior markers/path if they exist.
-            if (markerBottom !== undefined) {
-              markerBottom.setMap(null);
-            }
-            if (markerTop !== undefined) {
-              markerTop.setMap(null);
-            }
-            if (subPath !== undefined) {
-              subPath.setMap(null);
-            }
-            const subSectionNumber = 1;
-            //   const subLine2D = subLine.filter((inputArray) => ();
-            // console.log(subLine2D);
-            // Can leave in extra parameters and that has no effect on the graphing.
-            subPath = new google.maps.Polyline({
-              path: subLine,
-              geodesic: true,
-              strokeColor: 'blue',
-              strokeOpacity: 1.0,
-              strokeWeight: 2
-            });
-            // Setup event listener to show option for 3D window when polyline is clicked.
-            google.maps.event.addListener(subPath, 'click', function (event) {
-              const latLng = event.latLng;
-              console.log("Polyline clicked at lat: " + latLng.lat() + " lng: " + latLng.lng());
-              infoWindow = new google.maps.InfoWindow({
-                content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber + "&stored=true" + "> View in 3D </a>",
-                position: latLng
-              });
-              infoWindow.setMap(map);
-            }
-            );
-
-            subPath.setMap(map);
-
-            markerBottom = new google.maps.Marker({
-              position: { lat: discoveredMinLat, lng: discoveredMinLatPair },
-              title: "Lat: " + discoveredMinLat + " Lng: " + discoveredMinLatPair
-            });
-            markerTop = new google.maps.Marker({
-              position: { lat: discoveredMaxLngPair, lng: discoveredMaxLng },
-              title: "Lat: " + discoveredMaxLngPair + " Lng: " + discoveredMaxLng
-            });
-            // At this point iterate through all the values to contruct a new line with the appropriate markers.
-            markerBottom.setMap(map);
-            markerTop.setMap(map);
-            // Constant to account for possibility of multiple subsections.
-
-            sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
-
+        // Place the box.
+        if (event.which === LEFTCLICK) {
+          if (isMouseDown) {
+            placeRectangleEnd();
           }
         }
       }
     },
-    mousemove: function (event) {
-      if (ismousedown === true) {
-        console.log("Set width triggered");
-        finX = event.pageX;
-        finY = event.pageY;
-        widget.width(finX - x);
-        widget.height(finY - y);
-        widget.css({
-          'width': (finX - x) + '!important',
-          'height': (finY - y) + '!important',
-          'display': 'block',
-          'border': '2px dashed #ccc'
-        });
-      }
-    }
+    mousemove: genChangingBox
   })
 });
 
+function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
+  const minLat = Math.min(currentLat, priorLat);
+  const maxLat = Math.max(currentLat, priorLat);
+  const minLng = Math.min(currentLng, priorLng);
+  const maxLng = Math.max(currentLng, priorLng);
+  const poseLength = pose.length;
+  // Lat can be from [-90,90]. 
+  let discoveredMinLat = 91;
+  let discoveredMinLatPair = 181;
+  // Lng can be from [-180,180].
+  let discoveredMaxLng = -181;
+  let discoveredMaxLngPair = -91;
+  subLine = [];
+  for (let i = 0; i < poseLength; i++) {
+    const loopLat = pose[i].lat;
+    const loopLng = pose[i].lng;
+    if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
+      // While iterating save the max and min lat, same for the lng.
+      if (discoveredMinLat > loopLat) {
+        discoveredMinLatPair = loopLng;
+        discoveredMinLat = loopLat;
+      }
+      if (discoveredMaxLng < loopLng) {
+        discoveredMaxLngPair = loopLat;
+        discoveredMaxLng = loopLng;
+      }
+      subLine.push(pose[i]);
+    }
+  }
+
+  return { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair };
+}
+
+function placeRectangleStart() {
+  x = event.pageX;
+  y = event.pageY;
+  priorLat = currentLat;
+  priorLng = currentLng;
+  $('body').append('<div class="widget" style="top:' + y + 'px; left: ' + x + 'px;"></div>');
+  widget = $('.widget').last();
+  isMouseDown = true;
+}
+function placeRectangleEnd() {
+  $('.widget').remove();
+  let { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair } = computeSubSection(pose, currentLat, priorLat, currentLng, priorLng);
+  // Clear prior paths, only display newly selected ones.
+  clearSelectedPaths([markerBottom, markerTop, infoWindow, subPath]);
+  const subSectionNumber = 1;
+  subPath = getPolyLine(subLine, "blue", 1.0, 2);
+  // Setup event listener to show option for 3D window when polyline is clicked.
+  google.maps.event.addListener(subPath, 'click', linkTo3D);
+  markerBottom = genMarker(discoveredMinLat, discoveredMinLatPair);
+  markerTop = genMarker(discoveredMaxLngPair, discoveredMaxLng);
+  // Show the created elements.
+  showAll([subPath, markerBottom, markerTop]);
+  // Constant to account for possibility of multiple subsections.
+  sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
+  isMouseDown = false;
+}
+function genChangingBox(event) {
+  if (isMouseDown) {
+    console.log("Set width triggered");
+    finX = event.pageX;
+    finY = event.pageY;
+    widget.width(finX - x);
+    widget.height(finY - y);
+    widget.css({
+      'width': (finX - x) + '!important',
+      'height': (finY - y) + '!important',
+      'display': 'block',
+      'border': '2px dashed #ccc'
+    });
+  }
+}
+function genMarker(latitude, longitude) {
+  const marker = new google.maps.Marker({
+    position: { lat: latitude, lng: longitude },
+    title: "Lat: " + latitude + " Lng: " + longitude
+  });
+  return marker;
+}
+function clearSelectedPaths(pathArray) {
+  // Clear prior markers/path if they exist.
+  for (val of pathArray) {
+    if (val !== undefined) {
+      val.setMap(null);
+    }
+  }
+}
 function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
   if ((valLat >= minLat && valLat <= maxLat) && (valLng >= minLng && valLng <= maxLng)) {
     return true;
   }
   return false;
+}
+function linkTo3D(event) {
+  const latLng = event.latLng;
+  infoWindow = new google.maps.InfoWindow({
+    content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber + "&stored=true" + "> View in 3D </a>",
+    position: latLng
+  });
+  infoWindow.setMap(map);
+}
+
+function showAll(elems) {
+  elems.forEach(function (current) { current.setMap(map) });
 }
