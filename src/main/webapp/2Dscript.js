@@ -1,15 +1,14 @@
 // Gobal variables.
 let map;
-let maps = {}; // Cache for map elements that have been loaded.
-let datas = {}; // Cache for data elements that have been loaded.
+const mapCache = {};
+const dataCache = {};
 let pose;
 let data;
 let id;
 let type;
 let currentLat;
 let currentLong;
-// Define bounding box around the different data sets to quickly determined
-// whether they should be included in the calculation or not
+let flightPath;
 
 /**
  * A Point object with a lat and lng.
@@ -17,8 +16,12 @@ let currentLong;
  * @property {number} lat The lat of the point.
  * @property {number} lng The lng of the point.
  */
-let flightPath;
-// Define bounding box around the different data sets to quickly determined whether they should be included in the calculation or not
+/**
+ * A Types object which contains the different possible run types.
+ * @typedef {Array<string>} Types
+ */
+
+// First function called, code execution starts here.
 fetchData();
 /**
  * Fetchs pose data from the RunInfo servlet, it is an asynchronous call
@@ -30,14 +33,16 @@ function fetchData() {
   id = urlParams.get('id');
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
-    .then(response => response.json())
-    .then(data => pose = data)
-    .then(() => { return fetch('\data') })
-    .then(response => response.json())
-    .then(json => data = json)
-    .then(() => {
-      initMap();
-    })
+      .then((response) => response.json())
+      .then((data) => pose = data)
+      .then(() => {
+        return fetch('\data');
+      })
+      .then((response) => response.json())
+      .then((json) => data = json)
+      .then(() => {
+        initMap();
+      });
 }
 
 /**
@@ -73,7 +78,6 @@ function initMap() {
   flightPath.setMap(map);
 
 
-
   const centerControlDiv = document.createElement('div');
   centerControl(centerControlDiv);
   centerControlDiv.index = 1;
@@ -84,11 +88,11 @@ function initMap() {
     const latLng = event.latLng;
     currentLat = latLng.lat();
     currentLong = latLng.lng();
-  })
+  });
   table = createSideTable(data);
   console.log(table);
-  const sideControlDiv = document.createElement("div");
-  SelectionPane(sideControlDiv, table);
+  const sideControlDiv = document.createElement('div');
+  selectionPane(sideControlDiv, table);
   console.log(sideControlDiv);
   sideControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
@@ -113,28 +117,26 @@ function formatPoseData() {
  * @param {HTMLElement} sideControlDiv
  * @param {string} innerContent
  */
-
-function SelectionPane(sideControlDiv, innerContent) {
-
+function selectionPane(sideControlDiv, innerContent) {
   // Set CSS for the selection pane border.
   const selectionUI = document.createElement('div');
   selectionUI.className = 'selectionUI';
   selectionUI.title = 'Select the pose runs to view/render in 3D.';
   sideControlDiv.appendChild(selectionUI);
 
-  // Set CSS for the selectin pane interior.
+  // Set CSS for the selection pane interior.
   const selectionText = document.createElement('div');
   selectionText.className = 'selectionText';
+  // Add table to the selection pane.
   selectionText.appendChild(innerContent);
-  // Need to call a function to create a table with checkboxes here, likely write some generic function to do it with any JSON file possible. Also add checkbox as column and an eyeball icon with event listeners.
   selectionUI.appendChild(selectionText);
 }
 
 /**
  * Creates the html elements inside of the button, along with adding a link to
  * the 3DVisual.html page.
- * @param {HTMLElement} controlDiv
- * This is the main/parent element of the button.
+ * @param {HTMLElement} controlDiv This is the main/parent element of the
+ * button.
  */
 function centerControl(controlDiv) {
   // Set CSS for the control border.
@@ -155,88 +157,104 @@ function centerControl(controlDiv) {
   });
 }
 
+/**
+ * Create the table used in the sidebar, used to select and modify multiple data
+ * runs.
+ * @param {Object.<string, Types>} json
+ * @return {HTMLElement}
+ */
 function createSideTable(json) {
   const table = document.createElement('table');
-  let headerRow = document.createElement('tr');
-  let columnOne = document.createElement("th");
-  columnOne.innerText = "RunID";
-  let columnTwo = document.createElement("th");
-  columnTwo.innerText = "Select";
+  const headerRow = document.createElement('tr');
+  const columnOne = document.createElement('th');
+  columnOne.innerText = 'RunID';
+  const columnTwo = document.createElement('th');
+  columnTwo.innerText = 'Select';
   headerRow.appendChild(columnOne);
   headerRow.appendChild(columnTwo);
   table.appendChild(headerRow);
   let even = false;
   for (const key in json) {
-    let currentRow = document.createElement('tr');
-    currentRow.className = "visible";
-    if (even) {
-      currentRow.className += " even";
+    if (Object.prototype.hasOwnProperty.call(json, key)) {
+      const currentRow = document.createElement('tr');
+      currentRow.className = 'visible';
+      if (even) {
+        currentRow.className += ' even';
+      }
+      const keyEntry = document.createElement('td');
+      keyEntry.innerText = key;
+      currentRow.appendChild(keyEntry);
+
+      const checkBoxEntry = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = key;
+      input.addEventListener('click', function(event) {
+        // Get the necessary content for this runId if not stored in the local
+        // cache.
+        console.log('Checkbox event');
+        const checkBoxElement = event.target;
+        console.log('The id is:' + checkBoxElement.id);
+        console.log('The event is' + checkBoxElement.toString());
+        // TODO(morleyd): Understand complaints about 'this' usage. I
+        // am somewhat confused about when its appropriate to use 'this' in
+        // Javascript vs in this case, event. The behavior often differs
+        // from what I would expect, meaning my heuristic is likely wrong.
+        console.log('The checkbox is ' + this.checked); // eslint-disable-line
+        if (this.checked) { // eslint-disable-line
+          // First check the cache for this value.
+          dataEntries = dataCache[checkBoxElement.id];
+          console.log('The value of dataentries is ' + dataEntries);
+          // if the value is not found in the cache then fetch it.
+          if (dataEntries === undefined) {
+            console.log('Data Entries was false');
+            console.log('The id is:' + checkBoxElement.id);
+            fetch('/getrun?id=' + checkBoxElement.id + '&dataType=pose')
+                .then((response) => response.json())
+                .then((data) => dataEntries = data).then(() => {
+                  dataCache[checkBoxElement.id] = dataEntries;
+                  const toGraph = plotLine(dataEntries);
+                  mapCache[checkBoxElement.id] = toGraph;
+                  toGraph.setMap(map);
+                });
+          } else {
+            // Still plot the line, doesn't need to be asynchronous.
+            // TODO(morleyd): Abstract this out into a function.
+            console.log('Dataentries was true');
+            const toGraph = plotLine(dataEntries);
+            mapCache[checkBoxElement.id] = toGraph;
+            toGraph.setMap(map);
+          }
+        } else {
+          // In this case the box has become unchecked. We want to remove this
+          // graph. We can only remove this box if it has been generated before
+          // and then can be removed appropriately.
+          const toRemove = mapCache[checkBoxElement.id];
+          if (toRemove) {
+            toRemove.setMap(null);
+          }
+        }
+      });
+      checkBoxEntry.appendChild(input);
+      currentRow.appendChild(checkBoxEntry);
+      table.appendChild(currentRow);
+      console.log(currentRow);
+      even = !even;
     }
-    let keyEntry = document.createElement('td');
-    keyEntry.innerText = key;
-    currentRow.appendChild(keyEntry);
-
-    let checkBoxEntry = document.createElement("td");
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.id = key;
-    input.addEventListener("click", function (event) {
-      // Get the necessary content for this runId if not stored in the local cache.
-      console.log("Checkbox event");
-      const checkboxElement = event.target;
-      console.log("The id is:" + event.target.id);
-      console.log("The event is" + event.target.toString());
-      console.log("The checkbox is " + this.checked);
-      if (this.checked) {
-        // First check the cache for this value.
-        dataEntries = datas[event.target.id];
-        console.log("The value of dataentries is " + dataEntries);
-        // if the value is not found in the cache then fetch it.
-        if (dataEntries === undefined) {
-          console.log("Data Entries was false");
-          console.log("The id is:" + event.target.id);
-          fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
-            .then(data => dataEntries = data).then(() => {
-              datas[event.target.id] = dataEntries;
-              const toGraph = plotLine(dataEntries);
-              maps[event.target.id] = toGraph;
-              toGraph.setMap(map);
-            });
-        }
-        else {
-          // Still plot the line, doesn't need to be asynchronous.
-          // TODO(morleyd): abstract this out into a function.
-          console.log("Dataentries was true");
-          const toGraph = plotLine(dataEntries);
-          maps[event.target.id] = toGraph
-          toGraph.setMap(map);
-        }
-      }
-      else {
-        // In this case the box has become unchecked. We want to remove this graph.
-        // We can only remove this box if it has been generated before and then can be removed appropriately.
-        const toRemove = maps[event.target.id];
-        if (toRemove)
-          toRemove.setMap(null);
-      }
-
-    });
-    checkBoxEntry.appendChild(input);
-    currentRow.appendChild(checkBoxEntry);
-    table.appendChild(currentRow);
-    console.log(currentRow);
-    even = !even;
-
   }
   return table;
-
 }
 
+
+/**
+ * Generate a polyline from the given data points and return it.
+ * @param {Array<Point>} dataEntries
+ * @return {google.maps.Polyline}
+ */
 function plotLine(dataEntries) {
-  let currentLine = [];
-  // now add the map with the selected color of the element
+  const currentLine = [];
   for (let i = 0; i < dataEntries.length; i++) {
-    currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
+    currentLine.push({lat: dataEntries[i].lat, lng: dataEntries[i].lng});
   }
   console.log(currentLine);
   currentLineGraph = new google.maps.Polyline({
@@ -244,15 +262,16 @@ function plotLine(dataEntries) {
     geodesic: true,
     strokeColor: 'blue',
     strokeOpacity: 1.0,
-    strokeWeight: 2
+    strokeWeight: 2,
   });
   flightPath.setMap(null);
-  console.log("The value of map is " + map);
+  console.log('The value of map is ' + map);
   return currentLineGraph;
 }
 
-// When finished drawing the box, instead of leaving the widget, create markers at the current lat and intersection with the line.
-$(function () {
+// When finished drawing the box, instead of leaving the widget, create markers
+// at the current lat and intersection with the line.
+$(function() {
   let widget;
   let x;
   let y;
