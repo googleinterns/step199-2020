@@ -21,6 +21,11 @@ import shared.sharedObjects;
 public class Upload extends HttpServlet {
 
   private Database database;
+  /* Initialize the database. */
+  @Override
+  public void init() throws ServletException {
+    database = new GCSDatabase(sharedObjects.databaseName);
+  }
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
   @Override
@@ -33,7 +38,6 @@ public class Upload extends HttpServlet {
     /*
      * Make a database object and write file to it. redirect to index page.
      */
-    database = new GCSDatabase(sharedObjects.databaseName);
     DbWriter dataWriter = new DbWriter(database, runid, dataType);
     Part filePart = request.getPart("file");
     if (filePart == null) {
