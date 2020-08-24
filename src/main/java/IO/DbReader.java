@@ -39,10 +39,10 @@ public class DbReader {
     InputStream in;
     try {
       in = database.readData(runId, type);
-      return in;
     } catch (IOException e) {
+      return null;
     }
-    return null;
+    return in;
   }
 
   /*

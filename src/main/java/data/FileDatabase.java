@@ -38,8 +38,8 @@ public class FileDatabase implements Database {
       return new FileInputStream(fileName);
     } catch (FileNotFoundException e) {
       System.err.format("Unable to locate the give file with name %s", fileName);
+      return null;
     }
-    return null;
   }
 
   /*
@@ -53,8 +53,8 @@ public class FileDatabase implements Database {
       return new FileOutputStream(fileName);
     } catch (FileNotFoundException e) {
       System.err.format("Unable to locate the give file with name %s", fileName);
+      return null;
     }
-    return null;
   }
 
   /*Returns appropiate file name for data with this runId and type. */
@@ -65,9 +65,11 @@ public class FileDatabase implements Database {
   /* Returns list of files in database. */
   @Override
   public ArrayList<String> getAllFiles() {
-    File[] files = folder.listFiles();
+    String[] files = folder.list();
     ArrayList<String> filesAsStrings = new ArrayList<String>();
-    for (int i = 0; i < files.length; i++) filesAsStrings.add(files[i].getName());
+    for (int i = 0; i < files.length; i++) {
+      filesAsStrings.add(files[i]);
+    }
     return filesAsStrings;
   }
 

@@ -14,6 +14,7 @@ import shared.sharedObjects;
 /* Fetch the given data points for a specific run based on its runId and the dataType. */
 @WebServlet("/getrun")
 public class RunInfo extends HttpServlet {
+  Database database;
 
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
@@ -29,13 +30,13 @@ public class RunInfo extends HttpServlet {
       // We now make would make an instance of the reader object to get a stream from
       // the database, then pass this value to the decoder, with a string as our ouput
       // stream.
-      Database database = new GCSDatabase(sharedObjects.databaseName);
-      DbReader dataReader = new DbReader(database, runId, dataType);
-      Decoder.decode(dataReader.read(), response.getOutputStream());
+      database = new GCSDatabase(sharedObjects.databaseName);
     } catch (Exception e) {
-      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.out.println("Exception while initializing" + e.getMessage());
+      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.err.println("Exception while initializing" + e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
+    DbReader dataReader = new DbReader(database, runId, dataType);
+    Decoder.decode(dataReader.read(), response.getOutputStream());
   }
 }

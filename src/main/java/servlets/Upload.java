@@ -19,6 +19,8 @@ import shared.sharedObjects;
 @MultipartConfig
 @WebServlet("/upload")
 public class Upload extends HttpServlet {
+
+  private Database database;
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
   @Override
@@ -32,24 +34,22 @@ public class Upload extends HttpServlet {
      * Make a database object and write file to it. redirect to index page.
      */
     try {
-      Database database = new GCSDatabase(sharedObjects.databaseName);
-      DbWriter dataWriter = new DbWriter(database, runid, dataType);
-      Part filePart = null;
-
-      filePart = request.getPart("file");
-      if (filePart == null) {
-        response.sendRedirect("/index.html");
-      }
-      // Get the input stream and encode it/store it in the given OutputStream.
-      InputStream uploadedFile = filePart.getInputStream();
-      // dataWriter.write();
-      Encoder.encode(uploadedFile, dataWriter.write());
-      System.out.println("finishes encoding");
-      response.sendRedirect("/index.html");
+      database = new GCSDatabase(sharedObjects.databaseName);
     } catch (Exception e) {
-      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.out.println("Exception while initializing" + e.getMessage());
+      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.err.println("Exception while initializing" + e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
+    DbWriter dataWriter = new DbWriter(database, runid, dataType);
+    Part filePart = request.getPart("file");
+    if (filePart == null) {
+      response.sendRedirect("/index.html");
+    }
+    // Get the input stream and encode it/store it in the given OutputStream.
+    InputStream uploadedFile = filePart.getInputStream();
+    // dataWriter.write();
+    Encoder.encode(uploadedFile, dataWriter.write());
+    System.out.println("finishes encoding");
+    response.sendRedirect("/index.html");
   }
 }

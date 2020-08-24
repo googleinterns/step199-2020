@@ -74,7 +74,9 @@ public final class ReaderWriterTest {
       /* Convert inputStream to Stringbuilder. */
       StringBuilder textBuilder = new StringBuilder();
       int c = 0;
-      while ((c = reads.read()) != -1) textBuilder.append((char) c);
+      while ((c = reads.read()) != -1) {
+        textBuilder.append((char) c);
+      }
       /* Convert Stringbuilder to a string. */
       readTest = textBuilder.toString();
     }

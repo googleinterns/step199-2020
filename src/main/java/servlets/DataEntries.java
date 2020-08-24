@@ -16,6 +16,8 @@ import shared.sharedObjects;
  */
 @WebServlet("/data")
 public class DataEntries extends HttpServlet {
+
+  private Database database;
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
   @Override
@@ -34,13 +36,13 @@ public class DataEntries extends HttpServlet {
     }
     // get JSON from Database.
     try {
-      Database database = new GCSDatabase(sharedObjects.databaseName);
-      String json = DatabaseQuery.getJson(database);
-      response.getWriter().println(json);
+      database = new GCSDatabase(sharedObjects.databaseName);
     } catch (Exception e) {
-      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.out.println("Exception while initializing" + e.getMessage());
+      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
+      System.err.println("Exception while initializing" + e.getMessage());
       throw new RuntimeException(e.getMessage());
     }
+    String json = DatabaseQuery.getJson(database);
+    response.getWriter().println(json);
   }
 }
