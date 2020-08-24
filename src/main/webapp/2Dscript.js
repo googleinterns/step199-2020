@@ -8,13 +8,22 @@ let runs = {};
 runId:{
   map
   data
-  subsection
+  subSection
+  subData
   checkBox Element
   colorElement
+  topMarker
+  bottomMarker
 }
-*/ 
+*/
 
-
+/*
+Changes overview for tomorrow:
+Change event listener for lines to generate the same popup
+Create session storage element for all runs with their colors
+Load in three.js and change color as well
+Add shift click to select whole area instead of just intersect
+*/
 
 
 let subsections = {} // An object in JSON format as follows:
@@ -28,7 +37,6 @@ let selectedSubSections = [] // A list of all the subsections that have been sel
 let boundingRectangles = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
 let pose;
 let data;
-let id;
 let type;
 let currentLat;
 let currentLng;
@@ -57,15 +65,18 @@ function initMap() {
     return;
 
   let poseCoordinates = [];
+
   for (let i = 0; i < pose.length; i++) {
     poseCoordinates.push({ lat: pose[i].lat, lng: pose[i].lng });
   }
+  if (pose.length === 0)
+    return;
   map = new google.maps.Map(document.getElementById("map"), {
     center: { lat: pose[0].lat, lng: pose[0].lng },
     zoom: 18
   });
-  flightPath = getPolyLine(poseCoordinates, '#FF0000', 1.0, 2);
-  flightPath.setMap(map);
+
+
 
 
   // Generate the central map button.
@@ -86,8 +97,8 @@ function initMap() {
     currentLat = latLng.lat();
     currentLng = latLng.lng();
   });
-
-
+  // Click the selected run.
+  runs[id].checkBox.click();
 }
 
 function SelectionPane(sideControlDiv, innerContent) {
@@ -158,8 +169,9 @@ function createSideTable(json) {
       // Get the necessary content for this runId if not stored in the local cache.
       console.log("Checkbox event");
       const checkboxElement = event.target;
-      console.log("The id is:" + event.target.id);
-      console.log("The event is" + event.target.toString());
+      const targetId = checkboxElement.id;
+      console.log("The id is:" + targetId);
+      console.log("The event is" + checkboxElement.toString());
       console.log("The checkbox is " + this.checked);
       if (this.checked) {
         // First check the cache for this value.
@@ -170,10 +182,12 @@ function createSideTable(json) {
           console.log("The id is:" + event.target.id);
           fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
             .then(data => dataEntries = data).then(() => {
-              const color = runs[event.target.id].color.value;
+              console.log(targetId);
+              console.log(runs);
+              const color = runs[targetId].color.value;
               const toGraph = plotLine(dataEntries, color);
-              runs[event.target.id].data = dataEntries;
-              runs[event.target.id].map = toGraph;
+              runs[targetId].data = dataEntries;
+              runs[targetId].map = toGraph;
               toGraph.setMap(map);
             });
         }
@@ -181,7 +195,9 @@ function createSideTable(json) {
           // Still plot the line, doesn't need to be asynchronous.
           // TODO(morleyd): abstract this out into a function.
           console.log("Dataentries was true");
-          const color = runs[runId].color.value;
+          console.log(event.target.id);
+          console.log(runs);
+          const color = runs[event.target.id].color.value;
           const toGraph = plotLine(dataEntries, color);
           runs[event.target.id].map = toGraph
           toGraph.setMap(map);
@@ -261,17 +277,17 @@ function plotLine(dataEntries, color) {
     currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
   }
   const currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
-  flightPath.setMap(null);
   return currentLineGraph;
 }
 
-function getPolyLine(linePoints, color, opacity, weight) {
+function getPolyLine(linePoints, color, opacity, weight, index = 1) {
   const polyLine = new google.maps.Polyline({
     path: linePoints,
     geodesic: true,
     strokeColor: color,
     strokeOpacity: opacity,
-    strokeWeight: weight
+    strokeWeight: weight,
+    zIndex: index
   });
   return polyLine;
 }
@@ -284,8 +300,6 @@ let finY;
 let priorLat;
 let priorLng;
 let isMouseDown = false;
-let markerBottom;
-let markerTop;
 let subPath;
 let infoWindow;
 const LEFTCLICK = 1;
@@ -321,6 +335,7 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
   const maxLng = Math.max(currentLng, priorLng);
+  console.log(pose);
   const poseLength = pose.length;
   // Lat can be from [-90,90]. 
   let discoveredMinLat = 91;
@@ -362,20 +377,60 @@ function placeRectangleEnd() {
   $('.widget').remove();
 
   // Iterate over all data values here, need to find a way to check the checkbox value, should likely store this in an object somewhere to prevent excess DOM queries.
-  let { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair } = computeSubSection(pose, currentLat, priorLat, currentLng, priorLng);
-  // Clear prior paths, only display newly selected ones.
-  clearSelectedPaths([markerBottom, markerTop, infoWindow, subPath]);
-  const subSectionNumber = 1;
-  subPath = getPolyLine(subLine, "blue", 1.0, 2);
-  // Setup event listener to show option for 3D window when polyline is clicked.
-  google.maps.event.addListener(subPath, 'click', linkTo3D);
-  markerBottom = genMarker(discoveredMinLat, discoveredMinLatPair);
-  markerTop = genMarker(discoveredMaxLngPair, discoveredMaxLng);
-  // Show the created elements.
-  showAll([subPath, markerBottom, markerTop]);
-  // Constant to account for possibility of multiple subsections.
-  sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
-  isMouseDown = false;
+  const mapRuns = Object.entries(runs);
+  // Clear pop up window.
+  if (infoWindow !== undefined)
+    infoWindow.setMap(null);
+  clearSelectedPaths(["subSection", "markerBottom", "markerTop"]);
+  for ([id, currentRun] of mapRuns) {
+    if (currentRun.checkBox.checked) {
+      let { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair } = computeSubSection(currentRun.data, currentLat, priorLat, currentLng, priorLng);
+      // Clear prior paths, only display newly selected ones.
+      const subSectionNumber = 1;
+      currentRun.subData = subLine;
+      currentRun.subSection = getPolyLine(subLine, "blue", 1.0, 2, 1000);
+      // Setup event listener to show option for 3D window when polyline is clicked.
+      currentRun.markerBottom = genMarker(discoveredMinLat, discoveredMinLatPair);
+      currentRun.markerTop = genMarker(discoveredMaxLngPair, discoveredMaxLng);
+      // Show the created elements.
+      showAll([currentRun.subSection, currentRun.markerBottom, currentRun.markerTop]);
+      // Constant to account for possibility of multiple subsections.
+      // sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
+      isMouseDown = false;
+    }
+  }
+  let subSectionObject = {};
+  for ([id, currentRun] of mapRuns) {
+    if (currentRun.checkBox.checked) {
+      subSectionObject[id] = {};
+      subSectionObject[id].color = currentRun.color.value;
+      subSectionObject[id].data = currentRun.subData;
+      console.log(subSectionObject);
+      google.maps.event.addListener(currentRun.subSection, 'click', function (event) {
+        console.log("subsection clicked");
+        if (infoWindow !== undefined)
+          infoWindow.setMap(null);
+
+        const latLng = event.latLng;
+        console.log("the latlng is" + latLng);
+
+        const link = document.createElement("a");
+        link.innerText = "View in 3D";
+        link.href = "null";
+        link.addEventListener("click", function (event) {
+          event.preventDefault();
+          sessionStorage.setItem("subsection", JSON.stringify(subSectionObject));
+          window.location.href = "home.html?subsection=true";
+        });
+        infoWindow = new google.maps.InfoWindow({
+          content: link,
+          position: { lat: latLng.lat(), lng: latLng.lng() }
+        });
+        console.log(infoWindow);
+        infoWindow.setMap(map);
+      });
+    }
+  }
 }
 function genChangingBox(event) {
   if (isMouseDown) {
@@ -401,10 +456,15 @@ function genMarker(latitude, longitude) {
 }
 function clearSelectedPaths(pathArray) {
   // Clear prior markers/path if they exist.
-  for (val of pathArray) {
-    if (val !== undefined) {
-      val.setMap(null);
-    }
+  const objects = Object.values(runs);
+  for (val of objects) {
+    // Now take all these 
+    pathArray.forEach(function (current) {
+      const property = val[current];
+      if (property !== undefined) {
+        property.setMap(null);
+      }
+    });
   }
 }
 function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
@@ -413,10 +473,11 @@ function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
   }
   return false;
 }
-function linkTo3D(event) {
+function linkTo3D(event, id, type) {
+  console.log("The value of the event is " + event);
   const latLng = event.latLng;
   infoWindow = new google.maps.InfoWindow({
-    content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + subSectionNumber + "&stored=true" + "> View in 3D </a>",
+    content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + "1" + "&stored=true" + "> View in 3D </a>",
     position: latLng
   });
   infoWindow.setMap(map);

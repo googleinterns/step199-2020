@@ -12,6 +12,7 @@ let direction;
 let line;
 let count;
 let pose;
+let data;
 let poseRotation = { value: 0 };
 let poseScalar = { value: 1 };
 let posePosition = { x: 0, z: 0 };
@@ -24,6 +25,7 @@ let path = [];
  * Initializes the scene, camera, renderer, and clock.
  */
 function init() {
+  console.log("init was called");
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
       /* fov =*/ 75,
@@ -35,6 +37,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
+  controls = new OrbitControls(camera, renderer.domElement);
 
   // The camera controls allows the user to fly with the camera.
   //   controls = new FlyControls(camera, renderer.domElement);
@@ -42,25 +45,16 @@ function init() {
   //   controls.rollSpeed = Math.PI / 10;
   //   controls.autoForward = false;
   //   controls.dragToLook = true;
-
-  controls = new OrbitControls(camera, renderer.domElement);
-
   fetchData();
 }
 
-/**
- * Creates all the objects from pose data and adds them to the scene.
-*/
-function addPoseData() {
-  count = pose.length;
+function loadMap(initialPose) {
+
   let loader = new THREE.TextureLoader();
-  // If empty data set, don't load anything including map.
-  if (count === 0)
-    return;
   let material = new THREE.MeshLambertMaterial(
     {
       map: loader.load(
-        'https://maps.googleapis.com/maps/api/staticmap?format=png&center='+pose[0].lat+','+pose[0].lng+'&zoom=18&size=500x500&key=' + apiKey)
+        'https://maps.googleapis.com/maps/api/staticmap?format=png&center=' + initialPose[0].lat + ',' + initialPose[0].lng + '&zoom=18&size=500x500&key=' + apiKey)
     });
   let geometry = new THREE.PlaneGeometry(50, 50);
   let map = new THREE.Mesh(geometry, material);
@@ -74,61 +68,72 @@ function addPoseData() {
   // Add the light to the scene
   scene.add(light)
 
+}
+/**
+ * Creates all the objects from pose data and adds them to the scene.
+*/
+function addPoseData(poseToPlot, hexColor) {
+  count = poseToPlot.length;
+  // If empty data set, don't load anything including map.
+  if (count === 0)
+    return;
+
   // Adds pose trajectory line
-  plotPath();
+  plotPath(poseToPlot, hexColor);
 
   // Adds test pose data as one Geometry instance
-  material = new THREE.MeshBasicMaterial({ color: 'red' });
-  geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
-  direction = new THREE.InstancedMesh(geometry, material, count);
+  let material = new THREE.MeshBasicMaterial({ color: hexColor});
+  let geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
+  let direction = new THREE.InstancedMesh(geometry, material, count);
   direction.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(direction);// Orientation indicator
-  plotOrientation();
+  plotOrientation(poseToPlot, direction);
 
 }
-function plotPath() {
+function plotPath(poseToPlot, hexColor) {
+  let newLine;
   scene.remove(line);
   path = [];
   for (let increment = 0; increment < count; increment++) {
     path.push(new THREE.Vector3(
-      (pose[increment].lng - 11.582905) * 25000 * poseScalar.value,
-      (pose[increment].alt - 6.582905) / 4,
-      (pose[increment].lat - 48.129872) * 25000 * -poseScalar.value));// GPS points
+      (poseToPlot[increment].lng - 11.582905) * 25000 * poseScalar.value,
+      (poseToPlot[increment].alt - 6.582905) / 4,
+      (poseToPlot[increment].lat - 48.129872) * 25000 * -poseScalar.value));// GPS points
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(path);
-  const material = new THREE.LineBasicMaterial({ color: 'blue' });
-  line = new THREE.Line(geometry, material);
-  scene.add(line);
-  line.position.x = posePosition.x;
-  line.position.z = posePosition.z;
-  line.rotation.y = THREE.Math.degToRad(poseRotation.value);
+  const material = new THREE.LineBasicMaterial({ color: 'black' });
+  newLine = new THREE.Line(geometry, material);
+  scene.add(newLine);
+  newLine.position.x = posePosition.x;
+  newLine.position.z = posePosition.z;
+  newLine.rotation.y = THREE.Math.degToRad(poseRotation.value);
 }
-function plotOrientation() {
+function plotOrientation(poseToPlot, directionPose) {
   let dummy = new THREE.Object3D;
   dummy.matrixAutoUpdate = false;
   for (let i = 0; i < count; i++) {
     let matrix = new THREE.Matrix4();
     dummy.matrix.identity();
     matrix.makeTranslation(
-      (pose[i].lng - 11.582905) * 25000 * poseScalar.value,
-      (pose[i].alt - 6.582905) / 4,
-      (pose[i].lat - 48.129872) * 25000 * -poseScalar.value);
+      (poseToPlot[i].lng - 11.582905) * 25000 * poseScalar.value,
+      (poseToPlot[i].alt - 6.582905) / 4,
+      (poseToPlot[i].lat - 48.129872) * 25000 * -poseScalar.value);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
-      THREE.Math.degToRad(pose[i].pitchDeg)));
+      THREE.Math.degToRad(poseToPlot[i].pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
-      THREE.Math.degToRad(pose[i].yawDeg)));
+      THREE.Math.degToRad(poseToPlot[i].yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
-      THREE.Math.degToRad(pose[i].rollDeg)));
+      THREE.Math.degToRad(poseToPlot[i].rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     dummy.applyMatrix4(matrix);
     dummy.updateMatrix();
-    direction.setMatrixAt(i, dummy.matrix);
+    directionPose.setMatrixAt(i, dummy.matrix);
   }
-  direction.instanceMatrix.needsUpdate = true;
-  direction.position.x = posePosition.x;
-  direction.position.z = posePosition.z;
-  direction.rotation.y = THREE.Math.degToRad(poseRotation.value);
+  directionPose.instanceMatrix.needsUpdate = true;
+  directionPose.position.x = posePosition.x;
+  directionPose.position.z = posePosition.z;
+  directionPose.rotation.y = THREE.Math.degToRad(poseRotation.value);
 }
 
 function gui() {
@@ -158,22 +163,34 @@ function animate() {
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
+
+  const isSubSection = urlParams.get('subsection');
   const id = urlParams.get('id');
   const type = urlParams.get('dataType');
-  // Only need to refetch the data if it is not contained in local storage, in general it should be.
-  const isStored = urlParams.get('stored');
-  const subSectionNumber = urlParams.get('subSection');
-  console.log(id + type);
-  if (!isStored) {
-    fetch('/getrun?id=' + id + '&dataType=' + type)
+  console.log("The value of subsection is " + isSubSection);
+  let firstData;
+  if (isSubSection) {
+    /*fetch('/getrun?id=' + id + '&dataType=' + type)
       .then(response => response.json())
-      .then(data => pose = data)
-      .then(() => addPoseData());
+      .then(newData => data = newData)
+      .then(() =>*/
+
+    data = JSON.parse(sessionStorage.getItem("subsection"));
+    firstData = Object.values(data)[0].data;
+    // We should loop through all the runs and call addPoseData() for all of them.
+    {
+      Object.values(data).forEach((currentValue) => {
+        addPoseData(currentValue.data, currentValue.color);
+      });
+    }
   }
-  else{
-    pose = JSON.parse(sessionStorage.getItem(id+'_'+type+'_'+subSectionNumber));
+  else {
+    console.log("This shouldn't run");
+    pose = JSON.parse(sessionStorage.getItem(id + '_' + type + '_' + subSectionNumber));
     addPoseData();
   }
+  loadMap(firstData);
+
 }
 
 init();
