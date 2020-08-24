@@ -27,7 +27,7 @@ input[type=text] {
   box-sizing: border-box;
   padding: 5px;
 
-  /* Change the cursor color inside the text box when typing */
+  /* Change the cursor color inside the text box when typing. */
   caret-color: navy;
 }
 
@@ -37,8 +37,6 @@ input[type=text] {
   background-image: url("images/StellarPoint.png");
   background-size: cover;
   background-position: right 0;
-
-  /* background-attachment: fixed; */
 }
 
 h1 {
@@ -46,7 +44,7 @@ h1 {
   font-size: 50px;
   text-align: center;
 
-  /* Setup gradient for header */
+  /* Setup gradient for header. */
   background-image: linear-gradient(#3f8b99, white, #3f8b99);
   background-clip: text;
   -webkit-background-clip: text;
