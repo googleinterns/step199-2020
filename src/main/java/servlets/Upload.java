@@ -38,7 +38,7 @@ public class Upload extends HttpServlet {
     } catch (Exception e) {
       System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
       System.err.println("Exception while initializing" + e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw e;
     }
     DbWriter dataWriter = new DbWriter(database, runid, dataType);
     Part filePart = request.getPart("file");

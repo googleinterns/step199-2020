@@ -34,7 +34,7 @@ public class RunInfo extends HttpServlet {
     } catch (Exception e) {
       System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
       System.err.println("Exception while initializing" + e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw e;
     }
     DbReader dataReader = new DbReader(database, runId, dataType);
     Decoder.decode(dataReader.read(), response.getOutputStream());

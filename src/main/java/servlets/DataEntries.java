@@ -40,7 +40,7 @@ public class DataEntries extends HttpServlet {
     } catch (Exception e) {
       System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
       System.err.println("Exception while initializing" + e.getMessage());
-      throw new RuntimeException(e.getMessage());
+      throw e;
     }
     String json = DatabaseQuery.getJson(database);
     response.getWriter().println(json);
