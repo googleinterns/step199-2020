@@ -1,6 +1,8 @@
 package servlets;
 
 import IO.DbWriter;
+import data.Database;
+import data.GCSDatabase;
 import encoder.Encoder;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +19,13 @@ import shared.sharedObjects;
 @MultipartConfig
 @WebServlet("/upload")
 public class Upload extends HttpServlet {
+
+  private Database database;
+  /* Initialize the database. */
+  @Override
+  public void init() throws ServletException {
+    database = new GCSDatabase(sharedObjects.databaseName);
+  }
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
   @Override
@@ -25,11 +34,12 @@ public class Upload extends HttpServlet {
     response.setContentType("text/html;");
     String runid = request.getParameter("runID");
     String dataType = "pose";
-    // Should take in database instance, along with data type.
-    DbWriter dataWriter = new DbWriter(sharedObjects.dataInstance, runid, dataType);
-    Part filePart = null;
 
-    filePart = request.getPart("file");
+    /*
+     * Make a database object and write file to it. redirect to index page.
+     */
+    DbWriter dataWriter = new DbWriter(database, runid, dataType);
+    Part filePart = request.getPart("file");
     if (filePart == null) {
       response.sendRedirect("/index.html");
     }
@@ -38,11 +48,6 @@ public class Upload extends HttpServlet {
     // dataWriter.write();
     Encoder.encode(uploadedFile, dataWriter.write());
     System.out.println("finishes encoding");
-    // We now make would make an instance of the reader object to get a stream from
-    // the database, then pass this value to the decoder, with a string as our ouput
-    // stream.
-    // As reader object is not yet defined instead get the file input stream
-    // directly
     response.sendRedirect("/index.html");
   }
 }

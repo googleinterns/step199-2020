@@ -1,7 +1,10 @@
 package servlets;
 
+import data.Database;
 import data.DatabaseQuery;
+import data.GCSDatabase;
 import java.io.IOException;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +17,14 @@ import shared.sharedObjects;
  */
 @WebServlet("/data")
 public class DataEntries extends HttpServlet {
+
+  private Database database;
+  /* Initialize the database. */
+  @Override
+  public void init() throws ServletException {
+    database = new GCSDatabase(sharedObjects.databaseName);
+  }
+
   // Return numEntries runId and name pairs for getting urls to load viewer data.
   // Optional numEntries parameter limits the number of returned values.
   @Override
@@ -30,9 +41,8 @@ public class DataEntries extends HttpServlet {
         numEntries = -1;
       }
     }
-    // Logic that goes here that calls two methods from the intermediate Database
-    // depending on what exactly
-    String json = DatabaseQuery.getJson(sharedObjects.dataInstance);
+    // get JSON from Database.
+    String json = DatabaseQuery.getJson(database);
     response.getWriter().println(json);
   }
 }

@@ -1,19 +1,9 @@
 package shared;
 
-import data.Database;
-
-// Variables that need to be accessed between multiple class instances (i.e. Database initialization
-// variable).
-public class sharedObjects extends Exception {
-  public static Database dataInstance;
-  // public static
-  static {
-    try {
-      dataInstance = new Database("testdb-pose-3d-viewer-step");
-    } catch (Exception e) {
-      System.out.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.out.println("Exception while initializing" + e.getMessage());
-      throw new RuntimeException(e.getMessage());
-    }
-  }
+/*
+ * Variables that need to be accessed between multiple class instances (i.e. Database initialization
+ * variable).
+ */
+public class sharedObjects {
+  public static String databaseName = "testdb-pose-3d-viewer-step";
 }
