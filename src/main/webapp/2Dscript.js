@@ -1,4 +1,4 @@
-// Gobal variables.
+// Global variables.
 let map;
 const mapCache = {};
 const dataCache = {};
@@ -8,7 +8,22 @@ let id;
 let type;
 let currentLat;
 let currentLong;
-let flightPath;
+let initialPoseData;
+
+/**
+ * A Pose data object containing all properties returned
+ * from the requisite proto in the JSON format.
+ * Position is given in WGS84 latitude, longitude, and altitude.
+ * @typedef {Object<number, number, number, number,
+ * number, number, number>} PoseData
+ * @property {number} gpsTimestamp The time in seconds.
+ * @property {number} lat Degrees in [-90, 90]
+ * @property {number} lng Degrees in [-180, 180]
+ * @property {number} alt Meters above WGS84
+ * @property {number} rollDeg Degrees in [0,360]
+ * @property {number} pitchDeg Degrees in [0,360]
+ * @property {number} yawDeg Degrees in [0,360]
+ */
 
 /**
  * A Point object with a lat and lng.
@@ -16,6 +31,7 @@ let flightPath;
  * @property {number} lat The lat of the point.
  * @property {number} lng The lng of the point.
  */
+
 /**
  * A Types object which contains the different possible run types.
  * @typedef {Array<string>} Types
@@ -67,7 +83,7 @@ function initMap() {
     zoom: 18,
   });
 
-  flightPath = new google.maps.Polyline({
+  initialPoseData = new google.maps.Polyline({
     path: formatPoseData(),
     geodesic: true,
     strokeColor: '#FF0000',
@@ -75,7 +91,7 @@ function initMap() {
     strokeWeight: 2,
   });
 
-  flightPath.setMap(map);
+  initialPoseData.setMap(map);
 
 
   const centerControlDiv = document.createElement('div');
@@ -165,84 +181,149 @@ function centerControl(controlDiv) {
  */
 function createSideTable(json) {
   const table = document.createElement('table');
-  const headerRow = document.createElement('tr');
-  const columnOne = document.createElement('th');
-  columnOne.innerText = 'RunID';
-  const columnTwo = document.createElement('th');
-  columnTwo.innerText = 'Select';
-  headerRow.appendChild(columnOne);
-  headerRow.appendChild(columnTwo);
+  const headerRowText = ['RunId', 'Select'];
+  const headerRow = generateHeaderRow(headerRowText, table);
   table.appendChild(headerRow);
+  // Set the first entry class of the table to be noneven as 1 is odd.
   let even = false;
   for (const key in json) {
     if (Object.prototype.hasOwnProperty.call(json, key)) {
       const currentRow = document.createElement('tr');
       currentRow.className = 'visible';
+      // Change the class name if an even entry to properly adjust the styling.
       if (even) {
         currentRow.className += ' even';
       }
-      const keyEntry = document.createElement('td');
-      keyEntry.innerText = key;
-      currentRow.appendChild(keyEntry);
+      const keyEntry = generateKeyEntry(key);
+      const checkBoxEntry = generateCheckBoxEntry(key);
 
-      const checkBoxEntry = document.createElement('td');
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.id = key;
-      input.addEventListener('click', function(event) {
-        // Get the necessary content for this runId if not stored in the local
-        // cache.
-        console.log('Checkbox event');
-        const checkBoxElement = event.target;
-        console.log('The id is:' + checkBoxElement.id);
-        console.log('The event is' + checkBoxElement.toString());
-        // TODO(morleyd): Understand complaints about 'this' usage. I
-        // am somewhat confused about when its appropriate to use 'this' in
-        // Javascript vs in this case, event. The behavior often differs
-        // from what I would expect, meaning my heuristic is likely wrong.
-        console.log('The checkbox is ' + this.checked); // eslint-disable-line
-        if (this.checked) { // eslint-disable-line
-          // First check the cache for this value.
-          dataEntries = dataCache[checkBoxElement.id];
-          console.log('The value of dataentries is ' + dataEntries);
-          // if the value is not found in the cache then fetch it.
-          if (dataEntries === undefined) {
-            console.log('Data Entries was false');
-            console.log('The id is:' + checkBoxElement.id);
-            fetch('/getrun?id=' + checkBoxElement.id + '&dataType=pose')
-                .then((response) => response.json())
-                .then((data) => dataEntries = data).then(() => {
-                  dataCache[checkBoxElement.id] = dataEntries;
-                  const toGraph = plotLine(dataEntries);
-                  mapCache[checkBoxElement.id] = toGraph;
-                  toGraph.setMap(map);
-                });
-          } else {
-            // Still plot the line, doesn't need to be asynchronous.
-            // TODO(morleyd): Abstract this out into a function.
-            console.log('Dataentries was true');
-            const toGraph = plotLine(dataEntries);
-            mapCache[checkBoxElement.id] = toGraph;
-            toGraph.setMap(map);
-          }
-        } else {
-          // In this case the box has become unchecked. We want to remove this
-          // graph. We can only remove this box if it has been generated before
-          // and then can be removed appropriately.
-          const toRemove = mapCache[checkBoxElement.id];
-          if (toRemove) {
-            toRemove.setMap(null);
-          }
-        }
-      });
-      checkBoxEntry.appendChild(input);
-      currentRow.appendChild(checkBoxEntry);
+      const columnElements = [keyEntry, checkBoxEntry];
+      updateRow(currentRow, columnElements);
       table.appendChild(currentRow);
-      console.log(currentRow);
+      // Toggle the value of even for every other row.
       even = !even;
     }
   }
   return table;
+}
+
+
+/**
+ * Function to be called on a checkbox click events, attempts to grab data for
+ * graphing from local cache. If the data can't be found it is fetched from the
+ * corresponding servlet. Either way the data is then graphed on the map.
+ * @param {MouseEvent} event
+ */
+function showPoseData(event) {
+  const checkBoxElement = event.target;
+  // TODO(morleyd): Understand complaints about 'this' usage. I
+  // am somewhat confused about when its appropriate to use 'this' in
+  // Javascript vs in this case, event. The behavior often differs
+  // from what I would expect, meaning my heuristic is likely wrong.
+  const checked = this.checked; // eslint-disable-line
+  const id = checkBoxElement.id;
+  // Leave in this print for now as checkbox behavior was somewhat inconsistent
+  // good to validate.
+  console.log('The checkbox is ' + checked);
+  if (checked) { // eslint-disable-line
+    // First check the cache for this value.
+    dataEntries = dataCache[id];
+    console.log('The value of dataentries is ' + dataEntries);
+    // If the value is not found in the cache then fetch it.
+    if (dataEntries === undefined) {
+      fetchAndGraphData(id);
+    } else {
+      // Still plot the line, doesn't need to be asynchronous.
+      graphData(dataEntries, id);
+    }
+  } else {
+    // In this case the box has become unchecked. We want to remove this
+    // graph. We can only remove this box if it has been generated before
+    // and then can be removed appropriately.
+    const toRemove = mapCache[id];
+    if (toRemove) {
+      toRemove.setMap(null);
+    }
+  }
+}
+
+/**
+ * Generates the header row of a table from an array
+ * of column names.
+ * @param {Array<string>} headerRowText
+ * @return {HTMLElement}
+ */
+function generateHeaderRow(headerRowText) {
+  const headerRow = document.createElement('tr');
+  headerRowText.foreach((headerName) => {
+    const currentColumn = document.createElement('th');
+    currentColumn.innerText = headerName;
+    headerRow.appendChild(currentColumn);
+  });
+  return headerRow;
+}
+/**
+ * Generates a table entry for displaying a runId.
+ * @param {string} runId
+ * @return {HTMLElement}
+ */
+function generateKeyEntry(runId) {
+  const keyEntry = document.createElement('td');
+  keyEntry.innerText = runId;
+  return keyEntry;
+}
+
+/**
+ * Generate a checkbox with appropriate event listener
+ * for insertion into a table.
+ * @param {string} runId
+ * @return {HTMLElement}
+ */
+function generateCheckBoxEntry(runId) {
+  const checkBoxEntry = document.createElement('td');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.id = runId;
+  input.addEventListener('click', showPoseData);
+  checkBoxEntry.appendChild(input);
+  return checkBoxEntry;
+}
+
+/**
+ * Fetch the data and graph it. Necessary to include
+ * the graphing in this method so the asynchronous nature
+ * of the fetch operation isn't ignored.
+ * @param {string} runId
+ */
+function fetchAndGraphData(runId) {
+  fetch('/getrun?id=' + runId + '&dataType=pose')
+      .then((response) => response.json())
+      .then((data) => dataEntries = data).then(() => {
+        dataCache[runId] = dataEntries;
+        graphData(dataEntries, runId);
+      });
+}
+
+/**
+ * Create a line using the given data entries, plot it on
+ * the map and save it to the cache.
+ * @param {Array<PoseData>} dataEntries
+ * @param {string} runId
+ */
+function graphData(dataEntries, runId) {
+  const toGraph = plotLine(dataEntries);
+  mapCache[runId] = toGraph;
+  toGraph.setMap(map);
+}
+
+/**
+ * Insert all the elements in the array into the current
+ * table's row.
+ * @param {HTMLElement} currentRow
+ * @param {Array<string>} columnElements
+ */
+function updateRow(currentRow, columnElements) {
+  columnElements.foreach((currentElement)  => currentRow.appendChild(currentElement));  // eslint-disable-line
 }
 
 
@@ -264,7 +345,7 @@ function plotLine(dataEntries) {
     strokeOpacity: 1.0,
     strokeWeight: 2,
   });
-  flightPath.setMap(null);
+  initialPoseData.setMap(null);
   console.log('The value of map is ' + map);
   return currentLineGraph;
 }
