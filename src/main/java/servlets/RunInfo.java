@@ -26,16 +26,10 @@ public class RunInfo extends HttpServlet {
     String dataType = request.getParameter("dataType");
     System.out.println("The dataType is " + dataType);
 
-    try {
-      // We now make would make an instance of the reader object to get a stream from
-      // the database, then pass this value to the decoder, with a string as our ouput
-      // stream.
-      database = new GCSDatabase(sharedObjects.databaseName);
-    } catch (Exception e) {
-      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.err.println("Exception while initializing" + e.getMessage());
-      throw e;
-    }
+    // We now make would make an instance of the reader object to get a stream from
+    // the database, then pass this value to the decoder, with a string as our ouput
+    // stream.
+    database = new GCSDatabase(sharedObjects.databaseName);
     DbReader dataReader = new DbReader(database, runId, dataType);
     Decoder.decode(dataReader.read(), response.getOutputStream());
   }

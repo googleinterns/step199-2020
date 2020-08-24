@@ -33,13 +33,7 @@ public class Upload extends HttpServlet {
     /*
      * Make a database object and write file to it. redirect to index page.
      */
-    try {
-      database = new GCSDatabase(sharedObjects.databaseName);
-    } catch (Exception e) {
-      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.err.println("Exception while initializing" + e.getMessage());
-      throw e;
-    }
+    database = new GCSDatabase(sharedObjects.databaseName);
     DbWriter dataWriter = new DbWriter(database, runid, dataType);
     Part filePart = request.getPart("file");
     if (filePart == null) {

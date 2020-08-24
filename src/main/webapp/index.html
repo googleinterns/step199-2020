@@ -12,25 +12,48 @@
 	<body onload="createTable();">
 		<h1>StellarPoint</h1>
 		<form action="/upload" method="post" enctype="multipart/form-data" id="uploadData">
-			<div id="search"> <input id="searchQuery" type="text" onkeyup="filterTable();"></div>
+			<div id="search"><input id="searchQuery" type="text" onkeyup="filterTable();"></div>
+         <br/><br/>
 		</form>
 		<div id="scroll-body">
 			<table id="pose-data">
 			</table>
 		</div>
-		<div class="buttons">
+        
+       
+        <div id = "outer">
+        <div class="buttons2"><label class="submit-file">
+             <input type="checkbox" onClick="toggle(this)" /> Select All<br/>
+        </label></div>
+        <div class="buttons2">
+			<label class="submit-file">
+				<input type="submit" name="submit" onClick = "makeMultiRunJson();" />
+				View Selected
+			</label>
+		</div>
+        </div>
+    
+
+
+        <div id = "outer">
+		<div class="buttons1">
 			<label class="file-upload">
 				<input type="file" form="uploadData" name="file" />
 				Choose File
 			</label>
 		</div>
-		<div class="buttons">
+         <div class = "runID-name">
+             <label class="file-upload">
+             <textarea name="runID" form="uploadData">type runID of file you want to upload here</textarea>
+             </label>
+         </div>
+		<div class="buttons1">
 			<label class="submit-file">
 				<input type="submit" name="submit" form="uploadData" />
 				Upload Pose Data
 			</label>
 		</div>
-
+        </div>
 </div>
 
 </body>

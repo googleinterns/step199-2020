@@ -35,13 +35,7 @@ public class DataEntries extends HttpServlet {
       }
     }
     // get JSON from Database.
-    try {
-      database = new GCSDatabase(sharedObjects.databaseName);
-    } catch (Exception e) {
-      System.err.println("*************COULD NOT INITIALIZE DATABASE*********************");
-      System.err.println("Exception while initializing" + e.getMessage());
-      throw e;
-    }
+    database = new GCSDatabase(sharedObjects.databaseName);
     String json = DatabaseQuery.getJson(database);
     response.getWriter().println(json);
   }
