@@ -38,7 +38,7 @@ let currentLng;
  * @property {number} lng Degrees in [-180, 180]
  * @property {number} alt Meters above WGS84
  * @property {number} rollDeg Degrees in [0,360]
- * @property {number} pitchDeg Degrees in [0,360]
+ * @property {number} pitchDeg Degrees in [-90,90]
  * @property {number} yawDeg Degrees in [0,360]
  */
 
@@ -343,8 +343,8 @@ function updateRow(currentRow, columnElements) {
  */
 function plotLine(dataEntries) {
   const currentLine = [];
-  for (let i = 0; i < dataEntries.length; i++) {
-    currentLine.push({lat: dataEntries[i].lat, lng: dataEntries[i].lng});
+  for (point of dataEntries) {
+    currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
   currentLineGraph = getPolyLine(currentLine, 'blue', 1.0, 2);
