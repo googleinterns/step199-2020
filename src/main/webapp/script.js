@@ -44,7 +44,7 @@ function createTable() { // eslint-disable-line no-unused-vars
  * @return {Element}
  */
 function initializeRow(json, key, currentRow) {
-  const index = 0;
+  let index = 0;
   for (const type of json[key]) {
     const columnEntry = document.createElement('td');
     console.log(type);
