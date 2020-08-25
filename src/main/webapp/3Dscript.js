@@ -15,7 +15,8 @@ const poseTransform = {
   /* Unit: 4 meters*/ translateX: 0,
   /* Unit: 4 meters*/ translateZ: 0,
   /* Unit: degrees*/ rotate: 0,
-  /* Scalar*/ scale: 1};
+  /* Scalar*/ scale: 1,
+};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 initThreeJs();
@@ -38,7 +39,7 @@ function initThreeJs() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
-  controls = new OrbitControls(camera, renderer.domElement );
+  controls = new OrbitControls(camera, renderer.domElement);
 
   fetchData();
 }
@@ -65,7 +66,7 @@ function addMap() {
   scene.add(map);
 
   // Add the light to the scene.
-  const light = new THREE.PointLight(0xffffff, 1, 0 );
+  const light = new THREE.PointLight(0xffffff, 1, 0);
   light.position.set(0, 100, 0);
   scene.add(light);
   plotTrajectory();
@@ -97,7 +98,7 @@ function llaDegreeToLocal(lat, lng, alt) {
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
   const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
-  const y = (alt - pose[0].alt)/4;
+  const y = (alt - pose[0].alt) / 4;
   const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
   return [x, y, z];
 }
@@ -112,7 +113,7 @@ function plotTrajectory() {
    * The x axis controls the left and right direction, the y axis controls
    * up and down movement, and the z axis controls forward and back movement.
    */
-  const coordinates=[];
+  const coordinates = [];
   for (point of pose) {
     const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
     coordinates.push(new THREE.Vector3(x, y, z));
@@ -143,7 +144,7 @@ function plotOrientation() {
     const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
 
     matrix.makeTranslation(x, y, z);
-    matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+    matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(point.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
@@ -206,14 +207,15 @@ function fetchData() {
   const isStored = urlParams.get('stored');
   const subSectionNumber = urlParams.get('subSection');
   console.log(id + type);
-  if (!isStored) {
+  if (isStored) {
+    pose = JSON.parse(sessionStorage.getItem(id + '_' +
+      type + '_' + subSectionNumber));
+    addMap();
+  } else {
     fetch('/getrun?id=' + id + '&dataType=' + type)
         .then((response) => response.json())
         .then((data) => pose = data)
         .then(() => addMap());
-  } else {
-    pose = JSON.parse(sessionStorage.getItem(id+'_'+type+'_'+subSectionNumber));
-    addMap();
   }
 }
 
