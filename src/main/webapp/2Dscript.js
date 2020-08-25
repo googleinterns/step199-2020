@@ -91,11 +91,6 @@ function initMap() {
     return;
   }
 
-  const poseCoordinates = [];
-  for (let i = 0; i < initialPose.length; i++) {
-    poseCoordinates.push({lat: initialPose[i].lat, lng: initialPose[i].lng});
-  }
-
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
     zoom: 18,
@@ -415,57 +410,44 @@ function placeRectangleStart() {
  */
 function placeRectangleEnd() {
   $('.widget').remove();
-
-  const mapRuns = Object.entries(runs);
   // Clear pop up window.
   if (infoWindow !== undefined) {
     infoWindow.setMap(null);
   }
   // Clear other paths.
-
-  for ([id, currentRun] of mapRuns) {
-    const {subLine, discoveredMinLat, discoveredMinLatPair,
-      discoveredMaxLng, discoveredMaxLngPair} = computeSubSection(
-        currentRun.data, currentLat, priorLat, currentLng, priorLng);
-    // Choose a subSectionNumber, implement differently in future pr.
-    const subSectionNumber = 1;
-    // Clear prior paths, only display newly selected ones.
-    if (markerBottom !== undefined) {
-      markerBottom.setMap(null);
-    }
-    if (markerTop !== undefined) {
-      markerTop.setMap(null);
-    }
-    if (subPath !== undefined) {
-      subPath.setMap(null);
-    }
-    subPath = getPolyLine(subLine, 'blue', 1.0, 2);
-    // Setup event listener to show option for 3D window when polyline is
-    // clicked.
-    google.maps.event.addListener(subPath, 'click', function(event) {
-      const latLng = event.latLng;
-      console.log('Polyline clicked at lat: ' + latLng.lat() +
-        ' lng: ' + latLng.lng());
-      infoWindow = new google.maps.InfoWindow({
-        content: '<a href=/home.html?id=' + id + '&dataType=' +
-          type + '&subSection=' + subSectionNumber +
-          '&stored=true' + '> View in 3D </a>',
-        position: latLng,
-      });
-      infoWindow.setMap(map);
-    },
-    );
-
-    subPath.setMap(map);
-
-    markerBottom = genMarker(discoveredMinLat, discoveredMinLatPair);
-    markerTop = genMarker(discoveredMaxLngPair, discoveredMaxLng);
-    markerBottom.setMap(map);
-    markerTop.setMap(map);
-
-    sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber,
-        JSON.stringify(subLine));
+  // line
+  // minLatPoint
+  // lat , lng
+  // minLngPoint
+  // lat, lng
+  const subSectionData = computeSubSection(currentRun.data,
+      currentLat, priorLat, currentLng, priorLng);
+  // Choose a subSectionNumber, implement differently in future pr.
+  const subSectionNumber = 1;
+  // Clear prior paths, only display newly selected ones.
+  if (markerBottom !== undefined) {
+    markerBottom.setMap(null);
   }
+  if (markerTop !== undefined) {
+    markerTop.setMap(null);
+  }
+  if (subPath !== undefined) {
+    subPath.setMap(null);
+  }
+  subPath = getPolyLine(subLine, 'blue', 1.0, 2);
+  // Setup event listener to show option for 3D window when polyline is
+  // clicked.
+  google.maps.event.addListener(subPath, 'click', linkTo3D);
+  subPath.setMap(map);
+  markerBottom = genMarker(subSectionData.minLatPoint.lat,
+      subSectionData.minLatPoint.lng);
+  markerTop = genMarker(subSectionData.maxLngPoint.lat,
+      subSectionData.maxLngPoint.lng);
+  markerBottom.setMap(map);
+  markerTop.setMap(map);
+
+  sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber,
+      JSON.stringify(subLine));
 }
 
 /**
@@ -523,15 +505,20 @@ function getPolyLine(linePoints, color, opacity, weight, index = 1) {
   });
   return polyLine;
 }
-
+/**
+ * @typedef {Object<Array<Point>, Point, Point>} subSectionData
+ * @property {Array<Point>} subLine
+ * @property {Point} minLatPoint
+ * @property {Point} maxLngPoint
+ */
 /**
  * Compute the subsection of a line contained in a bounding rectangle.
- * @param {Point} pose
+ * @param {Array<Point>} pose
  * @param {number} currentLat
  * @param {number} priorLat
  * @param {number} currentLng
  * @param {number} priorLng
- * @return {Array<Point, number, number, number, number>}
+ * @return {subSectionData}
  */
 function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   const minLat = Math.min(currentLat, priorLat);
@@ -539,7 +526,6 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   const minLng = Math.min(currentLng, priorLng);
   const maxLng = Math.max(currentLng, priorLng);
   console.log(pose);
-  const poseLength = pose.length;
   // Lat can be from [-90,90].
   let discoveredMinLat = 91;
   let discoveredMinLatPair = 181;
@@ -547,9 +533,9 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   let discoveredMaxLng = -181;
   let discoveredMaxLngPair = -91;
   subLine = [];
-  for (let i = 0; i < poseLength; i++) {
-    const loopLat = pose[i].lat;
-    const loopLng = pose[i].lng;
+  for (point of pose) {
+    const loopLat = point.lat;
+    const loopLng = point.lng;
     if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
       // While iterating save the max and min lat, same for the lng.
       if (discoveredMinLat > loopLat) {
@@ -563,11 +549,28 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
       subLine.push(pose[i]);
     }
   }
+  const toReturn = {};
+  toReturn.subLine = subLine;
+  toReturn.minLatPoint = {lat: discoveredMinLat, lng: discoveredMinLatPair};
+  toReturn.maxLngPoint = {lat: discoveredMaxLngPair, lng: discoveredMaxLng};
+  return toReturn;
+}
 
-  return {
-    subLine, discoveredMinLat, discoveredMinLatPair,
-    discoveredMaxLng, discoveredMaxLngPair,
-  };
+/**
+ * Generate an info window to link to the 3D viewer.
+ * @param {MouseEvent} event
+ */
+function linkTo3D(event) {
+  const latLng = event.latLng;
+  console.log('Polyline clicked at lat: ' + latLng.lat() +
+    ' lng: ' + latLng.lng());
+  infoWindow = new google.maps.InfoWindow({
+    content: '<a href=/home.html?id=' + id + '&dataType=' +
+      type + '&subSection=' + subSectionNumber +
+      '&stored=true' + '> View in 3D </a>',
+    position: latLng,
+  });
+  infoWindow.setMap(map);
 }
 
 /**
