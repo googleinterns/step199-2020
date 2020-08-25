@@ -49,16 +49,16 @@ function fetchData() {
   id = urlParams.get('id');
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then((response) => response.json())
-      .then((data) => pose = data)
-      .then(() => {
-        return fetch('\data');
-      })
-      .then((response) => response.json())
-      .then((json) => data = json)
-      .then(() => {
-        initMap();
-      });
+    .then((response) => response.json())
+    .then((data) => pose = data)
+    .then(() => {
+      return fetch('\data');
+    })
+    .then((response) => response.json())
+    .then((json) => data = json)
+    .then(() => {
+      initMap();
+    });
 }
 
 /**
@@ -75,11 +75,11 @@ function initMap() {
   console.log('initMap called');
   const poseCoordinates = [];
   for (let i = 0; i < pose.length; i++) {
-    poseCoordinates.push({lat: pose[i].lat, lng: pose[i].lng});
+    poseCoordinates.push({ lat: pose[i].lat, lng: pose[i].lng });
   }
 
   map = new google.maps.Map(document.getElementById('map'), {
-    center: {lat: pose[0].lat, lng: pose[0].lng},
+    center: { lat: pose[0].lat, lng: pose[0].lng },
     zoom: 18,
   });
 
@@ -96,11 +96,10 @@ function initMap() {
 
   const centerControlDiv = document.createElement('div');
   centerControl(centerControlDiv);
-  centerControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
 
   // Add event listeners for selection box
-  map.addListener('mousemove', function(event) {
+  map.addListener('mousemove', function (event) {
     const latLng = event.latLng;
     currentLat = latLng.lat();
     currentLong = latLng.lng();
@@ -109,8 +108,6 @@ function initMap() {
   console.log(table);
   const sideControlDiv = document.createElement('div');
   selectionPane(sideControlDiv, table);
-  console.log(sideControlDiv);
-  sideControlDiv.index = 1;
   map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
 }
 
@@ -121,7 +118,7 @@ function initMap() {
 function formatPoseData() {
   const poseCoordinates = [];
   for (point of pose) {
-    poseCoordinates.push({lat: point.lat, lng: point.lng});
+    poseCoordinates.push({ lat: point.lat, lng: point.lng });
   }
   return poseCoordinates;
 }
@@ -139,6 +136,7 @@ function selectionPane(sideControlDiv, innerContent) {
   selectionUI.className = 'selectionUI';
   selectionUI.title = 'Select the pose runs to view/render in 3D.';
   sideControlDiv.appendChild(selectionUI);
+  sideControlDiv.index = 1;
 
   // Set CSS for the selection pane interior.
   const selectionText = document.createElement('div');
@@ -160,6 +158,7 @@ function centerControl(controlDiv) {
   controlUI.className = 'controlUI';
   controlUI.title = 'Click to switch to 3D visualization';
   controlDiv.appendChild(controlUI);
+  sideControlDiv.index = 1;
 
   // Set CSS for the control interior.
   const controlText = document.createElement('div');
@@ -168,7 +167,7 @@ function centerControl(controlDiv) {
   controlUI.appendChild(controlText);
 
   // Setup the click event listeners: simply set the map to Chicago.
-  controlUI.addEventListener('click', function() {
+  controlUI.addEventListener('click', function () {
     window.location.href = '/3DVisual.html?id=' + id + '&dataType=' + type;
   });
 }
@@ -297,11 +296,11 @@ function generateCheckBoxEntry(runId) {
  */
 function fetchAndGraphData(runId) {
   fetch('/getrun?id=' + runId + '&dataType=pose')
-      .then((response) => response.json())
-      .then((data) => dataEntries = data).then(() => {
-        dataCache[runId] = dataEntries;
-        graphData(dataEntries, runId);
-      });
+    .then((response) => response.json())
+    .then((data) => dataEntries = data).then(() => {
+      dataCache[runId] = dataEntries;
+      graphData(dataEntries, runId);
+    });
 }
 
 /**
@@ -323,7 +322,7 @@ function graphData(dataEntries, runId) {
  * @param {Array<string>} columnElements
  */
 function updateRow(currentRow, columnElements) {
-  columnElements.foreach((currentElement)  => currentRow.appendChild(currentElement));  // eslint-disable-line
+  columnElements.foreach((currentElement) => currentRow.appendChild(currentElement));  // eslint-disable-line
 }
 
 
@@ -335,7 +334,7 @@ function updateRow(currentRow, columnElements) {
 function plotLine(dataEntries) {
   const currentLine = [];
   for (let i = 0; i < dataEntries.length; i++) {
-    currentLine.push({lat: dataEntries[i].lat, lng: dataEntries[i].lng});
+    currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
   }
   console.log(currentLine);
   currentLineGraph = new google.maps.Polyline({
@@ -352,25 +351,62 @@ function plotLine(dataEntries) {
 
 // When finished drawing the box, instead of leaving the widget, create markers
 // at the current lat and intersection with the line.
-$(function() {
-  let widget;
-  let x;
-  let y;
-  let finX;
-  let finY;
-  let priorLat;
-  let priorLng;
-  let ismousedown = false;
-  let markerBottom;
-  let markerTop;
-  let subPath;
-  let infoWindow;
-
+let widget;
+let x;
+let y;
+let finX;
+let finY;
+let priorLat;
+let priorLng;
+let isMouseDown = false;
+let markerBottom;
+let markerTop;
+let subPath;
+let infoWindow;
+const LEFTCLICK = 1;
+$(function () {
   $(document).on({
-    mousedown: function(event) {
+    mousedown: function (event) {
+      console.log("event occurred");
+      // Inital selection to draw the box.
+      if (event.ctrlKey) {
+        if (!isMouseDown) {
+          console.log("mousedown triggered");
+          placeRectangleStart();
+        }
+      }
+      else {
+        // Place the box.
+        if (event.which === LEFTCLICK) {
+          if (isMouseDown) {
+            placeRectangleEnd();
+          }
+        }
+      }
+    },
+    mousemove: genChangingBox
+  })
+});
+
+function placeRectangleStart() {
+  x = event.pageX;
+  y = event.pageY;
+  priorLat = currentLat;
+  priorLng = currentLng;
+  $('body').append('<div class="widget" style="top:' + y + 'px; left: ' + x + 'px;"></div>');
+  widget = $('.widget').last();
+  isMouseDown = true;
+}
+
+
+
+
+$(function () {
+  $(document).on({
+    mousedown: function (event) {
       console.log('event occurred');
       if (event.ctrlKey) {
-        if (!ismousedown) {
+        if (!isMouseDown) {
           console.log('mousedown triggered');
           x = event.pageX;
           y = event.pageY;
@@ -382,19 +418,19 @@ $(function() {
           $('body').append('<div class="widget" style="top:' +
             y + 'px; left: ' + x + 'px;"></div>');
           widget = $('.widget').last();
-          ismousedown = true;
+          isMouseDown = true;
         }
         // Toggle the mouseDown state so same click used to set final.
       } else {
         // On the left click action.
         if (event.which === 1) {
-          if (ismousedown) {
+          if (isMouseDown) {
             $('.widget').remove();
             if (infoWindow !== undefined) {
               infoWindow.setMap(null);
             }
             console.log('Mousedown set to false');
-            ismousedown = false;
+            isMouseDown = false;
             // Here check the intersection by looping over the current different
             // bounding rectangles and determining if they intersect. Assume
             // that the selection window doesn't contain any multiple parallel
@@ -417,7 +453,7 @@ $(function() {
               const loopLat = pose[i].lat;
               const loopLng = pose[i].lng;
               if (withinBound(minLat, maxLat, minLng,
-                  maxLng, loopLat, loopLng)) {
+                maxLng, loopLat, loopLng)) {
                 // While iterating save the max and min lat, same for the lng.
                 if (discoveredMinLat > loopLat) {
                   discoveredMinLatPair = loopLng;
@@ -454,7 +490,7 @@ $(function() {
             });
             // Setup event listener to show option for 3D window when polyline
             // is clicked.
-            google.maps.event.addListener(subPath, 'click', function(event) {
+            google.maps.event.addListener(subPath, 'click', function (event) {
               const latLng = event.latLng;
               console.log('Polyline clicked at lat: ' + latLng.lat() +
                 ' lng: ' + latLng.lng());
@@ -471,12 +507,12 @@ $(function() {
             subPath.setMap(map);
 
             markerBottom = new google.maps.Marker({
-              position: {lat: discoveredMinLat, lng: discoveredMinLatPair},
+              position: { lat: discoveredMinLat, lng: discoveredMinLatPair },
               title: 'Lat: ' + discoveredMinLat +
                 ' Lng: ' + discoveredMinLatPair,
             });
             markerTop = new google.maps.Marker({
-              position: {lat: discoveredMaxLngPair, lng: discoveredMaxLng},
+              position: { lat: discoveredMaxLngPair, lng: discoveredMaxLng },
               title: 'Lat: ' + discoveredMaxLngPair +
                 ' Lng: ' + discoveredMaxLng,
             });
@@ -492,8 +528,8 @@ $(function() {
         }
       }
     },
-    mousemove: function(event) {
-      if (ismousedown === true) {
+    mousemove: function (event) {
+      if (isMouseDown === true) {
         console.log('Set width triggered');
         finX = event.pageX;
         finY = event.pageY;
