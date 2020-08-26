@@ -18,22 +18,31 @@ const poseTransform = {
   /* Scalar*/ scale: 1};
 
 const poseStart = {start: 0};
-const poseEnd = {end: 1000};
+const poseEnd = {end: 10000};
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 /* Matrices used to scale and unscale pose cylinders */
-const scaleMatrix = new THREE.Matrix4().makeScale(2, 2, 2 );
-const scaleInverseMatrix = new THREE.Matrix4().makeScale(1/2, 1/2, 1/2 );
+const scaleCylinder = 2;
+const scaleMatrix = new THREE.Matrix4().makeScale(
+    scaleCylinder, scaleCylinder, scaleCylinder );
+const scaleInverseMatrix = new THREE.Matrix4().makeScale(
+    1/scaleCylinder, 1/scaleCylinder, 1/scaleCylinder );
+
 let oldIndex= -1;
-const instanceMatrix = new THREE.Matrix4();
-const matrix = new THREE.Matrix4();
 
 /* For hiding trajectory. */
-const zeroMatrix = new THREE.Matrix4().makeScale(1/400, 1/400, 1/400 );
-const nonZeroMatrix = new THREE.Matrix4().makeScale(400, 400, 400 );
+const scaleHide = 400;
+const zeroMatrix = new THREE.Matrix4().makeScale(
+    1/scaleHide, 1/scaleHide, 1/scaleHide );
+const nonZeroMatrix = new THREE.Matrix4().makeScale(
+    scaleHide, scaleHide, scaleHide);
+
 let oldStart=0;
 let oldEnd;
+
+const instanceMatrix = new THREE.Matrix4();
+const matrix = new THREE.Matrix4();
 
 
 initThreeJs();
@@ -247,11 +256,12 @@ function timeConverted(time) {
 /**
 * Does matrix multiplication on specific index of the direction matrix.
 * @param {object} typeOfMatrix matrix to multiply by.
+* @param {int} index  of point to change.
 */
-function changeMatrix(typeOfMatrix) {
-  direction.getMatrixAt(increment, instanceMatrix );
+function changeMatrix(typeOfMatrix, index) {
+  direction.getMatrixAt(index, instanceMatrix );
   matrix.multiplyMatrices( instanceMatrix, typeOfMatrix );
-  direction.setMatrixAt( increment, matrix );
+  direction.setMatrixAt( index, matrix );
   direction.instanceMatrix.needsUpdate = true;
 }
 
@@ -264,11 +274,11 @@ function hideOrientationStart() {
 
     /* bring old startline back to normal */
     for (let increment = 0; increment < oldStart; increment++) {
-      changeMatrix(nonZeroMatrix);
+      changeMatrix(nonZeroMatrix, increment);
     }
     /* minimize cut trajectory */
     for (let increment = poseStart.start; increment >= 0; increment--) {
-      changeMatrix(zeroMatrix);
+      changeMatrix(zeroMatrix, increment);
     }
     /* show new start info */
     displayPointValues(poseStart.start);
@@ -301,11 +311,11 @@ function hideOrientationEnd() {
 
     /* bring old startline back to normal */
     for (let increment = oldEnd; increment < pose.length; increment++) {
-      changeMatrix(nonZeroMatrix);
+      changeMatrix(nonZeroMatrix, increment);
     }
     for (let increment = poseEnd.end; increment < pose.length; increment++) {
       /* minimize cut trajectory */
-      changeMatrix(zeroMatrix);
+      changeMatrix(zeroMatrix, increment);
     }
     /* update oldStart*/
     oldEnd = poseEnd.end;
@@ -331,12 +341,14 @@ function makeGUI() {
       .onChange(plotOrientation)
       .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
 
+  /* Adds index of point manipulation to gui. */
   const max= pose.length;
   oldEnd=max;
   gui.add(poseStart, 'start', 0, max, max/100+1)
       .onFinishChange(hideOrientationStart);
   gui.add(poseEnd, 'end', 0, max, max/100+1)
       .onFinishChange(hideOrientationEnd);
+
   /* Time value. */
   const timeStart = {time: ''};
   time = gui.add(timeStart, '');
@@ -366,7 +378,7 @@ function makeGUI() {
   roll = gui.add(rollStart, 'roll');
 }
 
-/* Global variables for raycasting. */
+/* TODO: put in onclick function. */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -390,10 +402,7 @@ function animate() {
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (oldIndex!= -1) {
-    direction.getMatrixAt(oldIndex, instanceMatrix );
-    matrix.multiplyMatrices( instanceMatrix, scaleInverseMatrix );
-    direction.setMatrixAt( oldIndex, matrix );
-    direction.instanceMatrix.needsUpdate = true;
+    changeMatrix(scaleInverseMatrix, oldIndex);
     oldIndex= -1;
   }
 
@@ -408,15 +417,10 @@ function onClick(event) {
   /* Shows properties of first instance of intersected cylinder. */
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.type == 'Mesh' ) {
-      const len =i;
-      const instanceId = intersects[len].instanceId;
+      const instanceId = intersects[i].instanceId;
 
       /* Scale cylinder and set it as the last index scaled. */
-      direction.getMatrixAt( instanceId, instanceMatrix );
-      matrix.multiplyMatrices( instanceMatrix, scaleMatrix );
-      direction.setMatrixAt( instanceId, matrix );
-      direction.instanceMatrix.needsUpdate = true;
-      oldIndex = instanceId;
+      changeMatrix(scaleMatrix, i);
 
       /* Set values in GUI. */
       displayPointValues(instanceId);

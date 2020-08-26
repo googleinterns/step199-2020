@@ -5,21 +5,20 @@ package proto;
 
 public final class SensorData {
   private SensorData() {}
-
-  public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
-
-  public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
-    registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
+  public static void registerAllExtensions(
+      com.google.protobuf.ExtensionRegistryLite registry) {
   }
 
-  public interface PoseOrBuilder
-      extends
+  public static void registerAllExtensions(
+      com.google.protobuf.ExtensionRegistry registry) {
+    registerAllExtensions(
+        (com.google.protobuf.ExtensionRegistryLite) registry);
+  }
+  public interface PoseOrBuilder extends
       // @@protoc_insertion_point(interface_extends:formats.Pose)
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     *
-     *
      * <pre>
      * Position is in WGS84 latitude, longitude, altitude.
      * </pre>
@@ -29,8 +28,6 @@ public final class SensorData {
     double getGpsTimestamp();
 
     /**
-     *
-     *
      * <pre>
      * Degrees in [-90, 90].
      * </pre>
@@ -40,8 +37,6 @@ public final class SensorData {
     double getLat();
 
     /**
-     *
-     *
      * <pre>
      * Degrees in [-180,180].
      * </pre>
@@ -51,8 +46,6 @@ public final class SensorData {
     double getLng();
 
     /**
-     *
-     *
      * <pre>
      * Meters above WGS84
      * </pre>
@@ -62,8 +55,6 @@ public final class SensorData {
     double getAlt();
 
     /**
-     *
-     *
      * <pre>
      * Degrees in [0,360]
      * </pre>
@@ -73,8 +64,6 @@ public final class SensorData {
     float getRollDeg();
 
     /**
-     *
-     *
      * <pre>
      * Degrees in [0,360]
      * </pre>
@@ -84,8 +73,6 @@ public final class SensorData {
     float getPitchDeg();
 
     /**
-     *
-     *
      * <pre>
      * Degrees int [0,360]
      * </pre>
@@ -94,16 +81,17 @@ public final class SensorData {
      */
     float getYawDeg();
   }
-  /** Protobuf type {@code formats.Pose} */
-  public static final class Pose extends com.google.protobuf.GeneratedMessageV3
-      implements
+  /**
+   * Protobuf type {@code formats.Pose}
+   */
+  public  static final class Pose extends
+      com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:formats.Pose)
       PoseOrBuilder {
     // Use Pose.newBuilder() to construct.
     private Pose(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
-
     private Pose() {
       gpsTimestamp_ = 0D;
       lat_ = 0D;
@@ -115,10 +103,10 @@ public final class SensorData {
     }
 
     @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
       return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
-
     private Pose(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -133,60 +121,60 @@ public final class SensorData {
             case 0:
               done = true;
               break;
-            default:
-              {
-                if (!input.skipField(tag)) {
-                  done = true;
-                }
-                break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
               }
-            case 9:
-              {
-                gpsTimestamp_ = input.readDouble();
-                break;
-              }
-            case 17:
-              {
-                lat_ = input.readDouble();
-                break;
-              }
-            case 25:
-              {
-                lng_ = input.readDouble();
-                break;
-              }
-            case 33:
-              {
-                alt_ = input.readDouble();
-                break;
-              }
-            case 45:
-              {
-                rollDeg_ = input.readFloat();
-                break;
-              }
-            case 53:
-              {
-                pitchDeg_ = input.readFloat();
-                break;
-              }
-            case 61:
-              {
-                yawDeg_ = input.readFloat();
-                break;
-              }
+              break;
+            }
+            case 9: {
+
+              gpsTimestamp_ = input.readDouble();
+              break;
+            }
+            case 17: {
+
+              lat_ = input.readDouble();
+              break;
+            }
+            case 25: {
+
+              lng_ = input.readDouble();
+              break;
+            }
+            case 33: {
+
+              alt_ = input.readDouble();
+              break;
+            }
+            case 45: {
+
+              rollDeg_ = input.readFloat();
+              break;
+            }
+            case 53: {
+
+              pitchDeg_ = input.readFloat();
+              break;
+            }
+            case 61: {
+
+              yawDeg_ = input.readFloat();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
         throw e.setUnfinishedMessage(this);
       } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
       } finally {
         makeExtensionsImmutable();
       }
     }
-
-    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
       return proto.SensorData.internal_static_formats_Pose_descriptor;
     }
 
@@ -200,8 +188,6 @@ public final class SensorData {
     public static final int GPS_TIMESTAMP_FIELD_NUMBER = 1;
     private double gpsTimestamp_;
     /**
-     *
-     *
      * <pre>
      * Position is in WGS84 latitude, longitude, altitude.
      * </pre>
@@ -215,8 +201,6 @@ public final class SensorData {
     public static final int LAT_FIELD_NUMBER = 2;
     private double lat_;
     /**
-     *
-     *
      * <pre>
      * Degrees in [-90, 90].
      * </pre>
@@ -230,8 +214,6 @@ public final class SensorData {
     public static final int LNG_FIELD_NUMBER = 3;
     private double lng_;
     /**
-     *
-     *
      * <pre>
      * Degrees in [-180,180].
      * </pre>
@@ -245,8 +227,6 @@ public final class SensorData {
     public static final int ALT_FIELD_NUMBER = 4;
     private double alt_;
     /**
-     *
-     *
      * <pre>
      * Meters above WGS84
      * </pre>
@@ -260,8 +240,6 @@ public final class SensorData {
     public static final int ROLL_DEG_FIELD_NUMBER = 5;
     private float rollDeg_;
     /**
-     *
-     *
      * <pre>
      * Degrees in [0,360]
      * </pre>
@@ -275,8 +253,6 @@ public final class SensorData {
     public static final int PITCH_DEG_FIELD_NUMBER = 6;
     private float pitchDeg_;
     /**
-     *
-     *
      * <pre>
      * Degrees in [0,360]
      * </pre>
@@ -290,8 +266,6 @@ public final class SensorData {
     public static final int YAW_DEG_FIELD_NUMBER = 7;
     private float yawDeg_;
     /**
-     *
-     *
      * <pre>
      * Degrees int [0,360]
      * </pre>
@@ -303,7 +277,6 @@ public final class SensorData {
     }
 
     private byte memoizedIsInitialized = -1;
-
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -313,7 +286,8 @@ public final class SensorData {
       return true;
     }
 
-    public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
       if (gpsTimestamp_ != 0D) {
         output.writeDouble(1, gpsTimestamp_);
       }
@@ -343,36 +317,42 @@ public final class SensorData {
 
       size = 0;
       if (gpsTimestamp_ != 0D) {
-        size += com.google.protobuf.CodedOutputStream.computeDoubleSize(1, gpsTimestamp_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(1, gpsTimestamp_);
       }
       if (lat_ != 0D) {
-        size += com.google.protobuf.CodedOutputStream.computeDoubleSize(2, lat_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(2, lat_);
       }
       if (lng_ != 0D) {
-        size += com.google.protobuf.CodedOutputStream.computeDoubleSize(3, lng_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(3, lng_);
       }
       if (alt_ != 0D) {
-        size += com.google.protobuf.CodedOutputStream.computeDoubleSize(4, alt_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, alt_);
       }
       if (rollDeg_ != 0F) {
-        size += com.google.protobuf.CodedOutputStream.computeFloatSize(5, rollDeg_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(5, rollDeg_);
       }
       if (pitchDeg_ != 0F) {
-        size += com.google.protobuf.CodedOutputStream.computeFloatSize(6, pitchDeg_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(6, pitchDeg_);
       }
       if (yawDeg_ != 0F) {
-        size += com.google.protobuf.CodedOutputStream.computeFloatSize(7, yawDeg_);
+        size += com.google.protobuf.CodedOutputStream
+          .computeFloatSize(7, yawDeg_);
       }
       memoizedSize = size;
       return size;
     }
 
     private static final long serialVersionUID = 0L;
-
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
-        return true;
+       return true;
       }
       if (!(obj instanceof proto.SensorData.Pose)) {
         return super.equals(obj);
@@ -380,34 +360,34 @@ public final class SensorData {
       proto.SensorData.Pose other = (proto.SensorData.Pose) obj;
 
       boolean result = true;
-      result =
-          result
-              && (java.lang.Double.doubleToLongBits(getGpsTimestamp())
-                  == java.lang.Double.doubleToLongBits(other.getGpsTimestamp()));
-      result =
-          result
-              && (java.lang.Double.doubleToLongBits(getLat())
-                  == java.lang.Double.doubleToLongBits(other.getLat()));
-      result =
-          result
-              && (java.lang.Double.doubleToLongBits(getLng())
-                  == java.lang.Double.doubleToLongBits(other.getLng()));
-      result =
-          result
-              && (java.lang.Double.doubleToLongBits(getAlt())
-                  == java.lang.Double.doubleToLongBits(other.getAlt()));
-      result =
-          result
-              && (java.lang.Float.floatToIntBits(getRollDeg())
-                  == java.lang.Float.floatToIntBits(other.getRollDeg()));
-      result =
-          result
-              && (java.lang.Float.floatToIntBits(getPitchDeg())
-                  == java.lang.Float.floatToIntBits(other.getPitchDeg()));
-      result =
-          result
-              && (java.lang.Float.floatToIntBits(getYawDeg())
-                  == java.lang.Float.floatToIntBits(other.getYawDeg()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getGpsTimestamp())
+          == java.lang.Double.doubleToLongBits(
+              other.getGpsTimestamp()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getLat())
+          == java.lang.Double.doubleToLongBits(
+              other.getLat()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getLng())
+          == java.lang.Double.doubleToLongBits(
+              other.getLng()));
+      result = result && (
+          java.lang.Double.doubleToLongBits(getAlt())
+          == java.lang.Double.doubleToLongBits(
+              other.getAlt()));
+      result = result && (
+          java.lang.Float.floatToIntBits(getRollDeg())
+          == java.lang.Float.floatToIntBits(
+              other.getRollDeg()));
+      result = result && (
+          java.lang.Float.floatToIntBits(getPitchDeg())
+          == java.lang.Float.floatToIntBits(
+              other.getPitchDeg()));
+      result = result && (
+          java.lang.Float.floatToIntBits(getYawDeg())
+          == java.lang.Float.floatToIntBits(
+              other.getYawDeg()));
       return result;
     }
 
@@ -419,107 +399,100 @@ public final class SensorData {
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
       hash = (37 * hash) + GPS_TIMESTAMP_FIELD_NUMBER;
-      hash =
-          (53 * hash)
-              + com.google.protobuf.Internal.hashLong(
-                  java.lang.Double.doubleToLongBits(getGpsTimestamp()));
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getGpsTimestamp()));
       hash = (37 * hash) + LAT_FIELD_NUMBER;
-      hash =
-          (53 * hash)
-              + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getLat()));
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getLat()));
       hash = (37 * hash) + LNG_FIELD_NUMBER;
-      hash =
-          (53 * hash)
-              + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getLng()));
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getLng()));
       hash = (37 * hash) + ALT_FIELD_NUMBER;
-      hash =
-          (53 * hash)
-              + com.google.protobuf.Internal.hashLong(java.lang.Double.doubleToLongBits(getAlt()));
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          java.lang.Double.doubleToLongBits(getAlt()));
       hash = (37 * hash) + ROLL_DEG_FIELD_NUMBER;
-      hash = (53 * hash) + java.lang.Float.floatToIntBits(getRollDeg());
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getRollDeg());
       hash = (37 * hash) + PITCH_DEG_FIELD_NUMBER;
-      hash = (53 * hash) + java.lang.Float.floatToIntBits(getPitchDeg());
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getPitchDeg());
       hash = (37 * hash) + YAW_DEG_FIELD_NUMBER;
-      hash = (53 * hash) + java.lang.Float.floatToIntBits(getYawDeg());
+      hash = (53 * hash) + java.lang.Float.floatToIntBits(
+          getYawDeg());
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
-    public static proto.SensorData.Pose parseFrom(com.google.protobuf.ByteString data)
+    public static proto.SensorData.Pose parseFrom(
+        com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-
     public static proto.SensorData.Pose parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-
     public static proto.SensorData.Pose parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-
     public static proto.SensorData.Pose parseFrom(
-        byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-
     public static proto.SensorData.Pose parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
-
     public static proto.SensorData.Pose parseFrom(
-        java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
-          PARSER, input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
-
     public static proto.SensorData.Pose parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
     }
-
     public static proto.SensorData.Pose parseDelimitedFrom(
-        java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
-          PARSER, input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-
-    public static proto.SensorData.Pose parseFrom(com.google.protobuf.CodedInputStream input)
+    public static proto.SensorData.Pose parseFrom(
+        com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
     }
-
     public static proto.SensorData.Pose parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
-          PARSER, input, extensionRegistry);
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    public Builder newBuilderForType() {
-      return newBuilder();
-    }
-
+    public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-
     public static Builder newBuilder(proto.SensorData.Pose prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-
     public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
     }
 
     @java.lang.Override
@@ -528,13 +501,15 @@ public final class SensorData {
       Builder builder = new Builder(parent);
       return builder;
     }
-    /** Protobuf type {@code formats.Pose} */
-    public static final class Builder
-        extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
-        implements
+    /**
+     * Protobuf type {@code formats.Pose}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:formats.Pose)
         proto.SensorData.PoseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
         return proto.SensorData.internal_static_formats_Pose_descriptor;
       }
 
@@ -550,15 +525,16 @@ public final class SensorData {
         maybeForceBuilderInitialization();
       }
 
-      private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
-
       private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
       }
-
       public Builder clear() {
         super.clear();
         gpsTimestamp_ = 0D;
@@ -578,7 +554,8 @@ public final class SensorData {
         return this;
       }
 
-      public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
         return proto.SensorData.internal_static_formats_Pose_descriptor;
       }
 
@@ -610,32 +587,32 @@ public final class SensorData {
       public Builder clone() {
         return (Builder) super.clone();
       }
-
-      public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
         return (Builder) super.setField(field, value);
       }
-
-      public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
         return (Builder) super.clearField(field);
       }
-
-      public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return (Builder) super.clearOneof(oneof);
       }
-
       public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field, int index, Object value) {
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
-
       public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
-
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof proto.SensorData.Pose) {
-          return mergeFrom((proto.SensorData.Pose) other);
+          return mergeFrom((proto.SensorData.Pose)other);
         } else {
           super.mergeFrom(other);
           return this;
@@ -691,10 +668,8 @@ public final class SensorData {
         return this;
       }
 
-      private double gpsTimestamp_;
+      private double gpsTimestamp_ ;
       /**
-       *
-       *
        * <pre>
        * Position is in WGS84 latitude, longitude, altitude.
        * </pre>
@@ -705,8 +680,6 @@ public final class SensorData {
         return gpsTimestamp_;
       }
       /**
-       *
-       *
        * <pre>
        * Position is in WGS84 latitude, longitude, altitude.
        * </pre>
@@ -714,14 +687,12 @@ public final class SensorData {
        * <code>double gps_timestamp = 1;</code>
        */
       public Builder setGpsTimestamp(double value) {
-
+        
         gpsTimestamp_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Position is in WGS84 latitude, longitude, altitude.
        * </pre>
@@ -729,16 +700,14 @@ public final class SensorData {
        * <code>double gps_timestamp = 1;</code>
        */
       public Builder clearGpsTimestamp() {
-
+        
         gpsTimestamp_ = 0D;
         onChanged();
         return this;
       }
 
-      private double lat_;
+      private double lat_ ;
       /**
-       *
-       *
        * <pre>
        * Degrees in [-90, 90].
        * </pre>
@@ -749,8 +718,6 @@ public final class SensorData {
         return lat_;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [-90, 90].
        * </pre>
@@ -758,14 +725,12 @@ public final class SensorData {
        * <code>double lat = 2;</code>
        */
       public Builder setLat(double value) {
-
+        
         lat_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [-90, 90].
        * </pre>
@@ -773,16 +738,14 @@ public final class SensorData {
        * <code>double lat = 2;</code>
        */
       public Builder clearLat() {
-
+        
         lat_ = 0D;
         onChanged();
         return this;
       }
 
-      private double lng_;
+      private double lng_ ;
       /**
-       *
-       *
        * <pre>
        * Degrees in [-180,180].
        * </pre>
@@ -793,8 +756,6 @@ public final class SensorData {
         return lng_;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [-180,180].
        * </pre>
@@ -802,14 +763,12 @@ public final class SensorData {
        * <code>double lng = 3;</code>
        */
       public Builder setLng(double value) {
-
+        
         lng_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [-180,180].
        * </pre>
@@ -817,16 +776,14 @@ public final class SensorData {
        * <code>double lng = 3;</code>
        */
       public Builder clearLng() {
-
+        
         lng_ = 0D;
         onChanged();
         return this;
       }
 
-      private double alt_;
+      private double alt_ ;
       /**
-       *
-       *
        * <pre>
        * Meters above WGS84
        * </pre>
@@ -837,8 +794,6 @@ public final class SensorData {
         return alt_;
       }
       /**
-       *
-       *
        * <pre>
        * Meters above WGS84
        * </pre>
@@ -846,14 +801,12 @@ public final class SensorData {
        * <code>double alt = 4;</code>
        */
       public Builder setAlt(double value) {
-
+        
         alt_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Meters above WGS84
        * </pre>
@@ -861,16 +814,14 @@ public final class SensorData {
        * <code>double alt = 4;</code>
        */
       public Builder clearAlt() {
-
+        
         alt_ = 0D;
         onChanged();
         return this;
       }
 
-      private float rollDeg_;
+      private float rollDeg_ ;
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -881,8 +832,6 @@ public final class SensorData {
         return rollDeg_;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -890,14 +839,12 @@ public final class SensorData {
        * <code>float roll_deg = 5;</code>
        */
       public Builder setRollDeg(float value) {
-
+        
         rollDeg_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -905,16 +852,14 @@ public final class SensorData {
        * <code>float roll_deg = 5;</code>
        */
       public Builder clearRollDeg() {
-
+        
         rollDeg_ = 0F;
         onChanged();
         return this;
       }
 
-      private float pitchDeg_;
+      private float pitchDeg_ ;
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -925,8 +870,6 @@ public final class SensorData {
         return pitchDeg_;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -934,14 +877,12 @@ public final class SensorData {
        * <code>float pitch_deg = 6;</code>
        */
       public Builder setPitchDeg(float value) {
-
+        
         pitchDeg_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees in [0,360]
        * </pre>
@@ -949,16 +890,14 @@ public final class SensorData {
        * <code>float pitch_deg = 6;</code>
        */
       public Builder clearPitchDeg() {
-
+        
         pitchDeg_ = 0F;
         onChanged();
         return this;
       }
 
-      private float yawDeg_;
+      private float yawDeg_ ;
       /**
-       *
-       *
        * <pre>
        * Degrees int [0,360]
        * </pre>
@@ -969,8 +908,6 @@ public final class SensorData {
         return yawDeg_;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees int [0,360]
        * </pre>
@@ -978,14 +915,12 @@ public final class SensorData {
        * <code>float yaw_deg = 7;</code>
        */
       public Builder setYawDeg(float value) {
-
+        
         yawDeg_ = value;
         onChanged();
         return this;
       }
       /**
-       *
-       *
        * <pre>
        * Degrees int [0,360]
        * </pre>
@@ -993,12 +928,11 @@ public final class SensorData {
        * <code>float yaw_deg = 7;</code>
        */
       public Builder clearYawDeg() {
-
+        
         yawDeg_ = 0F;
         onChanged();
         return this;
       }
-
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -1009,12 +943,12 @@ public final class SensorData {
         return this;
       }
 
+
       // @@protoc_insertion_point(builder_scope:formats.Pose)
     }
 
     // @@protoc_insertion_point(class_scope:formats.Pose)
     private static final proto.SensorData.Pose DEFAULT_INSTANCE;
-
     static {
       DEFAULT_INSTANCE = new proto.SensorData.Pose();
     }
@@ -1023,15 +957,15 @@ public final class SensorData {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<Pose> PARSER =
-        new com.google.protobuf.AbstractParser<Pose>() {
-          public Pose parsePartialFrom(
-              com.google.protobuf.CodedInputStream input,
-              com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-              throws com.google.protobuf.InvalidProtocolBufferException {
-            return new Pose(input, extensionRegistry);
-          }
-        };
+    private static final com.google.protobuf.Parser<Pose>
+        PARSER = new com.google.protobuf.AbstractParser<Pose>() {
+      public Pose parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new Pose(input, extensionRegistry);
+      }
+    };
 
     public static com.google.protobuf.Parser<Pose> parser() {
       return PARSER;
@@ -1045,44 +979,47 @@ public final class SensorData {
     public proto.SensorData.Pose getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
+
   }
 
   private static final com.google.protobuf.Descriptors.Descriptor
-      internal_static_formats_Pose_descriptor;
-  private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    internal_static_formats_Pose_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_formats_Pose_fieldAccessorTable;
 
-  public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
+  public static com.google.protobuf.Descriptors.FileDescriptor
+      getDescriptor() {
     return descriptor;
   }
-
-  private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
-
+  private static  com.google.protobuf.Descriptors.FileDescriptor
+      descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\nPose.proto\022\007formats\"z\n\004Pose\022\025\n\rgps_tim"
-          + "estamp\030\001 \001(\001\022\013\n\003lat\030\002 \001(\001\022\013\n\003lng\030\003 \001(\001\022\013"
-          + "\n\003alt\030\004 \001(\001\022\020\n\010roll_deg\030\005 \001(\002\022\021\n\tpitch_d"
-          + "eg\030\006 \001(\002\022\017\n\007yaw_deg\030\007 \001(\002B\023\n\005protoB\nSens"
-          + "orDatab\006proto3"
+      "\n\nPose.proto\022\007formats\"z\n\004Pose\022\025\n\rgps_tim" +
+      "estamp\030\001 \001(\001\022\013\n\003lat\030\002 \001(\001\022\013\n\003lng\030\003 \001(\001\022\013" +
+      "\n\003alt\030\004 \001(\001\022\020\n\010roll_deg\030\005 \001(\002\022\021\n\tpitch_d" +
+      "eg\030\006 \001(\002\022\017\n\007yaw_deg\030\007 \001(\002B\023\n\005protoB\nSens" +
+      "orDatab\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-        new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
           public com.google.protobuf.ExtensionRegistry assignDescriptors(
               com.google.protobuf.Descriptors.FileDescriptor root) {
             descriptor = root;
             return null;
           }
         };
-    com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(
-        descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {}, assigner);
-    internal_static_formats_Pose_descriptor = getDescriptor().getMessageTypes().get(0);
-    internal_static_formats_Pose_fieldAccessorTable =
-        new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-            internal_static_formats_Pose_descriptor,
-            new java.lang.String[] {
-              "GpsTimestamp", "Lat", "Lng", "Alt", "RollDeg", "PitchDeg", "YawDeg",
-            });
+    com.google.protobuf.Descriptors.FileDescriptor
+      .internalBuildGeneratedFileFrom(descriptorData,
+        new com.google.protobuf.Descriptors.FileDescriptor[] {
+        }, assigner);
+    internal_static_formats_Pose_descriptor =
+      getDescriptor().getMessageTypes().get(0);
+    internal_static_formats_Pose_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_formats_Pose_descriptor,
+        new java.lang.String[] { "GpsTimestamp", "Lat", "Lng", "Alt", "RollDeg", "PitchDeg", "YawDeg", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
