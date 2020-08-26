@@ -16,6 +16,10 @@ const poseTransform = {
   /* Unit: 4 meters*/ translateZ: 0,
   /* Unit: degrees*/ rotate: 0,
   /* Scalar*/ scale: 1};
+
+const poseStart = {start: 0};
+const poseEnd = {end: 1000};
+
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 /* Matrices used to scale and unscale pose cylinders */
@@ -25,8 +29,15 @@ let oldIndex= -1;
 const instanceMatrix = new THREE.Matrix4();
 const matrix = new THREE.Matrix4();
 
+/* For hiding trajectory. */
+const zeroMatrix = new THREE.Matrix4().makeScale(1/400, 1/400, 1/400 );
+const nonZeroMatrix = new THREE.Matrix4().makeScale(400, 400, 400 );
+let oldStart=0;
+let oldEnd;
+
+
 initThreeJs();
-gui();
+makeGUI();
 animate();
 
 /**
@@ -46,6 +57,9 @@ function initThreeJs() {
   controls = new OrbitControls(camera, renderer.domElement );
 }
 
+/**
+* Makes camera.
+ */
 function makeCamera() {
   /*  Called in fetch data. */
   camera = new THREE.PerspectiveCamera(
@@ -140,6 +154,33 @@ function plotTrajectory() {
 }
 
 /**
+ * This uses the pose data to create a blue line representing partial pose
+ * trajectory.
+ * @param {int} index beginning index.
+ * @param {int} end end index.
+ */
+function plotPartialPath(index, end) {
+  // Removes any existing trajectory objects for repositioning.
+  scene.remove(trajectory);
+  /**
+   * The x axis controls the left and right direction, the y axis controls
+   * up and down movement, and the z axis controls forward and back movement.
+   */
+  const coordinates=[];
+  for (let increment= index; increment < end; increment++) {
+    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+    coordinates.push(new THREE.Vector3(x, y, z));
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
+  const material = new THREE.LineBasicMaterial({color: 'blue'});
+  trajectory = new THREE.Line(geometry, material);
+  scene.add(trajectory);
+  trajectory.position.x = poseTransform.translateX;
+  trajectory.position.z = poseTransform.translateZ;
+  trajectory.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
+}
+
+/**
  * This repositions all children the orientation object. The object
  * is a geometry instance, initializing the object with one geometry
  * call rather than the number of data points. (O(1) vs. O(N))
@@ -172,7 +213,6 @@ function plotOrientation() {
   orientation.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
 }
 
-/* Global variables that will hold point informsation to be shown in GUI. */
 let time;
 let lat;
 let long;
@@ -182,10 +222,101 @@ let yaw;
 let pitch;
 
 /**
+* get time in readable units
+* @param {double} time raw time.
+* @return {String} readable time.
+ */
+function timeConverted(time) {
+  const unixTimestamp = time;
+  // Create a new JavaScript Date object based on the timestamp
+  // multiplied by 1000 so that the argument is in milliseconds, not seconds.
+  const date = new Date(unixTimestamp * 1000);
+  // Hours part from the timestamp
+  const hours = date.getHours();
+  // Minutes part from the timestamp
+  const minutes = '0' + date.getMinutes();
+  // Seconds part from the timestamp
+  const seconds = '0' + date.getSeconds();
+
+  // Will display time in 10:30:23 format
+  const formattedTime = hours + ':' +
+   minutes.substr(-2) + ':' + seconds.substr(-2);
+  return formattedTime;
+}
+
+/**
+* Does matrix multiplication on specific index of the direction matrix.
+* @param {object} typeOfMatrix matrix to multiply by.
+*/
+function changeMatrix(typeOfMatrix) {
+  direction.getMatrixAt(increment, instanceMatrix );
+  matrix.multiplyMatrices( instanceMatrix, typeOfMatrix );
+  direction.setMatrixAt( increment, matrix );
+  direction.instanceMatrix.needsUpdate = true;
+}
+
+/**
+* Hides beginning of trajectory based on user selected point.
+ */
+function hideOrientationStart() {
+  if (poseStart.start < pose.length && poseStart.start < poseEnd.end) {
+    plotPartialPath(poseStart.start, poseEnd.end);
+
+    /* bring old startline back to normal */
+    for (let increment = 0; increment < oldStart; increment++) {
+      changeMatrix(nonZeroMatrix);
+    }
+    /* minimize cut trajectory */
+    for (let increment = poseStart.start; increment >= 0; increment--) {
+      changeMatrix(zeroMatrix);
+    }
+    /* show new start info */
+    displayPointValues(poseStart.start);
+
+    /* update oldStart*/
+    oldStart = poseStart.start;
+  }
+}
+
+/**
+* Updates GUI with specific point information.
+* @param {int} index index of point.
+*/
+function displayPointValues(index) {
+  time.setValue(timeConverted(pose[index].gpsTimestamp));
+  lat.setValue(pose[index].lat);
+  long.setValue(pose[poseStart.start].lng);
+  alt.setValue(pose[index].alt);
+  yaw.setValue(pose[index].yawDeg);
+  roll.setValue(pose[index].rollDeg);
+  pitch.setValue(pose[index].pitchDeg);
+}
+
+/**
+* Hides end of trajectory based on user selected point.
+ */
+function hideOrientationEnd() {
+  if (poseEnd.end < pose.length && poseEnd.end > poseStart.start) {
+    plotPartialPath(poseStart.start, poseEnd.end);
+
+    /* bring old startline back to normal */
+    for (let increment = oldEnd; increment < pose.length; increment++) {
+      changeMatrix(nonZeroMatrix);
+    }
+    for (let increment = poseEnd.end; increment < pose.length; increment++) {
+      /* minimize cut trajectory */
+      changeMatrix(zeroMatrix);
+    }
+    /* update oldStart*/
+    oldEnd = poseEnd.end;
+  }
+}
+
+/**
  * This function initializes gui allowing the user to manipulate the
  * pose objects.
  */
-function gui() {
+function makeGUI() {
   const gui = new GUI();
   gui.add(poseTransform, 'rotate', 0, 360, 1).onChange(plotOrientation)
       .onFinishChange(plotTrajectory)
@@ -199,32 +330,39 @@ function gui() {
   gui.add(poseTransform, 'scale', .5, 2, .25)
       .onChange(plotOrientation)
       .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
+
+  const max= pose.length;
+  oldEnd=max;
+  gui.add(poseStart, 'start', 0, max, max/100+1)
+      .onFinishChange(hideOrientationStart);
+  gui.add(poseEnd, 'end', 0, max, max/100+1)
+      .onFinishChange(hideOrientationEnd);
   /* Time value. */
-  const timeStart = {time: 'no point yet'};
-  time = gui.add(timeStart, 'time');
+  const timeStart = {time: ''};
+  time = gui.add(timeStart, '');
 
   /* Lat value. */
-  const latStart = {lat: 'no point yet'};
+  const latStart = {lat: ''};
   lat = gui.add(latStart, 'lat');
 
   /* Long value. */
-  const longStart = {long: 'no point yet'};
+  const longStart = {long: ''};
   long = gui.add(longStart, 'long');
 
   /* Alt value. */
-  const altStart = {alt: 'no point yet'};
+  const altStart = {alt: ''};
   alt = gui.add(altStart, 'alt');
 
   /* Yaw value. */
-  const yawStart = {yaw: 'no point yet'};
+  const yawStart = {yaw: ''};
   yaw = gui.add(yawStart, 'yaw');
 
   /* Pitch value. */
-  const pitchStart = {pitch: 'no point yet'};
+  const pitchStart = {pitch: ''};
   pitch = gui.add(pitchStart, 'pitch');
 
   /* Roll value. */
-  const rollStart = {roll: 'no point yet'};
+  const rollStart = {roll: ''};
   roll = gui.add(rollStart, 'roll');
 }
 
@@ -244,7 +382,11 @@ function animate() {
   renderer.render(scene, camera);
 };
 
-/* What to do on mouse click. */
+
+/**
+* What to do on mouse click.
+* @param {event} event event.
+ */
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (oldIndex!= -1) {
@@ -277,13 +419,7 @@ function onClick(event) {
       oldIndex = instanceId;
 
       /* Set values in GUI. */
-      time.setValue(pose[instanceId].gpsTimestamp);
-      lat.setValue(pose[instanceId].lat);
-      long.setValue(pose[instanceId].lng);
-      alt.setValue(pose[instanceId].alt);
-      yaw.setValue(pose[instanceId].yawDeg);
-      roll.setValue(pose[instanceId].rollDeg);
-      pitch.setValue(pose[instanceId].pitchDeg);
+      displayPointValues(instanceId);
 
       /*
       * Break because the raycaster could intersect multiple object but we only
@@ -294,8 +430,8 @@ function onClick(event) {
   }
 }
 
-window.addEventListener('click', onClick);
 
+window.addEventListener('click', onClick);
 
 /**
  * This function fetchs pose data from the RunInfo servlet,
@@ -314,4 +450,3 @@ function fetchData() {
       .then((data) => pose = data)
       .then(() => addMap());
 }
-
