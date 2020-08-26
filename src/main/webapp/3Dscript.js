@@ -188,14 +188,14 @@ function createInstances() {
   * @param {number} lat Latitude represented in Decimal Degrees
   * @param {number} lng Longitude represented in Decimal Degrees
   * @param {number} alt Altitude represented in Decimal Degrees
-  * @return {array} An array containing x, y, z ECEF coordinates.
+  * @return {array} An array containing x, y, z ECEF coordinates
+  *     all of which are in meters.
   */
 function llaToEcef(lat, lng, alt) {
   // LLA to ECEF Paper: https://microem.ru/files/2012/08/GPS.G1-X-00006.pdf
-  // Constants.
-  const majorAxis = 6378137;
-  const flatConstant = 1 / 298.25722356;
-  const minorAxis = majorAxis*(1-flatConstant);
+  const majorAxis = 6378137; // Meters
+  const flatConstant = 1 / 298.25722356; // Scalar
+  const minorAxis = majorAxis*(1-flatConstant); // Meters
 
   // Eccentricity.
   const eSq = (Math.pow(majorAxis, 2) -
