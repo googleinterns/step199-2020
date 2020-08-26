@@ -94,7 +94,7 @@ function fetchData() {
         const origin = new Point(lat, lng, alt);
         addMap(latLng);
         const [xAxis, yAxis, zAxis] = createInstances();
-        const orientation = {x: xAxis, y: yAxis, z: zAxis}
+        const orientation = {x: xAxis, y: yAxis, z: zAxis};
         plotTrajectory(origin);
         plotOrientation(orientation, origin);
       });
