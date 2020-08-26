@@ -18,6 +18,13 @@ const poseTransform = {
   /* Scalar*/ scale: 1};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
+/* Matrices used to scale and unscale pose cylinders */
+const scaleMatrix = new THREE.Matrix4().makeScale(2, 2, 2 );
+const scaleInverseMatrix = new THREE.Matrix4().makeScale(1/2, 1/2, 1/2 );
+let oldIndex= -1;
+const instanceMatrix = new THREE.Matrix4();
+const matrix = new THREE.Matrix4();
+
 initThreeJs();
 gui();
 animate();
@@ -28,36 +35,25 @@ animate();
  */
 function initThreeJs() {
   scene = new THREE.Scene();
+
+  renderer = new THREE.WebGLRenderer();
+  renderer.setPixelRatio( window.devicePixelRatio );
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+  clock = new THREE.Clock();
+  fetchData();
+  // The camera controls allows the user to fly with the camera.
+  controls = new OrbitControls(camera, renderer.domElement );
+}
+
+function makeCamera() {
+  /*  Called in fetch data. */
   camera = new THREE.PerspectiveCamera(
       /* fov =*/ 75,
       /* aspectRatio =*/ window.innerWidth / window.innerHeight,
       /* nearFrustum =*/.1,
       /* farFrustum =*/ 1000);
   camera.position.set(0, 1, 1);
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-  clock = new THREE.Clock();
-  controls = new OrbitControls(camera, renderer.domElement );
-
-  fetchData();
-}
-
-
-/**
- * This function fetchs pose data from the RunInfo servlet,
- * it is an asynchronous call requiring addMap() to be
- * called after the data is fully loaded.
- */
-function fetchData() {
-  const queryString = window.location.search;
-  const urlParams = new URLSearchParams(queryString);
-  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
-  fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then((response) => response.json())
-      .then((data) => pose = data)
-      .then(() => addMap());
 }
 
 /**
@@ -176,6 +172,15 @@ function plotOrientation() {
   orientation.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
 }
 
+/* Global variables that will hold point informsation to be shown in GUI. */
+let time;
+let lat;
+let long;
+let alt;
+let roll;
+let yaw;
+let pitch;
+
 /**
  * This function initializes gui allowing the user to manipulate the
  * pose objects.
@@ -194,7 +199,38 @@ function gui() {
   gui.add(poseTransform, 'scale', .5, 2, .25)
       .onChange(plotOrientation)
       .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
+  /* Time value. */
+  const timeStart = {time: 'no point yet'};
+  time = gui.add(timeStart, 'time');
+
+  /* Lat value. */
+  const latStart = {lat: 'no point yet'};
+  lat = gui.add(latStart, 'lat');
+
+  /* Long value. */
+  const longStart = {long: 'no point yet'};
+  long = gui.add(longStart, 'long');
+
+  /* Alt value. */
+  const altStart = {alt: 'no point yet'};
+  alt = gui.add(altStart, 'alt');
+
+  /* Yaw value. */
+  const yawStart = {yaw: 'no point yet'};
+  yaw = gui.add(yawStart, 'yaw');
+
+  /* Pitch value. */
+  const pitchStart = {pitch: 'no point yet'};
+  pitch = gui.add(pitchStart, 'pitch');
+
+  /* Roll value. */
+  const rollStart = {roll: 'no point yet'};
+  roll = gui.add(rollStart, 'roll');
 }
+
+/* Global variables for raycasting. */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 /**
  * This is the animation loop which continually updates the scene.
@@ -207,4 +243,75 @@ function animate() {
   controls.update(delta);
   renderer.render(scene, camera);
 };
+
+/* What to do on mouse click. */
+function onClick(event) {
+  /* If a cylinder was the previous thing clicked, unscale it. */
+  if (oldIndex!= -1) {
+    direction.getMatrixAt(oldIndex, instanceMatrix );
+    matrix.multiplyMatrices( instanceMatrix, scaleInverseMatrix );
+    direction.setMatrixAt( oldIndex, matrix );
+    direction.instanceMatrix.needsUpdate = true;
+    oldIndex= -1;
+  }
+
+  event.preventDefault();
+  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+  /* Get array of objects intersected by raycaster */
+  raycaster.setFromCamera( mouse, camera );
+  const intersects = raycaster.intersectObjects(scene.children, true);
+
+  /* Shows properties of first instance of intersected cylinder. */
+  for (let i=0; i < intersects.length; i++) {
+    if ( intersects[i].object.type == 'Mesh' ) {
+      const len =i;
+      const instanceId = intersects[len].instanceId;
+
+      /* Scale cylinder and set it as the last index scaled. */
+      direction.getMatrixAt( instanceId, instanceMatrix );
+      matrix.multiplyMatrices( instanceMatrix, scaleMatrix );
+      direction.setMatrixAt( instanceId, matrix );
+      direction.instanceMatrix.needsUpdate = true;
+      oldIndex = instanceId;
+
+      /* Set values in GUI. */
+      time.setValue(pose[instanceId].gpsTimestamp);
+      lat.setValue(pose[instanceId].lat);
+      long.setValue(pose[instanceId].lng);
+      alt.setValue(pose[instanceId].alt);
+      yaw.setValue(pose[instanceId].yawDeg);
+      roll.setValue(pose[instanceId].rollDeg);
+      pitch.setValue(pose[instanceId].pitchDeg);
+
+      /*
+      * Break because the raycaster could intersect multiple object but we only
+     *  need the first cylinder.
+      */
+      break;
+    }
+  }
+}
+
+window.addEventListener('click', onClick);
+
+
+/**
+ * This function fetchs pose data from the RunInfo servlet,
+ * it is an asynchronous call requiring addMap() to be
+ * called after the data is fully loaded.
+ */
+function fetchData() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const id = urlParams.get('id');
+  const type = urlParams.get('dataType');
+  makeCamera();
+
+  fetch('/getrun?id=' + id + '&dataType=' + type)
+      .then((response) => response.json())
+      .then((data) => pose = data)
+      .then(() => addMap());
+}
 
