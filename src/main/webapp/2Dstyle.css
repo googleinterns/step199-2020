@@ -39,9 +39,10 @@ body {
   max-height: 45vh;
   overflow-x: hidden;
   overflow-y: auto;
+
   /* IE and Edge. */
   scrollbar-width: none;
-  padding-right:5px;
+  padding-right: 5px;
 }
 
 .selectionText {
