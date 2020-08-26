@@ -96,7 +96,7 @@ function initMap() {
     zoom: 18,
   });
 
-  initialPoseMap = getPolyLine(formatPoseData(initialPose), '#FF0000', 1.0, 2);
+  initialPoseMap = getPolyline(formatPoseData(initialPose), '#FF0000', 1.0, 2);
   initialPoseMap.setMap(map);
 
   const centerControlDiv = centerControl();
@@ -333,7 +333,7 @@ function updateRow(currentRow, columnElements) {
 
 /**
  * Generate a polyline from the given data points and return it.
- * @param {Array<Point>} dataEntries
+ * @param {Array<PoseData>} dataEntries
  * @return {google.maps.Polyline}
  */
 function plotLine(dataEntries) {
@@ -342,7 +342,7 @@ function plotLine(dataEntries) {
     currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
-  currentLineGraph = getPolyLine(currentLine, 'blue', 1.0, 2);
+  currentLineGraph = getPolyline(currentLine, 'blue', 1.0, 2);
   initialPoseData.setMap(null);
   return currentLineGraph;
 }
@@ -414,14 +414,8 @@ function placeRectangleEnd() {
   if (infoWindow !== undefined) {
     infoWindow.setMap(null);
   }
-  // Clear other paths.
-  // line
-  // minLatPoint
-  // lat , lng
-  // minLngPoint
-  // lat, lng
   const subSectionData = computeSubSection(currentRun.data,
-      currentLat, priorLat, currentLng, priorLng);
+      currentLat, currentLng, priorLat, priorLng);
   // Choose a subSectionNumber, implement differently in future pr.
   const subSectionNumber = 1;
   // Clear prior paths, only display newly selected ones.
@@ -434,9 +428,8 @@ function placeRectangleEnd() {
   if (subPath !== undefined) {
     subPath.setMap(null);
   }
-  subPath = getPolyLine(subLine, 'blue', 1.0, 2);
-  // Setup event listener to show option for 3D window when polyline is
-  // clicked.
+  subPath = getPolyline(subLine, 'blue', 1.0, 2);
+  // Setup event listener to show option for 3D window when polyline is clicked.
   google.maps.event.addListener(subPath, 'click', linkTo3D);
   subPath.setMap(map);
   markerBottom = genMarker(subSectionData.minLatPoint.lat,
@@ -494,8 +487,8 @@ function genMarker(latitude, longitude) {
  * @param {number} index
  * @return {google.maps.Polyline}
  */
-function getPolyLine(linePoints, color, opacity, weight, index = 1) {
-  const polyLine = new google.maps.Polyline({
+function getPolyline(linePoints, color, opacity, weight, index = 1) {
+  const polyline = new google.maps.Polyline({
     path: linePoints,
     geodesic: true,
     strokeColor: color,
@@ -503,7 +496,7 @@ function getPolyLine(linePoints, color, opacity, weight, index = 1) {
     strokeWeight: weight,
     zIndex: index,
   });
-  return polyLine;
+  return polyline;
 }
 /**
  * @typedef {Object<Array<Point>, Point, Point>} subSectionData
@@ -515,12 +508,12 @@ function getPolyLine(linePoints, color, opacity, weight, index = 1) {
  * Compute the subsection of a line contained in a bounding rectangle.
  * @param {Array<Point>} pose
  * @param {number} currentLat
- * @param {number} priorLat
  * @param {number} currentLng
+ * @param {number} priorLat
  * @param {number} priorLng
  * @return {subSectionData}
  */
-function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
+function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   const minLat = Math.min(currentLat, priorLat);
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
@@ -534,17 +527,15 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   let discoveredMaxLngPair = -91;
   subLine = [];
   for (point of pose) {
-    const loopLat = point.lat;
-    const loopLng = point.lng;
     if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
       // While iterating save the max and min lat, same for the lng.
-      if (discoveredMinLat > loopLat) {
-        discoveredMinLatPair = loopLng;
-        discoveredMinLat = loopLat;
+      if (discoveredMinLat > point.lat) {
+        discoveredMinLatPair = point.lng;
+        discoveredMinLat = point.lat;
       }
-      if (discoveredMaxLng < loopLng) {
-        discoveredMaxLngPair = loopLat;
-        discoveredMaxLng = loopLng;
+      if (discoveredMaxLng < point.lng) {
+        discoveredMaxLngPair = point.lat;
+        discoveredMaxLng = point.lng;
       }
       subLine.push(pose[i]);
     }
@@ -579,13 +570,13 @@ function linkTo3D(event) {
  * @param {number} maxLat
  * @param {number} minLng
  * @param {number} maxLng
- * @param {number} valLat
- * @param {number} valLng
+ * @param {number} lat
+ * @param {number} lng
  * @return {boolean}
  */
-function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
-  if (valLat >= minLat && valLat <= maxLat &&
-    valLng >= minLng && valLng <= maxLng) {
+function withinBound(minLat, maxLat, minLng, maxLng, lat, lng) {
+  if (lat >= minLat && lat <= maxLat &&
+    lng >= minLng && lng <= maxLng) {
     return true;
   }
   return false;
