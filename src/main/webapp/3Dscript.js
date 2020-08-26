@@ -18,13 +18,24 @@ class Point {
   }
   /**
    * A getter.
-   * @param {String} axis A string specifying which axis to return;
-   * @return {(number|object)} An arbitary 3D data point.
+   * @return {(number|object)} An arbitary x data point.
    */
-  get(axis) {
-    if (axis == 'x') return this.x;
-    if (axis == 'y') return this.y;
-    if (axis == 'z') return this.z;
+  getX() {
+    return this.x;
+  }
+  /**
+   * A getter.
+   * @return {(number|object)} An arbitary y data point.
+   */
+  getY() {
+    return this.y;
+  }
+  /**
+   * A getter.
+   * @return {(number|object)} An arbitary z data point.
+   */
+  getZ() {
+    return this.z;
   }
 }
 // Global objects.
@@ -79,8 +90,9 @@ function fetchData() {
       .then((data) => pose = data)
       .then(() => {
         const [lat, lng, alt] = findMedians();
+        const lla = {latitude, longitude}
         const origin = new Point(lat, lng, alt);
-        addMap(origin);
+        addMap(lla);
         const orientation = createInstances();
         plotTrajectory(origin);
         plotOrientation(orientation, origin);
@@ -118,7 +130,7 @@ function findMedians() {
  * It also calls two other functions so it can wait on the fetch
  * request and significantly cut down rendering time with
  * geometry instancing.
- * @param {Object} center An LLA coordinate used as the center
+ * @param {{Object.<String, number>}} center An LLA coordinate used as the center
  *     of the 2D map.
 */
 function addMap(center) {
@@ -127,7 +139,7 @@ function addMap(center) {
   const material = new THREE.MeshLambertMaterial({
     map: loader.load(
         'https://maps.googleapis.com/maps/api/staticmap' +
-      '?format=png&center=' + center.get(x) + ',' + center.get(y) +
+      '?format=png&center=' + center.latitude + ',' + center.longitude +
       '&zoom=18&size=500x500&key=' + apiKey),
   });
   const geometry = new THREE.PlaneGeometry(200, 200);
@@ -206,26 +218,24 @@ function llaToEcef(lat, lng, alt) {
 /**
  * Converts Earth-Centered, Earth-Fixed coordinates (ECEF) to
  * East-North-Up coordinates (ENU).
- * @param {number} x coordinates represented in meters.
- * @param {number} y coordinates represented in meters.
- * @param {number} z coordinates represented in meters.
+ * @param {Object} ecefPose The pose data point being converted to ENU.
  * @param {Object} ecefOrigin Reference ECEF position, used as the origin
  *     of the 3D world.
  * @param {Object} origin Reference LLA position, used as the origin
  *     of the 3D world.
  * @return {array} An array containing x, y, z ENU coordinates.
  */
-function ecefToEnu(x, y, z, ecefOrigin, origin) {
+function ecefToEnu(ecefPose, ecefOrigin, origin) {
   // ECEF to ENU equation: https://www.mathworks.com/help/map/ref/ecef2enu.html
   // Localizes the new xyz coordinate using the reference point.
-  const xd = x - ecefOrigin.get(x);
-  const yd = y - ecefOrigin.get(y);
-  const zd = z - ecefOrigin.get(z);
+  const xd = ecefPose.getX() - ecefOrigin.getX();
+  const yd = ecefPose.getY() - ecefOrigin.getY();
+  const zd = ecefPose.getZ() - ecefOrigin.getZ();
 
-  const sinLambda = Math.sin(THREE.Math.degToRad(origin.get(x)));
-  const cosLambda = Math.cos(THREE.Math.degToRad(origin.get(x)));
-  const cosPhi = Math.cos(THREE.Math.degToRad(origin.get(y)));
-  const sinPhi = Math.sin(THREE.Math.degToRad(origin.get(y)));
+  const sinLambda = Math.sin(THREE.Math.degToRad(origin.getX()));
+  const cosLambda = Math.cos(THREE.Math.degToRad(origin.getX()));
+  const cosPhi = Math.cos(THREE.Math.degToRad(origin.getY()));
+  const sinPhi = Math.sin(THREE.Math.degToRad(origin.getY()));
 
   // Matrix multiplication.
   const xEast = -sinPhi * xd + cosPhi * yd;
@@ -253,11 +263,12 @@ function plotTrajectory(origin) {
    */
   const coordinates=[];
   const [ecefX, ecefY, ecefZ] =
-    llaToEcef(origin.get(x), origin.get(y), origin.get(z));
+    llaToEcef(origin.getX(), origin.getY(), origin.getZ());
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
   for (const point of pose) {
     const [x0, y0, z0] = llaToEcef(point.lat, point.lng, point.alt);
-    const [x, y, z] = ecefToEnu(x0, y0, z0, ecefOrigin, origin);
+    const ecefPose = new Point(x0, y0, z0);
+    const [x, y, z] = ecefToEnu(ecefPose, ecefOrigin, origin);
     coordinates.push(new THREE.Vector3(x, y, z)
         .multiplyScalar(poseTransform.scale));
   }
@@ -278,9 +289,7 @@ function plotTrajectory(origin) {
 function plotOrientation(orientation, origin) {
   const axes = ['x', 'y', 'z'];
   for (const axis of axes) {
-    if (axis != '') {
-      matrixRotation(orientation, axis, origin);
-    }
+    matrixRotation(orientation, axis, origin);
   }
 }
 
@@ -298,7 +307,7 @@ function matrixRotation(orientation, direction, origin) {
   let increment = 0;
   let poseObject;
   const [ecefX, ecefY, ecefZ] =
-    llaToEcef(origin.get(x), origin.get(y), origin.get(z));
+    llaToEcef(origin.getX(), origin.getY(), origin.getZ());
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
   for (const point of pose) {
     /**
@@ -309,7 +318,8 @@ function matrixRotation(orientation, direction, origin) {
      */
     const matrix = new THREE.Matrix4();
     const [x0, y0, z0] = llaToEcef(point.lat, point.lng, point.alt);
-    const [x, y, z] = ecefToEnu(x0, y0, z0, ecefOrigin, origin);
+    const ecefPose = new Point(x0, y0, z0);
+    const [x, y, z] = ecefToEnu(ecefPose, ecefOrigin, origin);
     matrix.makeTranslation(x, y, z);
     matrix.multiply(new THREE.Matrix4().makeRotationX(Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
@@ -319,14 +329,14 @@ function matrixRotation(orientation, direction, origin) {
     matrix.multiply(new THREE.Matrix4().makeRotationY(
         THREE.Math.degToRad(point.rollDeg)));
     if (direction == 'z') {
-      poseObject = orientation.get(z);
+      poseObject = orientation.getZ();
     } else if (direction == 'y') {
       matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-      poseObject = orientation.get(y);
+      poseObject = orientation.getY();
     } else if (direction == 'x') {
       matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
       matrix.multiply(new THREE.Matrix4().makeRotationZ(-Math.PI/2));
-      poseObject = orientation.get(x);
+      poseObject = orientation.getX();
     }
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     poseObject.setMatrixAt(increment, matrix);
