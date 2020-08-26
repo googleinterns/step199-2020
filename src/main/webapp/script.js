@@ -13,8 +13,11 @@ function createTable() { // eslint-disable-line no-unused-vars
     columnOne.innerText = 'RunID';
     const columnTwo = document.createElement('th');
     columnTwo.innerText = 'DataType';
+    const columnThree = document.createElement('th');
+    columnThree.innerText = 'Select';
     headerRow.appendChild(columnOne);
     headerRow.appendChild(columnTwo);
+    headerRow.appendChild(columnThree);
     table.appendChild(headerRow);
     let even = false;
     for (const key in json) {
@@ -36,6 +39,7 @@ function createTable() { // eslint-disable-line no-unused-vars
     }
   });
 }
+
 /**
  * Create a row in the given table.
  * @param {Object} json The JSON that is currently being parsed.
@@ -47,22 +51,80 @@ function initializeRow(json, key, currentRow) {
   let index = 0;
   for (const type of json[key]) {
     const columnEntry = document.createElement('td');
-    console.log(type);
-    console.log(type.toUpperCase());
+
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
       link.href = '/getrun?id=' + key + '&dataType=' + json[key];
       link.innerText = type;
       columnEntry.appendChild(link);
+      currentRow.appendChild(columnEntry);
+      /* Makes checkboxes for each data entry. */
+      const checkbox = document.createElement('INPUT');
+      checkbox.type = 'checkbox';
+      checkbox.setAttribute('name', 'check');
+      checkbox.setAttribute('value', link.getAttribute('name'));
+      currentRow.appendChild(checkbox);
     } else {
       columnEntry.innerText = '';
+      currentRow.appendChild(columnEntry);
     }
-    currentRow.appendChild(columnEntry);
     index++;
   }
   return currentRow;
 }
+
+/* Select all Checkboxes function. */
+function toggle(source) {
+  checkboxes = document.getElementsByName('check');
+  for (let i=0, n=checkboxes.length; i<n; i++) {
+    checkboxes[i].checked = source.checked;
+  }
+}
+
+/*
+ * Make url for multiple runs selected. should be in the style of
+ ** link.href = "/home.html?id=" + key + "&dataType=" + json[key]
+ */
+function makeMultiRunURL() {
+  const checkboxes = document.getElementsByName('check');
+  let count =0;
+  const link = document.createElement('a');
+  link.href = '/home.html?';
+
+  for (let i=0, n=checkboxes.length; i<n; i++) {
+    if (checkboxes[i].checked) {
+      count++;
+      console.log('here what we are splitting!' +
+       checkboxes[i].getAttribute('value'));
+      const splitInfo = checkboxes[i].getAttribute('value').split('_');
+      link.href += 'id' + count + '=' + splitInfo[0] + '&type' +
+      count + '=' + splitInfo[1]+ '-';
+    }
+  }
+  link.href += 'count=' + count;
+}
+/*
+ * Make json for multiple runs selected. should be in the same style of
+ * fetch all files json from database.
+ */
+function makeMultiRunJson() {
+  const checkboxes = document.getElementsByName('check');
+  let str= '{';
+  for (let i=0, n=checkboxes.length; i<n; i++) {
+    if (checkboxes[i].checked) {
+      console.log('here what we are splitting!' +
+      checkboxes[i].getAttribute('value'));
+      const splitInfo = checkboxes[i].getAttribute('value').split('_');
+      str += '\n' + '"' + splitInfo[0] + '": [' + '\n "' +
+      splitInfo[1] + '" \n ], \n';
+    }
+  }
+  str += '}';
+  console.log(str);
+  sessionStorage.setItem('selected', str);
+}
+
 /**
 * Filter table to only show elements that start with the input value
 * @return {void}
