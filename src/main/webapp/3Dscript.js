@@ -90,10 +90,11 @@ function fetchData() {
       .then((data) => pose = data)
       .then(() => {
         const [lat, lng, alt] = findMedians();
-        const lla = {latitude, longitude};
+        const latLng = {latitude, longitude};
         const origin = new Point(lat, lng, alt);
-        addMap(lla);
-        const orientation = createInstances();
+        addMap(latLng);
+        const [xAxis, yAxis, zAxis] = createInstances();
+        const orientation = {x: xAxis, y: yAxis, z: zAxis}
         plotTrajectory(origin);
         plotOrientation(orientation, origin);
       });
@@ -180,7 +181,7 @@ function createInstances() {
   xCylinder.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(xCylinder);
 
-  return new Point(xCylinder, yCylinder, zCylinder);
+  return [xCylinder, yCylinder, zCylinder];
 }
 /**
   * Converts latitude, longitude, and altitude coordinates (LLA) to
@@ -281,7 +282,7 @@ function plotTrajectory(origin) {
 /**
  * Controls all 3 geometry instances, along with positioning the individual
  * instances.
- * @param {Object} orientation A Point object holding each axis' instance
+ * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
@@ -296,7 +297,7 @@ function plotOrientation(orientation, origin) {
 /**
  * Creates a Matrix4 object for each individual instance, using translations
  * and rotations to maneuver them into a given position.
- * @param {Object} orientation A Point object holding each axis' instance
+ * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {String} direction Specifies which instance mesh to manipulate using
  *     by naming the axis.
@@ -329,14 +330,14 @@ function matrixRotation(orientation, direction, origin) {
     matrix.multiply(new THREE.Matrix4().makeRotationY(
         THREE.Math.degToRad(point.rollDeg)));
     if (direction == 'z') {
-      poseObject = orientation.getZ();
+      poseObject = orientation.x;
     } else if (direction == 'y') {
       matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-      poseObject = orientation.getY();
+      poseObject = orientation.y;
     } else if (direction == 'x') {
       matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
       matrix.multiply(new THREE.Matrix4().makeRotationZ(-Math.PI/2));
-      poseObject = orientation.getX();
+      poseObject = orientation.z;
     }
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     poseObject.setMatrixAt(increment, matrix);
