@@ -90,7 +90,7 @@ function fetchData() {
       .then((data) => pose = data)
       .then(() => {
         const [lat, lng, alt] = findMedians();
-        const lla = {latitude, longitude}
+        const lla = {latitude, longitude};
         const origin = new Point(lat, lng, alt);
         addMap(lla);
         const orientation = createInstances();
@@ -130,7 +130,7 @@ function findMedians() {
  * It also calls two other functions so it can wait on the fetch
  * request and significantly cut down rendering time with
  * geometry instancing.
- * @param {{Object.<String, number>}} center An LLA coordinate used as the center
+ * @param {Object} center An LLA coordinate used as the center
  *     of the 2D map.
 */
 function addMap(center) {
