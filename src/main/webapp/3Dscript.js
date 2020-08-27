@@ -19,6 +19,8 @@ const poseTransform = {
 
 const poseStart = {start: 0};
 const poseEnd = {end: 10000};
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
@@ -29,7 +31,7 @@ const scaleMatrix = new THREE.Matrix4().makeScale(
 const scaleInverseMatrix = new THREE.Matrix4().makeScale(
     1/scaleCylinder, 1/scaleCylinder, 1/scaleCylinder );
 
-let oldIndex= -1;
+let selectedIndex= -1;
 
 /* For hiding trajectory. */
 const scaleHide = 400;
@@ -43,6 +45,21 @@ let oldEnd;
 
 const instanceMatrix = new THREE.Matrix4();
 const matrix = new THREE.Matrix4();
+
+/*  Datapoint time interface on gui. */
+let time;
+/*  Datapoint lat interface on gui. */
+let lat;
+/*  Datapoint long interface on gui. */
+let long;
+/*  Datapoint alt interface on gui. */
+let alt;
+/*  Datapoint roll interface on gui. */
+let roll;
+/*  Datapoint yaw interface on gui. */
+let yaw;
+/*  Datapoint pitch interface on gui. */
+let pitch;
 
 
 initThreeJs();
@@ -165,10 +182,10 @@ function plotTrajectory() {
 /**
  * This uses the pose data to create a blue line representing partial pose
  * trajectory.
- * @param {int} index beginning index.
- * @param {int} end end index.
+ * @param {int} start beginning index, inclusive.
+ * @param {int} end end index, exclusive.
  */
-function plotPartialPath(index, end) {
+function plotPartialPath(start, end) {
   // Removes any existing trajectory objects for repositioning.
   scene.remove(trajectory);
   /**
@@ -176,8 +193,8 @@ function plotPartialPath(index, end) {
    * up and down movement, and the z axis controls forward and back movement.
    */
   const coordinates=[];
-  for (let increment= index; increment < end; increment++) {
-    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+  for (let i= start; i < end; i++) {
+    const [x, y, z] = llaDegreeToLocal(pose[i].lat, pose[i].lng, pose[i].alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
@@ -222,21 +239,15 @@ function plotOrientation() {
   orientation.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
 }
 
-let time;
-let lat;
-let long;
-let alt;
-let roll;
-let yaw;
-let pitch;
-
 /**
 * get time in readable units
-* @param {double} time raw time.
+* @param {double} time raw time up to 6 decimal places. from GPS time
 * @return {String} readable time.
  */
-function timeConverted(time) {
-  const unixTimestamp = time;
+function formatTime(time) {
+  /* Time changed from gps to unix. */
+  const gpsDiff = 315964800;
+  const unixTimestamp = time - gpsDiff;
   // Create a new JavaScript Date object based on the timestamp
   // multiplied by 1000 so that the argument is in milliseconds, not seconds.
   const date = new Date(unixTimestamp * 1000);
@@ -266,34 +277,11 @@ function changeMatrix(typeOfMatrix, index) {
 }
 
 /**
-* Hides beginning of trajectory based on user selected point.
- */
-function hideOrientationStart() {
-  if (poseStart.start < pose.length && poseStart.start < poseEnd.end) {
-    plotPartialPath(poseStart.start, poseEnd.end);
-
-    /* bring old startline back to normal */
-    for (let increment = 0; increment < oldStart; increment++) {
-      changeMatrix(nonZeroMatrix, increment);
-    }
-    /* minimize cut trajectory */
-    for (let increment = poseStart.start; increment >= 0; increment--) {
-      changeMatrix(zeroMatrix, increment);
-    }
-    /* show new start info */
-    displayPointValues(poseStart.start);
-
-    /* update oldStart*/
-    oldStart = poseStart.start;
-  }
-}
-
-/**
 * Updates GUI with specific point information.
 * @param {int} index index of point.
 */
 function displayPointValues(index) {
-  time.setValue(timeConverted(pose[index].gpsTimestamp));
+  time.setValue(formatTime(pose[index].gpsTimestamp));
   lat.setValue(pose[index].lat);
   long.setValue(pose[poseStart.start].lng);
   alt.setValue(pose[index].alt);
@@ -305,20 +293,31 @@ function displayPointValues(index) {
 /**
 * Hides end of trajectory based on user selected point.
  */
-function hideOrientationEnd() {
-  if (poseEnd.end < pose.length && poseEnd.end > poseStart.start) {
+function hideOrientation() {
+  if (poseStart.start < poseEnd.end && poseEnd.end < pose.length) {
     plotPartialPath(poseStart.start, poseEnd.end);
 
-    /* bring old startline back to normal */
-    for (let increment = oldEnd; increment < pose.length; increment++) {
-      changeMatrix(nonZeroMatrix, increment);
+    if (oldStart >= poseStart.start) {
+      for (let i = oldStart; i >= poseStart.start; i--) {
+        changeMatrix(nonZeroMatrix, i);
+      }
+    } else {
+      for (let i = oldStart; i <= poseStart.start; i++) {
+        changeMatrix(zeroMatrix, i);
+      }
     }
-    for (let increment = poseEnd.end; increment < pose.length; increment++) {
-      /* minimize cut trajectory */
-      changeMatrix(zeroMatrix, increment);
+    if (oldEnd >= poseEnd.end) {
+      for (let i = oldEnd-1; i >= poseEnd.end; i--) {
+        changeMatrix(zeroMatrix, i);
+      }
+    } else {
+      for (let i = oldEnd; i < poseEnd.end; i++) {
+        changeMatrix(nonZeroMatrix, i);
+      }
     }
-    /* update oldStart*/
+    /* Update oldentries. */
     oldEnd = poseEnd.end;
+    oldStart = poseStart.start;
   }
 }
 
@@ -345,42 +344,25 @@ function makeGUI() {
   const max= pose.length;
   oldEnd=max;
   gui.add(poseStart, 'start', 0, max, max/100+1)
-      .onFinishChange(hideOrientationStart);
+      .onFinishChange(hideOrientation);
   gui.add(poseEnd, 'end', 0, max, max/100+1)
-      .onFinishChange(hideOrientationEnd);
+      .onFinishChange(hideOrientation);
 
   /* Time value. */
-  const timeStart = {time: ''};
-  time = gui.add(timeStart, '');
-
+  time = gui.add({time: ''}, '');
   /* Lat value. */
-  const latStart = {lat: ''};
-  lat = gui.add(latStart, 'lat');
-
+  lat = gui.add({lat: ''}, 'lat');
   /* Long value. */
-  const longStart = {long: ''};
-  long = gui.add(longStart, 'long');
-
+  long = gui.add({long: ''}, 'long');
   /* Alt value. */
-  const altStart = {alt: ''};
-  alt = gui.add(altStart, 'alt');
-
+  alt = gui.add({alt: ''}, 'alt');
   /* Yaw value. */
-  const yawStart = {yaw: ''};
-  yaw = gui.add(yawStart, 'yaw');
-
+  yaw = gui.add({yaw: ''}, 'yaw');
   /* Pitch value. */
-  const pitchStart = {pitch: ''};
-  pitch = gui.add(pitchStart, 'pitch');
-
+  pitch = gui.add({pitch: ''}, 'pitch');
   /* Roll value. */
-  const rollStart = {roll: ''};
-  roll = gui.add(rollStart, 'roll');
+  roll = gui.add({roll: ''}, 'roll');
 }
-
-/* TODO: put in onclick function. */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
 
 /**
  * This is the animation loop which continually updates the scene.
@@ -401,12 +383,14 @@ function animate() {
  */
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
-  if (oldIndex!= -1) {
-    changeMatrix(scaleInverseMatrix, oldIndex);
-    oldIndex= -1;
+  if (selectedIndex!= -1) {
+    changeMatrix(scaleInverseMatrix, selectedIndex);
+    selectedIndex= -1;
   }
 
   event.preventDefault();
+
+  /* Mouse coodinates for when renderer is the whole window. */
   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
@@ -415,22 +399,23 @@ function onClick(event) {
   const intersects = raycaster.intersectObjects(scene.children, true);
 
   /* Shows properties of first instance of intersected cylinder. */
-  for (let i=0; i < intersects.length; i++) {
-    if ( intersects[i].object.type == 'Mesh' ) {
-      const instanceId = intersects[i].instanceId;
+  for (const intersected of intersects) {
+    if ( intersected.object.type != 'Mesh' ) {
+      continue;
+    }
+    const instanceId = intersected.instanceId;
 
-      /* Scale cylinder and set it as the last index scaled. */
-      changeMatrix(scaleMatrix, i);
+    /* Scale cylinder and set it as the last index scaled. */
+    changeMatrix(scaleMatrix, i);
 
-      /* Set values in GUI. */
-      displayPointValues(instanceId);
+    /* Set values in GUI. */
+    displayPointValues(instanceId);
 
-      /*
+    /*
       * Break because the raycaster could intersect multiple object but we only
      *  need the first cylinder.
       */
-      break;
-    }
+    break;
   }
 }
 
