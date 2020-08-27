@@ -229,9 +229,9 @@ function llaToEcef(lat, lng, alt) {
 function ecefToEnu(ecefPose, ecefOrigin, origin) {
   // ECEF to ENU equation: https://www.mathworks.com/help/map/ref/ecef2enu.html
   // Localizes the new xyz coordinate using the reference point.
-  const xd = ecefPose.getX() - ecefOrigin.getX();
-  const yd = ecefPose.getY() - ecefOrigin.getY();
-  const zd = ecefPose.getZ() - ecefOrigin.getZ();
+  const localX = ecefPose.getX() - ecefOrigin.getX();
+  const localY = ecefPose.getY() - ecefOrigin.getY();
+  const localZ = ecefPose.getZ() - ecefOrigin.getZ();
 
   const sinLambda = Math.sin(THREE.Math.degToRad(origin.getX()));
   const cosLambda = Math.cos(THREE.Math.degToRad(origin.getX()));
@@ -239,11 +239,11 @@ function ecefToEnu(ecefPose, ecefOrigin, origin) {
   const sinPhi = Math.sin(THREE.Math.degToRad(origin.getY()));
 
   // Matrix multiplication.
-  const xEast = -sinPhi * xd + cosPhi * yd;
-  const yNorth = -cosPhi * sinLambda * xd - sinLambda *
-    sinPhi * yd + cosLambda * zd;
-  const zUp = cosLambda * cosPhi * xd + cosLambda *
-    sinPhi * yd + sinLambda * zd;
+  const xEast = -sinPhi * localX + cosPhi * localY;
+  const yNorth = -cosPhi * sinLambda * localX - sinLambda *
+    sinPhi * localY + cosLambda * localZ;
+  const zUp = cosLambda * cosPhi * localX + cosLambda *
+    sinPhi * localY + sinLambda * localZ;
 
   return [xEast, yNorth, zUp];
 }
