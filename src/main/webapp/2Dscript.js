@@ -35,12 +35,12 @@ runId:{
 */
 let selectedSubSections = [] // A list of all the subsections that have been selected and should thus be displayed.
 let boundingRectangles = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
-let pose;
+let initialPose;
 let data;
 let type;
 let currentLat;
 let currentLng;
-let flightPath;
+let initialPoseData;
 
 fetchData();
 function fetchData() {
@@ -50,7 +50,7 @@ function fetchData() {
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
     .then(response => response.json())
-    .then(data => pose = data)
+    .then(data => initialPose = data)
     .then(() => { return fetch('\data') })
     .then(response => response.json())
     .then(json => data = json)
@@ -61,18 +61,18 @@ function fetchData() {
 
 function initMap() {
   // Occurs when google map api calls all promises, which is getting this function called somehow, according to stack trace.
-  if (pose === undefined)
+  if (initialPose === undefined)
     return;
 
   let poseCoordinates = [];
 
-  for (let i = 0; i < pose.length; i++) {
-    poseCoordinates.push({ lat: pose[i].lat, lng: pose[i].lng });
+  for (let i = 0; i < initialPose.length; i++) {
+    poseCoordinates.push({ lat: initialPose[i].lat, lng: initialPose[i].lng });
   }
-  if (pose.length === 0)
+  if (initialPose.length === 0)
     return;
   map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat: pose[0].lat, lng: pose[0].lng },
+    center: { lat: initialPose[0].lat, lng: initialPose[0].lng },
     zoom: 18
   });
 
