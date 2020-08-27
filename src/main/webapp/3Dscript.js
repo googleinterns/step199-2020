@@ -116,6 +116,8 @@ function findMedians() {
     arrays.alt.push(point.alt);
   }
   const sorted = {
+    /* Sorts the array given using the compare function given as a parameter.
+     The a - b specifies that it should be in ascending order. */
     lat: [...arrays.lat].sort((a, b) => a - b),
     lng: [...arrays.lng].sort((a, b) => a - b),
     alt: [...arrays.alt].sort((a, b) => a - b)};
@@ -145,6 +147,7 @@ function addMap(center) {
   });
   const geometry = new THREE.PlaneGeometry(200, 200);
   const map = new THREE.Mesh(geometry, material);
+  // A -4 Z parameter is given so the map rendered below the pose(s).
   map.position.set(0, 0, -4);
   scene.add(map);
 
@@ -164,6 +167,8 @@ function addMap(center) {
 function createInstances() {
   // Blue corresponds to the Z axis.
   let material = new THREE.MeshBasicMaterial({color: 'blue'});
+  /* Geometry defines the top and bottom radius along with the length.
+    The numbers are given to be distinguishable from other data points. */
   const geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
   const zCylinder = new THREE.InstancedMesh(geometry, material, pose.length);
   zCylinder.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
