@@ -62,7 +62,7 @@ function initializeRow(json, key, currentRow) {
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
       /* Makes checkboxes for each data entry. */
-      makeCheckbox(currentRow, index);
+      makeCheckbox(currentRow, index, link);
     } else {
       columnEntry.innerText = '';
       currentRow.appendChild(columnEntry);
@@ -76,8 +76,9 @@ function initializeRow(json, key, currentRow) {
 * Makes checkboxes for each data entry.
 * @param {object} currentRow currentRow to add checkbox to
 * @param {number} index row checkbox will be on
+* @param {link} link associated with row checkbox will be on
 */
-function makeCheckbox(currentRow, index) {
+function makeCheckbox(currentRow, index, link) {
   const checkbox = document.createElement('INPUT');
   checkbox.type = 'checkbox';
   checkbox.setAttribute('name', 'check');
@@ -86,12 +87,14 @@ function makeCheckbox(currentRow, index) {
   checkMap.set(index, checkbox);
 }
 
+/* eslint-disable */
 /**
 * Select all Checkboxes function.
  * @param {object} source checkbox
  */
 function toggle(source) {
-  for (const checkbox of checkMap.values()) {
+  const checkboxes = document.getElementsByName('check');
+  for (const checkbox of checkboxes) {
     checkbox.checked = source.checked;
   }
 }
@@ -103,8 +106,8 @@ function toggle(source) {
 function makeMultiRunJson() {
   const strArray = [];
   strArray.push('{');
-
-  for (const checkbox of checkMap.values()) {
+  const checkboxes = document.getElementsByName('check');
+  for (const checkbox of checkboxes) {
     if (checkbox.checked) {
       const splitInfo = checkbox.getAttribute('value').split('_');
       strArray.push(`
