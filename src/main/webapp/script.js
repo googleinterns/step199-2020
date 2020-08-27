@@ -1,5 +1,8 @@
 /* Eslint disables ensure no warning for functions that are referenced within
 the .html file. */
+
+/* Array of checkboxes */
+const checkArray = [];
 /**
 * Create a table from the data service, loading all entries.
 * As some point should likely fetch only part of the values at a time.
@@ -40,7 +43,6 @@ function createTable() { // eslint-disable-line no-unused-vars
   });
 }
 
-const checkMap = new Map();
 
 /**
  * Create a row in the given table.
@@ -84,7 +86,7 @@ function makeCheckbox(currentRow, index, link) {
   checkbox.setAttribute('name', 'check');
   checkbox.setAttribute('value', link.getAttribute('name'));
   currentRow.appendChild(checkbox);
-  checkMap.set(index, checkbox);
+  checkArray.push(checkbox);
 }
 
 /* eslint-disable */
@@ -93,8 +95,7 @@ function makeCheckbox(currentRow, index, link) {
  * @param {object} source checkbox
  */
 function toggle(source) {
-  const checkboxes = document.getElementsByName('check');
-  for (const checkbox of checkboxes) {
+  for (const checkbox of checkArray) {
     checkbox.checked = source.checked;
   }
 }
@@ -106,8 +107,7 @@ function toggle(source) {
 function makeMultiRunJson() {
   const strArray = [];
   strArray.push('{');
-  const checkboxes = document.getElementsByName('check');
-  for (const checkbox of checkboxes) {
+  for (const checkbox of checkArray) {
     if (checkbox.checked) {
       const splitInfo = checkbox.getAttribute('value').split('_');
       strArray.push(`
