@@ -1,31 +1,50 @@
-import { FlyControls } from 'https://threejs.org/examples/jsm/controls/FlyControls.js';
 import { OrbitControls } from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
-
 import { GUI } from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
-// Initialization of global objects.
+/**
+* A Point object with a lat and lng.
+* @typedef {Object<number, number, number>} Point
+* @property {number} lat The lat of the point.
+* @property {number} lng The lng of the point.
+* @property {number} alt The alt of the point.
+*/
+// These are global objects.
+/**
+ * @typedef {Array<number, number>}
+ * @property {Array<Point>} data All the stored run data for a given runId
+ * @property {string} color The color in a standard HTML acceptable format
+ */
+let runs;
+/*
+runId: data color
+
+*/
+// Overall Threejs objects, may be helpful to condense into one Object.
 let scene;
 let camera;
 let renderer;
 let clock;
 let controls;
-let direction;
-let line;
-let count;
-let pose;
-let data;
-let poseRotation = { value: 0 };
-let poseScalar = { value: 1 };
-let posePosition = { x: 0, z: 0 };
-const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
-const rotationData = new Map();
-let path = [];
 
+// Likely need to make a separate pose transform for each runId;
+const transforms = {};
+// poseTransforms indexed by runId;
+const defaultTransform = {
+  /* Unit: 4 meters*/ translateX: 0,
+  /* Unit: 4 meters*/ translateZ: 0,
+  /* Unit: degrees*/ rotate: 0,
+  /* Scalar*/ scale: 1,
+};
+// The runId of the current run being modified, bound to gui.
+let currentId = {};
+const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
+
+initThreeJs();
+animate();
 
 /**
- * Initializes the scene, camera, renderer, and clock.
+ * Initializes the essential three.js 3D components then fetchs the pose data.
  */
-function init() {
-  console.log("init was called");
+function initThreeJs() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
       /* fov =*/ 75,
@@ -39,119 +58,179 @@ function init() {
   clock = new THREE.Clock();
   controls = new OrbitControls(camera, renderer.domElement);
 
-  // The camera controls allows the user to fly with the camera.
-  //   controls = new FlyControls(camera, renderer.domElement);
-  //   controls.movementSpeed = 5;
-  //   controls.rollSpeed = Math.PI / 10;
-  //   controls.autoForward = false;
-  //   controls.dragToLook = true;
   fetchData();
 }
-
-function loadMap(initialPose) {
-
-  let loader = new THREE.TextureLoader();
-  let material = new THREE.MeshLambertMaterial(
-    {
-      map: loader.load(
-        'https://maps.googleapis.com/maps/api/staticmap?format=png&center=' + initialPose[0].lat + ',' + initialPose[0].lng + '&zoom=18&size=500x500&key=' + apiKey)
-    });
-  let geometry = new THREE.PlaneGeometry(50, 50);
-  let map = new THREE.Mesh(geometry, material);
-  map.position.set(0, 0, 0);
+/**
+ * Plot the map centered around this run's first coordinate.
+ * @param {Array<Point>} pose
+ */
+function initMap(pose) {
+  // Creates the 2D map.
+  const loader = new THREE.TextureLoader();
+  console.log("Map initialized at lat: "+pose[0].lat+" lng "+pose[0].lng);
+  const material = new THREE.MeshLambertMaterial({
+    map: loader.load(
+      'https://maps.googleapis.com/maps/api/staticmap' +
+      '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
+      '&zoom=18&size=500x500&key=' + apiKey),
+  });
+  const geometry = new THREE.PlaneGeometry(50, 50);
+  const map = new THREE.Mesh(geometry, material);
+  map.position.set(0, -4, 0);
   map.rotation.x = -Math.PI / 2;
   scene.add(map);
-
-  let light = new THREE.PointLight(0xffffff, 1, 0);
-  // Specify the light's position
-  light.position.set(0, 100, 0);
-  // Add the light to the scene
-  scene.add(light)
-
 }
 /**
- * Creates all the objects from pose data and adds them to the scene.
+ * Creates the 2D terrain and points a light at it. It also calls two other
+ * functions so it can wait on the fetch request and significantly cut down
+ * rendering time with geometry instancing.
+ * @param {number} runId
+ * @param {Array<Point>} poseToPlot
+ * @param {string} hexColor
 */
-function addPoseData(poseToPlot, hexColor) {
-  count = poseToPlot.length;
-  // If empty data set, don't load anything including map.
-  if (count === 0)
-    return;
+function addPoseData(runId, poseToPlot, hexColor) {
+  // Add the light to the scene.
+  const light = new THREE.PointLight(0xffffff, 1, 0);
+  light.position.set(0, 100, 0);
+  scene.add(light);
+  plotTrajectory(runId, poseToPlot);
 
-  // Adds pose trajectory line
-  plotPath(poseToPlot, hexColor);
-
-  // Adds test pose data as one Geometry instance
-  let material = new THREE.MeshBasicMaterial({ color: hexColor});
-  let geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
-  let direction = new THREE.InstancedMesh(geometry, material, count);
-  direction.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  scene.add(direction);// Orientation indicator
-  plotOrientation(poseToPlot, direction);
-
+  // Adds pose data to the scene as one Geometry instance.
+  const material = new THREE.MeshBasicMaterial({ color: hexColor });
+  const geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
+  let orientation = new THREE.InstancedMesh(geometry, material, poseToPlot.length);
+  orientation.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  runs[runId].orientation = orientation;
+  runs[runId].data = poseToPlot;
+  scene.add(orientation);
+  plotOrientation(runId);
 }
-function plotPath(poseToPlot, hexColor) {
-  let newLine;
-  scene.remove(line);
-  path = [];
-  for (let increment = 0; increment < count; increment++) {
-    path.push(new THREE.Vector3(
-      (poseToPlot[increment].lng - 11.582905) * 25000 * poseScalar.value,
-      (poseToPlot[increment].alt - 6.582905) / 4,
-      (poseToPlot[increment].lat - 48.129872) * 25000 * -poseScalar.value));// GPS points
+
+/**
+ * Converts lla coordinates to local world coordinates.
+ * @param {number} runId The given run's id.
+ * @param {Array<Point>} pose The run to center the data around.
+ * @param {number} lat Latitude in degrees.
+ * @param {number} lng Longitude in degrees.
+ * @param {number} alt Altitude in meters.
+ * @return {Array<number, number, number>} An array returning gps coordinates.
+ */
+function llaDegreeToLocal(runId, pose, lat, lng, alt) {
+  /**
+   * Subtracting each point by the first point starts the pose at coordinates
+   * (0, 0, 0). Each unit in the 3D scene is 4 meters while the 6th decimal
+   * point in GPS coordinates represents .11 meters. This is why we multiple the
+   * lat/lng by 25000, an increment in the 6th decimal place equates to a 0.025
+   * unit change in our 3D space. Since altitude is already represented in
+   * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
+   */
+  const x = (lng - pose[0].lng) * 25000 * transforms[runId].scale;
+  const y = (alt - pose[0].alt) / 4;
+  const z = (lat - pose[0].lat) * 25000 * -transforms[runId].scale;
+  return [x, y, z];
+}
+/**
+ * This uses the pose data to create a blue line representing the pose
+ * trajectory.
+ * @param {number} runId
+ * @param {Array<Point>} pose
+ */
+function plotTrajectory(runId, pose) {
+  if (runs[runId].trajectory !== undefined) {
+    scene.remove(runs[runId].trajectory);
   }
-  const geometry = new THREE.BufferGeometry().setFromPoints(path);
+  /**
+   * The x axis controls the left and right direction, the y axis controls up
+   * and down movement, and the z axis controls forward and back movement.
+   */
+  const coordinates = [];
+  for (const point of pose) {
+    const [x, y, z] = llaDegreeToLocal(runId, pose, point.lat, point.lng, point.alt);
+    coordinates.push(new THREE.Vector3(x, y, z));
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
   const material = new THREE.LineBasicMaterial({ color: 'black' });
-  newLine = new THREE.Line(geometry, material);
-  scene.add(newLine);
-  newLine.position.x = posePosition.x;
-  newLine.position.z = posePosition.z;
-  newLine.rotation.y = THREE.Math.degToRad(poseRotation.value);
+  let trajectory = new THREE.Line(geometry, material);
+  runs[runId].trajectory = trajectory;
+  scene.add(trajectory);
+  trajectory.position.x = transforms[runId].translateX;
+  trajectory.position.z = transforms[runId].translateZ;
+  trajectory.rotation.y = THREE.Math.degToRad(transforms[runId].rotate);
 }
-function plotOrientation(poseToPlot, directionPose) {
-  let dummy = new THREE.Object3D;
-  dummy.matrixAutoUpdate = false;
-  for (let i = 0; i < count; i++) {
-    let matrix = new THREE.Matrix4();
-    dummy.matrix.identity();
-    matrix.makeTranslation(
-      (poseToPlot[i].lng - 11.582905) * 25000 * poseScalar.value,
-      (poseToPlot[i].alt - 6.582905) / 4,
-      (poseToPlot[i].lat - 48.129872) * 25000 * -poseScalar.value);
+
+/**
+ * This repositions all children the orientation object. The object is a
+ * geometry instance, initializing the object with one geometry call rather than
+ * the number of data points. (O(1) vs. O(N))
+ * @param {number} runId
+ */
+function plotOrientation(runId) {
+  const pose = runs[runId].data;
+  let orientation = runs[runId].orientation;
+  for (const point of pose) {
+    /**
+     * Matrix is a 4x4 matrix used to translate and rotate each instance of the
+     * pose orientation locally instead using the world transform. This means it
+     * will rotate relative to the position of the matrix, not the center of the
+     * 3D scene.
+     */
+    const matrix = new THREE.Matrix4();
+    const [x, y, z] = llaDegreeToLocal(runId, pose, point.lat, point.lng, point.alt);
+
+    matrix.makeTranslation(x, y, z);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
-      THREE.Math.degToRad(poseToPlot[i].pitchDeg)));
+      THREE.Math.degToRad(point.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
-      THREE.Math.degToRad(poseToPlot[i].yawDeg)));
+      THREE.Math.degToRad(point.yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
-      THREE.Math.degToRad(poseToPlot[i].rollDeg)));
+      THREE.Math.degToRad(point.rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
-    dummy.applyMatrix4(matrix);
-    dummy.updateMatrix();
-    directionPose.setMatrixAt(i, dummy.matrix);
+    orientation.setMatrixAt(pose.indexOf(point), matrix);
   }
-  directionPose.instanceMatrix.needsUpdate = true;
-  directionPose.position.x = posePosition.x;
-  directionPose.position.z = posePosition.z;
-  directionPose.rotation.y = THREE.Math.degToRad(poseRotation.value);
-}
-
-function gui() {
-  var gui = new GUI();
-  gui.add(poseRotation, 'value', 0, 360, 1).onChange(plotOrientation)
-    .onFinishChange(plotPath).name('Pose Rotation (degrees)');
-  gui.add(posePosition, 'x', -10, 10, .025).onChange(plotOrientation)
-    .onFinishChange(plotPath).name('X Axis Translation');
-  gui.add(posePosition, 'z', -10, 10, .025).onChange(plotOrientation)
-    .onFinishChange(plotPath).name('Y Axis Translation');
-  gui.add(poseScalar, 'value', .5, 2, .25).onChange(plotOrientation)
-    .onFinishChange(plotPath).name('Pose Scale Multiplier');
+  orientation.instanceMatrix.needsUpdate = true;
+  orientation.position.x = transforms[runId].translateX;
+  orientation.position.z = transforms[runId].translateZ;
+  orientation.rotation.y = THREE.Math.degToRad(transforms[runId].rotate);
 }
 
 /**
- * This is the animation loop which continually updates the scene.
- * It allows the movement of objects to be seen on screen and the camera
- * to be moved in accordance to the controls.
+ * This function initializes gui allowing the user to manipulate the pose
+ * objects.
+ */
+function loadGui() {
+  // Need a way to select which pose run to make this change to and pass this
+  // parameter.
+  const runId = currentId.value;
+  const gui = new GUI();
+  console.log(runs);
+  let currentData = runs[runId].data;
+  // On change of selected runId, update the given dataset to use;
+  gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
+    () => { currentData = runs[currentId.value].data; console.log(currentId); });
+
+  gui.add(transforms[currentId.value], 'rotate', 0, 360, 1)
+    .onChange(() => { console.log("changed"); plotOrientation(currentId.value); })
+    .onFinishChange(() => { console.log(currentId.value); plotTrajectory(currentId.value, currentData) })
+    .name('Pose Rotation (degrees)');
+  gui.add(transforms[currentId.value], 'translateX', -10, 10, .025)
+    .onChange(() => plotOrientation(currentId.value))
+    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+    .name('X Axis Translation');
+  gui.add(transforms[currentId.value], 'translateZ', -10, 10, .025)
+    .onChange(() => plotOrientation(currentId.value))
+    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+    .name('Z Axis Translation');
+  gui.add(transforms[currentId.value], 'scale', .5, 2, .25)
+    .onChange(() => plotOrientation(currentId.value))
+    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+    .name('Pose Scale Multiplier');
+}
+
+/**
+ * This is the animation loop which continually updates the scene. It allows the
+ * movement of objects to be seen on screen and the camera to be moved in
+ * accordance to the controls.
  */
 function animate() {
   requestAnimationFrame(animate);
@@ -160,40 +239,37 @@ function animate() {
   renderer.render(scene, camera);
 };
 
+/**
+ * Get the necessary data from sessionStorage and load page contents.
+ */
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
 
   const isSubSection = urlParams.get('subsection');
-  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
-  console.log("The value of subsection is " + isSubSection);
+
   let firstData;
   if (isSubSection) {
-    /*fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then(response => response.json())
-      .then(newData => data = newData)
-      .then(() =>*/
+    runs = JSON.parse(sessionStorage.getItem('subsection'));
+    firstData = Object.values(runs)[0].data;
+    currentId.value = Object.keys(runs)[0];
 
-    data = JSON.parse(sessionStorage.getItem("subsection"));
-    firstData = Object.values(data)[0].data;
-    // We should loop through all the runs and call addPoseData() for all of them.
+    // set the runId to We should loop through all the runs and call
+    // addPoseData() for all of them.
     {
-      Object.values(data).forEach((currentValue) => {
-        addPoseData(currentValue.data, currentValue.color);
-      });
+      // Initialize the transforms for each run.
+      Object.keys(runs).forEach(
+        (currentKey) => transforms[currentKey] = defaultTransform);
+      // Render the different runs.
+      const runsIterable = Object.entries(runs);
+      for (const [runId, currentObject] of runsIterable) {
+        addPoseData(runId, currentObject.data, currentObject.color);
+      }
     }
+  } else {
+    console.log('Invalid input format provided');
   }
-  else {
-    console.log("This shouldn't run");
-    pose = JSON.parse(sessionStorage.getItem(id + '_' + type + '_' + subSectionNumber));
-    addPoseData();
-  }
-  loadMap(firstData);
-
+  loadGui();
+  initMap(firstData);
 }
-
-init();
-gui();
-animate();
 

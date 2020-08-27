@@ -1,128 +1,179 @@
-const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
+// Global Variables
 
-"use strict";
+// Initial object that stores the generated 2D map, of @type{google.maps.Maps}.
 let map;
-// Maps and data to be to one variable associated with the runId
-let runs = {};
+// Store all information for every run (acts as cache), of @type{Run}
+const runs = {};
 /*
-runId:{
-  map
-  data
-  subSection
-  subData
-  checkBox Element
-  colorElement
-  topMarker
-  bottomMarker
+runId:{map data subsection checkBox Element colorElement
 }
 */
+// Stores JSON response giving allRuns with their associated runIds.
+let allRuns;
 
-/*
-Changes overview for tomorrow:
-Change event listener for lines to generate the same popup
-Create session storage element for all runs with their colors
-Load in three.js and change color as well
-Add shift click to select whole area instead of just intersect
-*/
-
-
-let subsections = {} // An object in JSON format as follows:
-/*
-runId:{
- color: colorValue in hex,
- data: runData in (lat, lng)  Object
-}
-*/
-let selectedSubSections = [] // A list of all the subsections that have been selected and should thus be displayed.
-let boundingRectangles = {} // A map from the runId to the 4 coordinates of bounding rectangle, in the order [bottom left, bottom right, top left, top right]
-let initialPose;
-let data;
+// Initial run parameters.
+let id;
 let type;
+
+// Store for selection window, updated on each click.
 let currentLat;
 let currentLng;
-let initialPoseData;
 
+/**
+ * A Run object contains the given datapoints, line data, and checkbox
+ * associated with a given run.
+ * @typedef {Object<google.maps.Polyline, PoseData, HTMLElement> } Run
+ * @property {google.maps.Polyline} map A map object that is placed on the 2D
+ * map.
+ * @property {PoseData} data A JSON object storing all the data for a specific
+ * run.
+ * @property {HTMLElement} checkBox A checkbox element for checking whether the
+ * current run should be displayed without querying the DOM.
+ */
+
+/**
+ * A Pose data object containing all properties returned from the requisite
+ * proto in the JSON format. Position is given in WGS84 latitude, longitude, and
+ * altitude.
+ * @typedef {Object<number, number, number, number, number, number, number>}
+ * PoseData
+ * @property {number} gpsTimestamp The time in seconds.
+ * @property {number} lat Degrees in [-90, 90]
+ * @property {number} lng Degrees in [-180, 180]
+ * @property {number} alt Meters above WGS84
+ * @property {number} rollDeg Degrees in [0,360]
+ * @property {number} pitchDeg Degrees in [-90,90]
+ * @property {number} yawDeg Degrees in [0,360]
+ */
+
+/**
+ * A Point object with a lat and lng.
+ * @typedef {Object<number, number>} Point
+ * @property {number} lat The lat of the point.
+ * @property {number} lng The lng of the point.
+ */
+
+/**
+ * A Types object which contains the different possible run types.
+ * @typedef {Array<string>} Types
+ */
+
+// First function called, code execution starts here.
 fetchData();
+/**
+ * Fetchs pose data from the RunInfo servlet, it is an asynchronous call
+ * requiring initMap() to be called after the data is fully loaded.
+ */
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   id = urlParams.get('id');
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
-    .then(response => response.json())
-    .then(data => initialPose = data)
-    .then(() => { return fetch('\data') })
-    .then(response => response.json())
-    .then(json => data = json)
+    .then((response) => response.json())
+    .then((data) => {
+      runs[id] = {};
+      runs[id].data = data;
+    })
+    .then(() => {
+      return fetch('\data');
+    })
+    .then((response) => response.json())
+    .then((json) => allRuns = json)
     .then(() => {
       initMap();
-    })
+    });
 }
 
+/**
+ * Embeds the Google map interface within the html along with drawing the pose
+ * trajectory and adding a button link.
+ */
 function initMap() {
-  // Occurs when google map api calls all promises, which is getting this function called somehow, according to stack trace.
-  if (initialPose === undefined)
+  // Occurs when google map api calls all promises, which is getting this
+  // function called somehow, according to stack trace.
+  if (runs[id] === undefined) {
     return;
-
-  let poseCoordinates = [];
-
-  for (let i = 0; i < initialPose.length; i++) {
-    poseCoordinates.push({ lat: initialPose[i].lat, lng: initialPose[i].lng });
   }
-  if (initialPose.length === 0)
-    return;
-  map = new google.maps.Map(document.getElementById("map"), {
+  const initialPose = runs[id].data;
+  console.log("The value of runs is " + JSON.stringify(runs[id]));
+  let initialPoseMap = runs[id].map;
+
+  map = new google.maps.Map(document.getElementById('map'), {
     center: { lat: initialPose[0].lat, lng: initialPose[0].lng },
-    zoom: 18
+    zoom: 18,
   });
 
 
-
-
-  // Generate the central map button.
-  const centerControlDiv = document.createElement('div');
-  CenterControl(centerControlDiv);
-  centerControlDiv.index = 1;
+  const centerControlDiv = centerControl();
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
-  // Generate the side selection pane.
-  table = createSideTable(data);
-  const sideControlDiv = document.createElement("div");
-  SelectionPane(sideControlDiv, table);
-  sideControlDiv.index = 1;
-  map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
 
-  // Add event listener to globally update lat and lng variables.
-  map.addListener("mousemove", function (event) {
+  // Add event listeners to record latitude and longitude globally for selection
+  // box.
+  map.addListener('mousemove', function (event) {
     const latLng = event.latLng;
     currentLat = latLng.lat();
     currentLng = latLng.lng();
   });
+
+  table = createSideTable(allRuns);
+  const sideControlDiv = selectionPane(table);
+  map.controls[google.maps.ControlPosition.LEFT_TOP].push(sideControlDiv);
   // Click the selected run.
   runs[id].checkBox.click();
 }
 
-function SelectionPane(sideControlDiv, innerContent) {
+/**
+ * Changes the pose data to a format the Google maps javascript api can read.
+ * @param {PoseData} pose Data to be converted from the PoseData format to a
+ * simpler one.
+ * @return { Array <Point> } Returns an array of Points.
+ */
+function formatPoseData(pose) {
+  const poseCoordinates = [];
+  for (point of pose) {
+    poseCoordinates.push({ lat: point.lat, lng: point.lng });
+  }
+  return poseCoordinates;
+}
+
+
+/**
+ * Create a selection element containing a table which allows easy modification
+ * of map data displayed.
+ * @param {string} innerContent
+ * @return {HTMLElement}
+ */
+function selectionPane(innerContent) {
   // Set CSS for the selection pane border.
+  const sideControlDiv = document.createElement('div');
   const selectionUI = document.createElement('div');
   selectionUI.className = 'selectionUI';
   selectionUI.title = 'Select the pose runs to view/render in 3D.';
   sideControlDiv.appendChild(selectionUI);
+  sideControlDiv.index = 1;
 
-  // Set CSS for the selectin pane interior.
+  // Set CSS for the selection pane interior.
   const selectionText = document.createElement('div');
   selectionText.className = 'selectionText';
+  // Add table to the selection pane.
   selectionText.appendChild(innerContent);
-  // Need to call a function to create a table with checkboxes here, likely write some generic function to do it with any JSON file possible. Also add checkbox as column and an eyeball icon with event listeners.
   selectionUI.appendChild(selectionText);
+  return sideControlDiv;
 }
 
-function CenterControl(controlDiv) {
-
+/**
+ * Creates the html elements inside of the button, along with adding a link to
+ * the 3DVisual.html page. button.
+ */
+function centerControl() {
   // Set CSS for the control border.
+  const controlDiv = document.createElement('div');
   const controlUI = document.createElement('div');
   controlUI.className = 'controlUI';
   controlUI.title = 'Click to switch to 3D visualization';
   controlDiv.appendChild(controlUI);
+  controlDiv.index = 1;
 
   // Set CSS for the control interior.
   const controlText = document.createElement('div');
@@ -132,192 +183,267 @@ function CenterControl(controlDiv) {
 
   // Setup the click event listeners: simply set the map to Chicago.
   controlUI.addEventListener('click', function () {
-    window.location.href = "/home.html?id=" + id + "&dataType=" + type;
+    window.location.href = '/home.html?id=' + id + '&dataType=' + type;
   });
-
 }
 
+/**
+ * Create the table used in the sidebar, used to select and modify multiple data
+ * runs.
+ * @param {Object.<string, Types>} json
+ * @return {HTMLElement}
+ */
 function createSideTable(json) {
   const table = document.createElement('table');
-  const headerRow = document.createElement('tr');
-  const headerRowText = ["RunId", "Select", "Color", "View"];
-  for (header of headerRowText) {
-    let currentColumn = document.createElement("th");
-    currentColumn.innerText = header;
-    headerRow.appendChild(currentColumn);
-  }
-
+  const headerRowText = ['RunId', 'Select', 'Color', 'View'];
+  const headerRow = generateHeaderRow(headerRowText, table);
   table.appendChild(headerRow);
+  // Set the first entry class of the table to be noneven as 1 is odd.
   let even = false;
   for (const key in json) {
-    // Initialize all runs in this loop.
-    runs[key] = {};
-    let currentRow = document.createElement('tr');
-    currentRow.className = "visible";
-    if (even) {
-      currentRow.className += " even";
+    if (Object.prototype.hasOwnProperty.call(json, key)) {
+      runs[key] = {};
+      const currentRow = document.createElement('tr');
+      currentRow.className = 'visible';
+      // Change the class name if an even entry to properly adjust the styling.
+      if (even) {
+        currentRow.className += ' even';
+      }
+      const keyEntry = generateKeyEntry(key);
+      const [checkBoxEntry, checkBox] = generateCheckBoxEntry(key);
+      console.log("The checkbox here is " + checkBox);
+      /* This part won't compile and should be changed to new format in later
+      commmit.*/
+      const colorPickerEntry = document.createElement('td');
+      const colorPicker = document.createElement('input');
+      colorPicker.type = 'color';
+      colorPicker.id = 'color_' + key;
+      // Initialize each value to a random starting color.
+      colorPicker.value = '#' + Math.floor(
+        Math.random() * 16777215).toString(16);
+      // Change the map graph color whenever a different color is selected.
+      colorPicker.addEventListener('input', function (event) {
+        const colorId = event.target.id;
+        const runId = colorId.split('_')[1];
+        console.log('Parsed run id is ' + runId);
+        const checkboxValue = runs[runId].checkBox.checked;
+        // Only add the run if the checkbox is checked and we have selected a
+        // new color.
+        if (runs[runId].map !== undefined && checkboxValue) {
+          runs[runId].map.setMap(null);
+          // Create plot with new color;
+          runs[runId].map = plotLine(runs[runId].data, runs[runId].color.value);
+          runs[runId].map.setMap(map);
+        }
+      });
+      colorPickerEntry.appendChild(colorPicker);
+
+      const viewIconEntry = document.createElement('td');
+      const viewIcon = document.createElement('div');
+      viewIcon.id = 'view_' + key;
+      viewIcon.innerHTML = '<i class=\'fa fa-eye\'></i>';
+      viewIcon.addEventListener('click', function () {
+        const viewId = this.id;  // eslint-disable-line
+        const runId = viewId.split('_')[1];
+        console.log('run id is ' + runId);
+        const isChecked = runs[runId].checkBox.checked;
+        console.log('The checkbox value is ' + isChecked);
+        if (isChecked && runs[runId].data !== undefined &&
+          runs[runId].map !== undefined) {
+          // Set the new center to be the first latlng value fetched from the
+          // data.
+          const mapData = runs[runId].data[0];
+          map.setCenter({ lat: mapData.lat, lng: mapData.lng });
+        } else {
+          // In this case the box has become unchecked. We want to remove this
+          // graph. We can only remove this box if it has been generated before
+          // and then can be removed appropriately.
+          const toRemove = runs[event.target.id].map;
+          if (toRemove) {
+            toRemove.setMap(null);
+          }
+        }
+      });
+      viewIconEntry.appendChild(viewIcon);
+
+      // Create the color picker element to add to the table. Change color of
+      // the element (if it exists on its selection).
+      runs[key].color = colorPicker;
+      runs[key].checkBox = checkBox;
+      const columnElements = [keyEntry, checkBoxEntry, colorPickerEntry];
+      updateRow(currentRow, columnElements);
+      table.appendChild(currentRow);
+
+      table.appendChild(currentRow);
+      console.log(currentRow);
+      // Toggle the value of even for every other row.
+      even = !even;
     }
-    let keyEntry = document.createElement('td');
-    keyEntry.innerText = key;
-    currentRow.appendChild(keyEntry);
-
-    let checkBoxEntry = document.createElement("td");
-    const checkBox = document.createElement("input");
-    checkBox.type = "checkbox";
-    checkBox.id = key;
-    checkBox.addEventListener("click", function (event) {
-      // Get the necessary content for this runId if not stored in the local cache.
-      console.log("Checkbox event");
-      const checkboxElement = event.target;
-      const targetId = checkboxElement.id;
-      console.log("The id is:" + targetId);
-      console.log("The event is" + checkboxElement.toString());
-      console.log("The checkbox is " + this.checked);
-      if (this.checked) {
-        // First check the cache for this value.
-        dataEntries = runs[event.target.id].data;
-        // if the value is not found in the cache then fetch it.
-        if (dataEntries === undefined) {
-          console.log("Data Entries was false");
-          console.log("The id is:" + event.target.id);
-          fetch("/getrun?id=" + event.target.id + "&dataType=pose").then(response => response.json())
-            .then(data => dataEntries = data).then(() => {
-              console.log(targetId);
-              console.log(runs);
-              const color = runs[targetId].color.value;
-              const toGraph = plotLine(dataEntries, color);
-              runs[targetId].data = dataEntries;
-              runs[targetId].map = toGraph;
-              toGraph.setMap(map);
-            });
-        }
-        else {
-          // Still plot the line, doesn't need to be asynchronous.
-          // TODO(morleyd): abstract this out into a function.
-          console.log("Dataentries was true");
-          console.log(event.target.id);
-          console.log(runs);
-          const color = runs[event.target.id].color.value;
-          const toGraph = plotLine(dataEntries, color);
-          runs[event.target.id].map = toGraph
-          toGraph.setMap(map);
-        }
-      }
-      else {
-        // In this case the box has become unchecked. We want to remove this graph.
-        // We can only remove this box if it has been generated before and then can be removed appropriately.
-        const toRemove = runs[event.target.id].map;
-        if (toRemove !== undefined)
-          toRemove.setMap(null);
-      }
-
-    });
-    let colorPickerEntry = document.createElement("td");
-    const colorPicker = document.createElement("input");
-    colorPicker.type = "color";
-    colorPicker.id = "color_" + key;
-    // Initialize each value to a random starting color.
-    colorPicker.value = "#" + Math.floor(Math.random() * 16777215).toString(16);
-    // Change the map graph color whenever a different color is selected.
-    colorPicker.addEventListener("input", function (event) {
-      const colorId = event.target.id;
-      const runId = colorId.split("_")[1];
-      console.log("Parsed run id is " + runId);
-      const checkboxValue = runs[runId].checkBox.checked;
-      // Only add the run if the checkbox is checked and we have selected a new color.
-      if (runs[runId].map !== undefined && checkboxValue) {
-        runs[runId].map.setMap(null);
-        // Create plot with new color;
-        runs[runId].map = plotLine(runs[runId].data, event.target.value);
-        runs[runId].map.setMap(map);
-      }
-    });
-    colorPickerEntry.appendChild(colorPicker)
-
-    let viewIconEntry = document.createElement("td");
-    const viewIcon = document.createElement("div");
-    viewIcon.id = "view_" + key;
-    viewIcon.innerHTML = "<i class='fa fa-eye'></i>";
-    viewIcon.addEventListener("click", function () {
-      const viewId = this.id;
-      const runId = viewId.split("_")[1];
-      console.log("run id is " + runId);
-      // Get latlng of the current element if there is one.
-      const isChecked = runs[runId].checkBox.checked;
-      console.log("The checkbox value is " + isChecked);
-      if (isChecked && runs[runId].data !== undefined && runs[runId].map !== undefined) {
-        // Set the new center to be the first latlng value fetched from the data.
-        const mapObject = runs[runId].data[0];
-        map.setCenter({ lat: mapObject.lat, lng: mapObject.lng });
-      }
-
-
-    });
-
-    // Also save all these values to the object storing information on runId.
-    runs[key].color = colorPicker;
-    runs[key].checkBox = checkBox;
-    viewIconEntry.appendChild(viewIcon);
-    // Create the color picker element to add to the table. Change color of the element (if it exists on its selection).
-    checkBoxEntry.appendChild(checkBox);
-    currentRow.appendChild(checkBoxEntry);
-    currentRow.appendChild(colorPickerEntry);
-    currentRow.appendChild(viewIconEntry);
-    table.appendChild(currentRow);
-    even = !even;
   }
   return table;
-
+}
+/**
+ * Function to be called on a checkbox click events, attempts to grab data for
+ * graphing from local cache. If the data can't be found it is fetched from the
+ * corresponding servlet. Either way the data is then graphed on the map.
+ * @param {MouseEvent} event
+ */
+function showPoseData(event) {
+  const checkBoxElement = event.target;
+  // TODO(morleyd): Understand complaints about 'this' usage. I am somewhat
+  // confused about when its appropriate to use 'this' in Javascript vs in this
+  // case, event. The behavior often differs from what I would expect, meaning
+  // my heuristic is likely wrong.
+  const checked = this.checked; // eslint-disable-line
+  const id = checkBoxElement.id;
+  // Leave in this print for now as checkbox behavior was somewhat inconsistent
+  // good to validate.
+  console.log('The checkbox is ' + checked);
+  if (checked) { // eslint-disable-line
+    // First check the cache for this value.
+    dataEntries = runs[id].data;
+    console.log('The value of dataentries is ' + dataEntries);
+    // If the value is not found in the cache then fetch it.
+    if (dataEntries === undefined) {
+      fetchAndGraphData(id);
+    } else {
+      // Still plot the line, doesn't need to be asynchronous.
+      graphData(dataEntries, id);
+    }
+  } else {
+    // In this case the box has become unchecked. We want to remove this graph.
+    // We can only remove this box if it has been generated before and then can
+    // be removed appropriately.
+    const toRemove = runs[id].map;
+    if (toRemove) {
+      toRemove.setMap(null);
+    }
+  }
 }
 
+/**
+ * Generates the header row of a table from an array of column names.
+ * @param {Array<string>} headerRowText
+ * @return {HTMLElement}
+ */
+function generateHeaderRow(headerRowText) {
+  const headerRow = document.createElement('tr');
+  headerRowText.forEach((headerName) => {
+    const currentColumn = document.createElement('th');
+    currentColumn.innerText = headerName;
+    headerRow.appendChild(currentColumn);
+  });
+  return headerRow;
+}
+/**
+ * Generates a table entry for displaying a runId.
+ * @param {string} runId
+ * @return {HTMLElement}
+ */
+function generateKeyEntry(runId) {
+  const keyEntry = document.createElement('td');
+  keyEntry.innerText = runId;
+  return keyEntry;
+}
+
+/**
+ * Generate a checkbox with appropriate event listener for insertion into a
+ * table.
+ * @param {string} runId
+ * @return {Array<HTMLElement, HTMLElement>}
+ */
+function generateCheckBoxEntry(runId) {
+  const checkBoxEntry = document.createElement('td');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.id = runId;
+  input.addEventListener('click', showPoseData);
+  checkBoxEntry.appendChild(input);
+  console.log("The checkbox input is " + input);
+  return [checkBoxEntry, input];
+}
+
+/**
+ * Fetch the data and graph it. Necessary to include the graphing in this method
+ * so the asynchronous nature of the fetch operation isn't ignored.
+ * @param {string} runId
+ */
+function fetchAndGraphData(runId) {
+  fetch('/getrun?id=' + runId + '&dataType=pose')
+    .then((response) => response.json())
+    .then((data) => dataEntries = data).then(() => {
+      runs[runId].data = dataEntries;
+      graphData(dataEntries, runId);
+    });
+}
+
+/**
+ * Create a line using the given data entries, plot it on the map and save it to
+ * the cache.
+ * @param {Array<PoseData>} dataEntries
+ * @param {string} runId
+ */
+function graphData(dataEntries, runId) {
+  const color = runs[runId].color.value;
+  const toGraph = plotLine(dataEntries, color);
+  runs[runId].map = toGraph;
+  toGraph.setMap(map);
+}
+
+/**
+ * Insert all the elements in the array into the current table's row.
+ * @param {HTMLElement} currentRow
+ * @param {Array<string>} columnElements
+ */
+function updateRow(currentRow, columnElements) {
+  columnElements.forEach((currentElement) => currentRow.appendChild(currentElement));  // eslint-disable-line
+}
+
+
+/**
+ * Generate a polyline from the given data points and return it.
+ * @param {Array<Point>} dataEntries
+ * @param {string} color
+ * @return {google.maps.Polyline}
+ */
 function plotLine(dataEntries, color) {
-  let currentLine = [];
-  // now add the map with the selected color of the element
-  for (let i = 0; i < dataEntries.length; i++) {
-    currentLine.push({ lat: dataEntries[i].lat, lng: dataEntries[i].lng });
+  const currentLine = [];
+  for (point of dataEntries) {
+    currentLine.push({ lat: point.lat, lng: point.lng });
   }
-  const currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
+  console.log(currentLine);
+  currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
   return currentLineGraph;
 }
 
-function getPolyLine(linePoints, color, opacity, weight, index = 1) {
-  const polyLine = new google.maps.Polyline({
-    path: linePoints,
-    geodesic: true,
-    strokeColor: color,
-    strokeOpacity: opacity,
-    strokeWeight: weight,
-    zIndex: index
-  });
-  return polyLine;
-}
-
+// When finished drawing the box, instead of leaving the widget, create markers
+// at the current lat and intersection with the line.
 let widget;
+// Initial x and y position from clicking.
 let x;
 let y;
+// Final x and y position from selection rectangle.
 let finX;
 let finY;
+// Initial lat and long from selection rectangle.
 let priorLat;
 let priorLng;
+// Store whether or not selection has been clicked.
 let isMouseDown = false;
 let subPath;
 let infoWindow;
 const LEFTCLICK = 1;
-
-
-// When finished drawing the box, instead of leaving the widget, create markers at the current lat and intersection with the line.
 $(function () {
   $(document).on({
     mousedown: function (event) {
-      console.log("event occurred");
+      console.log('event occurred');
       // Inital selection to draw the box.
       if (event.ctrlKey) {
         if (!isMouseDown) {
-          console.log("mousedown triggered");
+          console.log('mousedown triggered');
           placeRectangleStart();
         }
-      }
-      else {
+      } else {
         // Place the box.
         if (event.which === LEFTCLICK) {
           if (isMouseDown) {
@@ -326,27 +452,201 @@ $(function () {
         }
       }
     },
-    mousemove: genChangingBox
-  })
+    mousemove: genChangingBox,
+  });
 });
 
+/**
+ * Locks the starting cursor when the user begins using the selection rectangle.
+ */
+function placeRectangleStart() {
+  x = event.pageX;
+  y = event.pageY;
+  priorLat = currentLat;
+  priorLng = currentLng;
+  $('body').append('<div class="widget" style="top:' +
+    y + 'px; left: ' + x + 'px;"></div>');
+  widget = $('.widget').last();
+  isMouseDown = true;
+}
+
+/**
+ * Finish placing the selection box, select the subsection within this region.
+ */
+function placeRectangleEnd() {
+  $('.widget').remove();
+  // Clear pop up window.
+  if (infoWindow !== undefined) {
+    infoWindow.setMap(null);
+  }
+  clearSelectedPaths(['subSection', 'markerBottom', 'markerTop']);
+  // Clear other paths. line minLatPoint lat , lng minLngPoint lat, lng Iterate
+  // over all data values here, need to find a way to check the checkbox value,
+  // should likely store this in an object somewhere to prevent excess DOM
+  // queries.
+  const mapRuns = Object.entries(runs);
+  for ([id, currentRun] of mapRuns) {
+    if (currentRun.checkBox.checked) {
+      const subSectionData = computeSubSection(currentRun.data,
+        currentLat, priorLat, currentLng, priorLng);
+      currentRun.subData = subSectionData.subData;
+      // Clear prior paths, only display newly selected ones.
+      const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
+      // Setup event listener to show option for 3D window when polyline is
+      // clicked.
+      currentRun.subSection = subPath;
+      // google.maps.event.addListener(subPath, 'click', linkTo3D);
+      subPath.setMap(map);
+      currentRun.markerBottom = genMarker(subSectionData.minLatPoint.lat,
+        subSectionData.minLatPoint.lng);
+      currentRun.markerTop = genMarker(subSectionData.maxLngPoint.lat,
+        subSectionData.maxLngPoint.lng);
+      showAll([currentRun.subSection, currentRun.markerBottom,
+      currentRun.markerTop]);
+      isMouseDown = false;
+    }
+  }
+  const subSectionObject = {};
+  for ([id, currentRun] of mapRuns) {
+    if (currentRun.checkBox.checked && currentRun.subData.length !== 0) {
+      subSectionObject[id] = {};
+      subSectionObject[id].color = currentRun.color.value;
+      subSectionObject[id].data = currentRun.subData;
+      console.log(subSectionObject);
+      google.maps.event.addListener(currentRun.subSection,
+        'click', function (event) {
+          console.log('subsection clicked');
+          if (infoWindow !== undefined) {
+            console.log("Remove the infoWindow");
+            infoWindow.setMap(null);
+          }
+
+          const latLng = event.latLng;
+          console.log('the latlng is' + latLng);
+
+          const link = document.createElement('a');
+          link.innerText = 'View in 3D';
+          link.href = 'null';
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            sessionStorage.setItem('subsection',
+              JSON.stringify(subSectionObject));
+            window.location.href = 'home.html?subsection=true';
+          });
+          infoWindow = new google.maps.InfoWindow({
+            content: link,
+            position: { lat: latLng.lat(), lng: latLng.lng() },
+          });
+          infoWindow.setMap(map);
+        });
+    }
+  }
+}
+
+/**
+ * Change the rectangle width to be match the current cursor position.
+ * @param {MouseEvent} event
+ */
+function genChangingBox(event) {
+  if (isMouseDown) {
+    console.log('Set width triggered');
+    finX = event.pageX;
+    finY = event.pageY;
+    widget.width(finX - x);
+    widget.height(finY - y);
+    widget.css({
+      'width': (finX - x) + '!important',
+      'height': (finY - y) + '!important',
+      'display': 'block',
+      'border': '2px dashed #ccc',
+    });
+  }
+}
+
+/**
+ * Generate a Google maps marker at the given lat and long.
+ * @param {number} latitude
+ * @param {number} longitude
+ * @return {google.maps.Marker}
+ */
+function genMarker(latitude, longitude) {
+  const marker = new google.maps.Marker({
+    position: { lat: latitude, lng: longitude },
+    title: 'Lat: ' + latitude + ' Lng: ' + longitude,
+  });
+  return marker;
+}
+
+
+/**
+ * Create a polyline from the given points with specified parameters.
+ * @param {Point} linePoints
+ * @param {string} color
+ * @param {number} opacity
+ * @param {number} weight
+ * @param {number} index
+ * @return {google.maps.Polyline}
+ */
+function getPolyLine(linePoints, color, opacity, weight, index = 1) {
+  console.log("The color is " + color);
+  const polyLine = new google.maps.Polyline({
+    path: linePoints,
+    geodesic: true,
+    strokeColor: color,
+    strokeOpacity: opacity,
+    strokeWeight: weight,
+    zIndex: index,
+  });
+  return polyLine;
+}
+/**
+ * Clear prior markers/path if they exist.
+ * @param {Array<google.maps.Polyline | google.maps.InfoWindow |
+ * google.maps.Marker>} pathArray
+ */
+function clearSelectedPaths(pathArray) {
+  const objects = Object.values(runs);
+  for (val of objects) {
+    // Now take all these
+    pathArray.forEach(function (current) {
+      const property = val[current];
+      if (property !== undefined) {
+        property.setMap(null);
+      }
+    });
+  }
+}
+/**
+ * @typedef {Object<Array<Point>, Point, Point>} subSectionData
+ * @property {Array<Point>} subData
+ * @property {Point} minLatPoint
+ * @property {Point} maxLngPoint
+ */
+/**
+ * Compute the subsection of a line contained in a bounding rectangle.
+ * @param {Array<Point>} pose
+ * @param {number} currentLat
+ * @param {number} priorLat
+ * @param {number} currentLng
+ * @param {number} priorLng
+ * @return {subSectionData}
+ */
 function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   const minLat = Math.min(currentLat, priorLat);
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
   const maxLng = Math.max(currentLng, priorLng);
   console.log(pose);
-  const poseLength = pose.length;
-  // Lat can be from [-90,90]. 
+  // Lat can be from [-90,90].
   let discoveredMinLat = 91;
   let discoveredMinLatPair = 181;
   // Lng can be from [-180,180].
   let discoveredMaxLng = -181;
   let discoveredMaxLngPair = -91;
-  subLine = [];
-  for (let i = 0; i < poseLength; i++) {
-    const loopLat = pose[i].lat;
-    const loopLng = pose[i].lng;
+  subData = [];
+  for (point of pose) {
+    const loopLat = point.lat;
+    const loopLng = point.lng;
     if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
       // While iterating save the max and min lat, same for the lng.
       if (discoveredMinLat > loopLat) {
@@ -357,132 +657,58 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
         discoveredMaxLngPair = loopLat;
         discoveredMaxLng = loopLng;
       }
-      subLine.push(pose[i]);
+      subData.push(point);
     }
   }
-
-  return { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair };
+  const toReturn = {};
+  toReturn.subData = subData;
+  toReturn.minLatPoint = { lat: discoveredMinLat, lng: discoveredMinLatPair };
+  toReturn.maxLngPoint = { lat: discoveredMaxLngPair, lng: discoveredMaxLng };
+  return toReturn;
 }
 
-function placeRectangleStart() {
-  x = event.pageX;
-  y = event.pageY;
-  priorLat = currentLat;
-  priorLng = currentLng;
-  $('body').append('<div class="widget" style="top:' + y + 'px; left: ' + x + 'px;"></div>');
-  widget = $('.widget').last();
-  isMouseDown = true;
-}
-function placeRectangleEnd() {
-  $('.widget').remove();
-
-  // Iterate over all data values here, need to find a way to check the checkbox value, should likely store this in an object somewhere to prevent excess DOM queries.
-  const mapRuns = Object.entries(runs);
-  // Clear pop up window.
-  if (infoWindow !== undefined)
-    infoWindow.setMap(null);
-  clearSelectedPaths(["subSection", "markerBottom", "markerTop"]);
-  for ([id, currentRun] of mapRuns) {
-    if (currentRun.checkBox.checked) {
-      let { subLine, discoveredMinLat, discoveredMinLatPair, discoveredMaxLng, discoveredMaxLngPair } = computeSubSection(currentRun.data, currentLat, priorLat, currentLng, priorLng);
-      // Clear prior paths, only display newly selected ones.
-      const subSectionNumber = 1;
-      currentRun.subData = subLine;
-      currentRun.subSection = getPolyLine(subLine, "blue", 1.0, 2, 1000);
-      // Setup event listener to show option for 3D window when polyline is clicked.
-      currentRun.markerBottom = genMarker(discoveredMinLat, discoveredMinLatPair);
-      currentRun.markerTop = genMarker(discoveredMaxLngPair, discoveredMaxLng);
-      // Show the created elements.
-      showAll([currentRun.subSection, currentRun.markerBottom, currentRun.markerTop]);
-      // Constant to account for possibility of multiple subsections.
-      // sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber, JSON.stringify(subLine));
-      isMouseDown = false;
-    }
-  }
-  let subSectionObject = {};
-  for ([id, currentRun] of mapRuns) {
-    if (currentRun.checkBox.checked) {
-      subSectionObject[id] = {};
-      subSectionObject[id].color = currentRun.color.value;
-      subSectionObject[id].data = currentRun.subData;
-      console.log(subSectionObject);
-      google.maps.event.addListener(currentRun.subSection, 'click', function (event) {
-        console.log("subsection clicked");
-        if (infoWindow !== undefined)
-          infoWindow.setMap(null);
-
-        const latLng = event.latLng;
-        console.log("the latlng is" + latLng);
-
-        const link = document.createElement("a");
-        link.innerText = "View in 3D";
-        link.href = "null";
-        link.addEventListener("click", function (event) {
-          event.preventDefault();
-          sessionStorage.setItem("subsection", JSON.stringify(subSectionObject));
-          window.location.href = "home.html?subsection=true";
-        });
-        infoWindow = new google.maps.InfoWindow({
-          content: link,
-          position: { lat: latLng.lat(), lng: latLng.lng() }
-        });
-        console.log(infoWindow);
-        infoWindow.setMap(map);
-      });
-    }
-  }
-}
-function genChangingBox(event) {
-  if (isMouseDown) {
-    console.log("Set width triggered");
-    finX = event.pageX;
-    finY = event.pageY;
-    widget.width(finX - x);
-    widget.height(finY - y);
-    widget.css({
-      'width': (finX - x) + '!important',
-      'height': (finY - y) + '!important',
-      'display': 'block',
-      'border': '2px dashed #ccc'
-    });
-  }
-}
-function genMarker(latitude, longitude) {
-  const marker = new google.maps.Marker({
-    position: { lat: latitude, lng: longitude },
-    title: "Lat: " + latitude + " Lng: " + longitude
-  });
-  return marker;
-}
-function clearSelectedPaths(pathArray) {
-  // Clear prior markers/path if they exist.
-  const objects = Object.values(runs);
-  for (val of objects) {
-    // Now take all these 
-    pathArray.forEach(function (current) {
-      const property = val[current];
-      if (property !== undefined) {
-        property.setMap(null);
-      }
-    });
-  }
-}
-function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
-  if ((valLat >= minLat && valLat <= maxLat) && (valLng >= minLng && valLng <= maxLng)) {
-    return true;
-  }
-  return false;
-}
-function linkTo3D(event, id, type) {
-  console.log("The value of the event is " + event);
+/**
+ * Generate an info window to link to the 3D viewer.
+ * @param {MouseEvent} event
+ */
+function linkTo3D(event) {
   const latLng = event.latLng;
+  console.log('Polyline clicked at lat: ' + latLng.lat() +
+    ' lng: ' + latLng.lng());
   infoWindow = new google.maps.InfoWindow({
-    content: "<a href=/home.html?id=" + id + "&dataType=" + type + "&subSection=" + "1" + "&stored=true" + "> View in 3D </a>",
-    position: latLng
+    content: '<a href=/home.html?id=' + id + '&dataType=' +
+      type +
+      '&stored=true' + '> View in 3D </a>',
+    position: latLng,
   });
   infoWindow.setMap(map);
 }
 
-function showAll(elems) {
-  elems.forEach(function (current) { current.setMap(map) });
+/**
+ * Check whether the given lat, lng is within the bounding rectangle.
+ * @param {number} minLat
+ * @param {number} maxLat
+ * @param {number} minLng
+ * @param {number} maxLng
+ * @param {number} valLat
+ * @param {number} valLng
+ * @return {boolean}
+ */
+function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
+  if (valLat >= minLat && valLat <= maxLat &&
+    valLng >= minLng && valLng <= maxLng) {
+    return true;
+  }
+  return false;
+}
+/**
+ * For each parameter, set its current map to be our base map.
+ * @param {Array<google.map.InfoWindow | google.map.Marker |
+ * google.map.Polyline>} elems
+ */
+
+function showAll(elems) {  // eslint-disable-line
+  elems.forEach(function (current) {
+    current.setMap(map);
+  });
 }
