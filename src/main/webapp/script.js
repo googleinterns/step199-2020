@@ -40,6 +40,8 @@ function createTable() { // eslint-disable-line no-unused-vars
   });
 }
 
+const checkMap = new Map();
+
 /**
  * Create a row in the given table.
  * @param {Object} json The JSON that is currently being parsed.
@@ -60,11 +62,7 @@ function initializeRow(json, key, currentRow) {
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
       /* Makes checkboxes for each data entry. */
-      const checkbox = document.createElement('INPUT');
-      checkbox.type = 'checkbox';
-      checkbox.setAttribute('name', 'check');
-      checkbox.setAttribute('value', link.getAttribute('name'));
-      currentRow.appendChild(checkbox);
+      makeCheckbox(currentRow, index);
     } else {
       columnEntry.innerText = '';
       currentRow.appendChild(columnEntry);
@@ -74,54 +72,50 @@ function initializeRow(json, key, currentRow) {
   return currentRow;
 }
 
-/* Select all Checkboxes function. */
-function toggle(source) {
-  checkboxes = document.getElementsByName('check');
-  for (let i=0, n=checkboxes.length; i<n; i++) {
-    checkboxes[i].checked = source.checked;
-  }
+/**
+* Makes checkboxes for each data entry.
+* @param {object} currentRow currentRow to add checkbox to
+* @param {number} index row checkbox will be on
+*/
+function makeCheckbox(currentRow, index) {
+  const checkbox = document.createElement('INPUT');
+  checkbox.type = 'checkbox';
+  checkbox.setAttribute('name', 'check');
+  checkbox.setAttribute('value', link.getAttribute('name'));
+  currentRow.appendChild(checkbox);
+  checkMap.set(index, checkbox);
 }
 
-/*
- * Make url for multiple runs selected. should be in the style of
- ** link.href = "/home.html?id=" + key + "&dataType=" + json[key]
+/**
+* Select all Checkboxes function.
+ * @param {object} source checkbox
  */
-function makeMultiRunURL() {
-  const checkboxes = document.getElementsByName('check');
-  let count =0;
-  const link = document.createElement('a');
-  link.href = '/home.html?';
-
-  for (let i=0, n=checkboxes.length; i<n; i++) {
-    if (checkboxes[i].checked) {
-      count++;
-      console.log('here what we are splitting!' +
-       checkboxes[i].getAttribute('value'));
-      const splitInfo = checkboxes[i].getAttribute('value').split('_');
-      link.href += 'id' + count + '=' + splitInfo[0] + '&type' +
-      count + '=' + splitInfo[1]+ '-';
-    }
+function toggle(source) {
+  for (const checkbox of checkMap.values()) {
+    checkbox.checked = source.checked;
   }
-  link.href += 'count=' + count;
 }
-/*
+
+/**
  * Make json for multiple runs selected. should be in the same style of
  * fetch all files json from database.
  */
 function makeMultiRunJson() {
-  const checkboxes = document.getElementsByName('check');
-  let str= '{';
-  for (let i=0, n=checkboxes.length; i<n; i++) {
-    if (checkboxes[i].checked) {
-      console.log('here what we are splitting!' +
-      checkboxes[i].getAttribute('value'));
-      const splitInfo = checkboxes[i].getAttribute('value').split('_');
-      str += '\n' + '"' + splitInfo[0] + '": [' + '\n "' +
-      splitInfo[1] + '" \n ], \n';
+  const strArray = [];
+  strArray.push('{');
+
+  for (const checkbox of checkMap.values()) {
+    if (checkbox.checked) {
+      const splitInfo = checkbox.getAttribute('value').split('_');
+      strArray.push(`
+      "${splitInfo[0]}": [
+          "${splitInfo[1]}"
+          ]
+          `);
     }
   }
-  str += '}';
-  console.log(str);
+  strArray.push('}');
+  const str=strArray.join('');
   sessionStorage.setItem('selected', str);
 }
 
