@@ -71,7 +71,10 @@ function fetchData() {
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
       .then((response) => response.json())
-      .then((data) => runs[id].data = data)
+      .then((data) => {
+        runs[id] = {};
+        runs[id].data = data;
+      })
       .then(() => {
         return fetch('\data');
       })
@@ -89,19 +92,17 @@ function fetchData() {
 function initMap() {
   // Occurs when google map api calls all promises, which is getting this
   // function called somehow, according to stack trace.
-  const initialPose = runs[id].data;
-  const initialPoseMap = runs[id].map;
-  if (initialPose === undefined) {
+  if (runs[id] === undefined) {
     return;
   }
+  const initialPose = runs[id].data;
+  console.log('The value of runs is ' + JSON.stringify(runs[id]));
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
     zoom: 18,
   });
 
-  initialPoseMap = getPolyLine(formatPoseData(initialPose), '#FF0000', 1.0, 2);
-  initialPoseMap.setMap(map);
 
   const centerControlDiv = centerControl();
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
@@ -120,21 +121,6 @@ function initMap() {
   // Click the selected run.
   runs[id].checkBox.click();
 }
-
-/**
- * Changes the pose data to a format the Google maps javascript api can read.
- * @param {PoseData} pose Data to be converted from the PoseData format to a
- * simpler one.
- * @return { Array <Point> } Returns an array of Points.
- */
-function formatPoseData(pose) {
-  const poseCoordinates = [];
-  for (point of pose) {
-    poseCoordinates.push({lat: point.lat, lng: point.lng});
-  }
-  return poseCoordinates;
-}
-
 
 /**
  * Create a selection element containing a table which allows easy modification
@@ -171,7 +157,7 @@ function centerControl() {
   controlUI.className = 'controlUI';
   controlUI.title = 'Click to switch to 3D visualization';
   controlDiv.appendChild(controlUI);
-  sideControlDiv.index = 1;
+  controlDiv.index = 1;
 
   // Set CSS for the control interior.
   const controlText = document.createElement('div');
@@ -208,7 +194,8 @@ function createSideTable(json) {
         currentRow.className += ' even';
       }
       const keyEntry = generateKeyEntry(key);
-      const {checkBoxEntry, checkBox} = generateCheckBoxEntry(key);
+      const [checkBoxEntry, checkBox] = generateCheckBoxEntry(key);
+      console.log('The checkbox here is ' + checkBox);
       /* This part won't compile and should be changed to new format in later
       commmit.*/
       const colorPickerEntry = document.createElement('td');
@@ -229,7 +216,7 @@ function createSideTable(json) {
         if (runs[runId].map !== undefined && checkboxValue) {
           runs[runId].map.setMap(null);
           // Create plot with new color;
-          runs[runId].map = plotLine(datas[runId], event.target.value);
+          runs[runId].map = plotLine(runs[runId].data, runs[runId].color.value);
           runs[runId].map.setMap(map);
         }
       });
@@ -325,7 +312,7 @@ function showPoseData(event) {
  */
 function generateHeaderRow(headerRowText) {
   const headerRow = document.createElement('tr');
-  headerRowText.foreach((headerName) => {
+  headerRowText.forEach((headerName) => {
     const currentColumn = document.createElement('th');
     currentColumn.innerText = headerName;
     headerRow.appendChild(currentColumn);
@@ -356,7 +343,8 @@ function generateCheckBoxEntry(runId) {
   input.id = runId;
   input.addEventListener('click', showPoseData);
   checkBoxEntry.appendChild(input);
-  return {checkBoxEntry, input};
+  console.log('The checkbox input is ' + input);
+  return [checkBoxEntry, input];
 }
 
 /**
@@ -392,7 +380,7 @@ function graphData(dataEntries, runId) {
  * @param {Array<string>} columnElements
  */
 function updateRow(currentRow, columnElements) {
-  columnElements.foreach((currentElement) => currentRow.appendChild(currentElement));  // eslint-disable-line
+  columnElements.forEach((currentElement) => currentRow.appendChild(currentElement));  // eslint-disable-line
 }
 
 
@@ -404,12 +392,11 @@ function updateRow(currentRow, columnElements) {
  */
 function plotLine(dataEntries, color) {
   const currentLine = [];
-  for (point of dataEntries) {
+  for (const point of dataEntries) {
     currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
   currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
-  initialPoseData.setMap(null);
   return currentLineGraph;
 }
 
@@ -427,7 +414,6 @@ let priorLat;
 let priorLng;
 // Store whether or not selection has been clicked.
 let isMouseDown = false;
-let subPath;
 let infoWindow;
 const LEFTCLICK = 1;
 $(function() {
@@ -486,12 +472,13 @@ function placeRectangleEnd() {
     if (currentRun.checkBox.checked) {
       const subSectionData = computeSubSection(currentRun.data,
           currentLat, priorLat, currentLng, priorLng);
-      currentRun.subLine = subSectionData.subLine;
+      currentRun.subData = subSectionData.subData;
       // Clear prior paths, only display newly selected ones.
-      currentRun.subSection = getPolyLine(subLine, 'blue', 1.0, 2);
+      const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
       // Setup event listener to show option for 3D window when polyline is
       // clicked.
-      google.maps.event.addListener(subPath, 'click', linkTo3D);
+      currentRun.subSection = subPath;
+      // google.maps.event.addListener(subPath, 'click', linkTo3D);
       subPath.setMap(map);
       currentRun.markerBottom = genMarker(subSectionData.minLatPoint.lat,
           subSectionData.minLatPoint.lng);
@@ -504,7 +491,7 @@ function placeRectangleEnd() {
   }
   const subSectionObject = {};
   for ([id, currentRun] of mapRuns) {
-    if (currentRun.checkBox.checked) {
+    if (currentRun.checkBox.checked && currentRun.subData.length !== 0) {
       subSectionObject[id] = {};
       subSectionObject[id].color = currentRun.color.value;
       subSectionObject[id].data = currentRun.subData;
@@ -513,6 +500,7 @@ function placeRectangleEnd() {
           'click', function(event) {
             console.log('subsection clicked');
             if (infoWindow !== undefined) {
+              console.log('Remove the infoWindow');
               infoWindow.setMap(null);
             }
 
@@ -526,13 +514,12 @@ function placeRectangleEnd() {
               event.preventDefault();
               sessionStorage.setItem('subsection',
                   JSON.stringify(subSectionObject));
-              window.location.href = 'home.html?subsection=true';
+              window.location.href = '3DVisual.html?subsection=true';
             });
             infoWindow = new google.maps.InfoWindow({
               content: link,
               position: {lat: latLng.lat(), lng: latLng.lng()},
             });
-            console.log(infoWindow);
             infoWindow.setMap(map);
           });
     }
@@ -584,6 +571,7 @@ function genMarker(latitude, longitude) {
  * @return {google.maps.Polyline}
  */
 function getPolyLine(linePoints, color, opacity, weight, index = 1) {
+  console.log('The color is ' + color);
   const polyLine = new google.maps.Polyline({
     path: linePoints,
     geodesic: true,
@@ -613,7 +601,7 @@ function clearSelectedPaths(pathArray) {
 }
 /**
  * @typedef {Object<Array<Point>, Point, Point>} subSectionData
- * @property {Array<Point>} subLine
+ * @property {Array<Point>} subData
  * @property {Point} minLatPoint
  * @property {Point} maxLngPoint
  */
@@ -638,7 +626,7 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   // Lng can be from [-180,180].
   let discoveredMaxLng = -181;
   let discoveredMaxLngPair = -91;
-  subLine = [];
+  subData = [];
   for (point of pose) {
     const loopLat = point.lat;
     const loopLng = point.lng;
@@ -652,11 +640,11 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
         discoveredMaxLngPair = loopLat;
         discoveredMaxLng = loopLng;
       }
-      subLine.push(pose[i]);
+      subData.push(point);
     }
   }
   const toReturn = {};
-  toReturn.subLine = subLine;
+  toReturn.subData = subData;
   toReturn.minLatPoint = {lat: discoveredMinLat, lng: discoveredMinLatPair};
   toReturn.maxLngPoint = {lat: discoveredMaxLngPair, lng: discoveredMaxLng};
   return toReturn;
@@ -666,13 +654,13 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
  * Generate an info window to link to the 3D viewer.
  * @param {MouseEvent} event
  */
-function linkTo3D(event) {
+function linkTo3D(event) { // eslint-disable-line
   const latLng = event.latLng;
   console.log('Polyline clicked at lat: ' + latLng.lat() +
     ' lng: ' + latLng.lng());
   infoWindow = new google.maps.InfoWindow({
-    content: '<a href=/home.html?id=' + id + '&dataType=' +
-      type + '&subSection=' + subSectionNumber +
+    content: '<a href=/3DVisual.html?id=' + id + '&dataType=' +
+      type +
       '&stored=true' + '> View in 3D </a>',
     position: latLng,
   });
