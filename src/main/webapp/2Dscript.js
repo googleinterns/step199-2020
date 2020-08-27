@@ -66,19 +66,19 @@ function fetchData() {
   id = urlParams.get('id');
   type = urlParams.get('dataType');
   fetch('/getrun?id=' + id + '&dataType=' + type)
-    .then((response) => response.json())
-    .then((data) => {
-      runs[id] = {};
-      runs[id].data = data;
-    })
-    .then(() => {
-      return fetch('\data');
-    })
-    .then((response) => response.json())
-    .then((json) => allRuns = json)
-    .then(() => {
-      initMap();
-    });
+      .then((response) => response.json())
+      .then((data) => {
+        runs[id] = {};
+        runs[id].data = data;
+      })
+      .then(() => {
+        return fetch('\data');
+      })
+      .then((response) => response.json())
+      .then((json) => allRuns = json)
+      .then(() => {
+        initMap();
+      });
 }
 
 /**
@@ -96,7 +96,7 @@ function initMap() {
 
 
   map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: initialPose[0].lat, lng: initialPose[0].lng },
+    center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
     zoom: 18,
   });
 
@@ -108,7 +108,7 @@ function initMap() {
 
   // Add event listeners to record latitude and longitude globally for selection
   // box.
-  map.addListener('mousemove', function (event) {
+  map.addListener('mousemove', function(event) {
     const latLng = event.latLng;
     currentLat = latLng.lat();
     currentLng = latLng.lng();
@@ -128,7 +128,7 @@ function initMap() {
 function formatPoseData(pose) {
   const poseCoordinates = [];
   for (point of pose) {
-    poseCoordinates.push({ lat: point.lat, lng: point.lng });
+    poseCoordinates.push({lat: point.lat, lng: point.lng});
   }
   return poseCoordinates;
 }
@@ -178,7 +178,7 @@ function centerControl() {
   controlUI.appendChild(controlText);
 
   // Setup the click event listeners: simply set the map to Chicago.
-  controlUI.addEventListener('click', function () {
+  controlUI.addEventListener('click', function() {
     window.location.href = '/3DVisual.html?id=' + id + '&dataType=' + type;
   });
 }
@@ -306,11 +306,11 @@ function generateCheckBoxEntry(runId) {
  */
 function fetchAndGraphData(runId) {
   fetch('/getrun?id=' + runId + '&dataType=pose')
-    .then((response) => response.json())
-    .then((data) => dataEntries = data).then(() => {
-      runs[runId].data = dataEntries;
-      graphData(dataEntries, runId);
-    });
+      .then((response) => response.json())
+      .then((data) => dataEntries = data).then(() => {
+        runs[runId].data = dataEntries;
+        graphData(dataEntries, runId);
+      });
 }
 
 /**
@@ -343,7 +343,7 @@ function updateRow(currentRow, columnElements) {
 function plotLine(dataEntries) {
   const currentLine = [];
   for (const point of dataEntries) {
-    currentLine.push({ lat: point.lat, lng: point.lng });
+    currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
   currentLineGraph = getPolyline(currentLine, 'blue', 1.0, 2);
@@ -371,9 +371,9 @@ let markerTop;
 let subPath;
 let infoWindow;
 const LEFTCLICK = 1;
-$(function () {
+$(function() {
   $(document).on({
-    mousedown: function (event) {
+    mousedown: function(event) {
       console.log('event occurred');
       // Inital selection to draw the box.
       if (event.ctrlKey) {
@@ -418,7 +418,7 @@ function placeRectangleEnd() {
     infoWindow.setMap(null);
   }
   const subSectionData = computeSubSection(currentRun.data,
-    currentLat, currentLng, priorLat, priorLng);
+      currentLat, currentLng, priorLat, priorLng);
   // Choose a subSectionNumber, implement differently in future pr.
   const subSectionNumber = 1;
   // Clear prior paths, only display newly selected ones.
@@ -436,14 +436,14 @@ function placeRectangleEnd() {
   google.maps.event.addListener(subPath, 'click', linkTo3D);
   subPath.setMap(map);
   markerBottom = genMarker(subSectionData.minLatPoint.lat,
-    subSectionData.minLatPoint.lng);
+      subSectionData.minLatPoint.lng);
   markerTop = genMarker(subSectionData.maxLngPoint.lat,
-    subSectionData.maxLngPoint.lng);
+      subSectionData.maxLngPoint.lng);
   markerBottom.setMap(map);
   markerTop.setMap(map);
 
   sessionStorage.setItem(id + '_' + type + '_' + subSectionNumber,
-    JSON.stringify(subLine));
+      JSON.stringify(subLine));
 }
 
 /**
@@ -474,7 +474,7 @@ function genChangingBox(event) {
  */
 function genMarker(latitude, longitude) {
   const marker = new google.maps.Marker({
-    position: { lat: latitude, lng: longitude },
+    position: {lat: latitude, lng: longitude},
     title: 'Lat: ' + latitude + ' Lng: ' + longitude,
   });
   return marker;
@@ -545,8 +545,8 @@ function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   }
   const toReturn = {};
   toReturn.subLine = subLine;
-  toReturn.minLatPoint = { lat: discoveredMinLat, lng: discoveredMinLatPair };
-  toReturn.maxLngPoint = { lat: discoveredMaxLngPair, lng: discoveredMaxLng };
+  toReturn.minLatPoint = {lat: discoveredMinLat, lng: discoveredMinLatPair};
+  toReturn.maxLngPoint = {lat: discoveredMaxLngPair, lng: discoveredMaxLng};
   return toReturn;
 }
 
