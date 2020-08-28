@@ -9,7 +9,7 @@ const checkArray = [];
 * @return {void}
 */
 function createTable() { // eslint-disable-line no-unused-vars
-  fetch('\data').then((response) => response.json()).then((json) => {
+  fetch('\data').then((response) => response.json()).then((runInformation) => {
     const table = document.getElementById('pose-data');
     const headerRow = document.createElement('tr');
     const columnOne = document.createElement('th');
@@ -23,8 +23,8 @@ function createTable() { // eslint-disable-line no-unused-vars
     headerRow.appendChild(columnThree);
     table.appendChild(headerRow);
     let even = false;
-    for (const key in json) {
-      if (json.hasOwnProperty(key)) {
+    for (const key in runInformation) {
+      if (runInformation.hasOwnProperty(key)) {
         const currentRow = document.createElement('tr');
         currentRow.className = 'visible';
         if (even) {
@@ -35,7 +35,7 @@ function createTable() { // eslint-disable-line no-unused-vars
         currentRow.appendChild(keyEntry);
         console.log('The key is ' + key);
         // Create row goes here
-        initializeRow(json, key, currentRow);
+        appendRow(runInformation, key, currentRow);
         table.appendChild(currentRow);
         even = !even;
       }
@@ -46,20 +46,20 @@ function createTable() { // eslint-disable-line no-unused-vars
 
 /**
  * Create a row in the given table.
- * @param {Object} json The JSON that is currently being parsed.
+ * @param {Object} runInformation  that is currently being parsed.
  * @param {String} key The key to lookup in the JSON element.
  * @param {Object} currentRow The currentRow to append the new elements too.
  * @return {Element}
  */
-function initializeRow(json, key, currentRow) {
+function appendRow(runInformation, key, currentRow) {
   let index = 0;
-  for (const type of json[key]) {
+  for (const type of runInformation[key]) {
     const columnEntry = document.createElement('td');
 
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
-      link.href = '/getrun?id=' + key + '&dataType=' + json[key];
+      link.href = '/getrun?id=' + key + '&dataType=' + runInformation[key];
       link.innerText = type;
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
