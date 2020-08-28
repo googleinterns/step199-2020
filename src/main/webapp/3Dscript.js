@@ -23,7 +23,7 @@ const poseStartIndex = {start: 0};
 const poseEndIndex = {end: Number.MAX_VALUE};
 
 /* Last indices to be picked for boundaries of a partial trajectory. */
-let oldStart=0;
+let oldStart=-1;
 let oldEnd;
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
@@ -264,7 +264,7 @@ function formatTime(time) {
 * @param {object} typeOfMatrix matrix to multiply by.
 * @param {int} index of point to change.
 */
-function changeMatrix(typeOfMatrix, index) {
+function updateMatrixAtIndex(typeOfMatrix, index) {
   orientation.getMatrixAt(index, instanceMatrix );
   matrix.multiplyMatrices( instanceMatrix, typeOfMatrix );
   orientation.setMatrixAt( index, matrix );
@@ -296,17 +296,17 @@ function hideOrientation() {
   const min = Math.min(poseEndIndex.end, poseLength);
   plotPartialPath(poseStartIndex.start, min);
   for (let i= 0; i<= oldStart; i++) {
-    changeMatrix(nonZeroMatrix, i);
+    updateMatrixAtIndex(nonZeroMatrix, i);
   }
   for (let i= 0; i<= poseStartIndex.start; i++) {
-    changeMatrix(zeroMatrix, i);
+    updateMatrixAtIndex(zeroMatrix, i);
   }
 
   for (let i= poseLength-1; i>oldEnd; i--) {
-    changeMatrix(nonZeroMatrix, i);
+    updateMatrixAtIndex(nonZeroMatrix, i);
   }
   for (let i= poseLength-1; i> poseEndIndex.end; i--) {
-    changeMatrix(zeroMatrix, i);
+    updateMatrixAtIndex(zeroMatrix, i);
   }
 
   /* Update oldentries. */
@@ -385,7 +385,7 @@ function animate() {
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
-    changeMatrix(scaleInverseMatrix, selectedIndex);
+    updateMatrixAtIndex(scaleInverseMatrix, selectedIndex);
     selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
@@ -406,7 +406,7 @@ function onClick(event) {
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
       const instanceId = intersects[i].instanceId;
-      changeMatrix(scaleMatrix, instanceId);
+      updateMatrixAtIndex(scaleMatrix, instanceId);
       selectedIndex = instanceId;
       displayPointValues(instanceId);
 

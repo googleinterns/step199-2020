@@ -36,6 +36,7 @@ function createTable() { // eslint-disable-line no-unused-vars
     }
   });
 }
+
 /**
  * Create a row in the given table.
  * @param {Object} json The JSON that is currently being parsed.
