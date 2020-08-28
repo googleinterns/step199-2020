@@ -2,7 +2,7 @@
 
 // Initial object that stores the generated 2D map, of @type{google.maps.Maps}.
 let map;
-// Store all information for every run (acts as cache), of @type{Run}
+// Store all information for every run (acts as cache), of @type{Object<Run>}
 const runs = {};
 // Stores JSON response giving allRuns with their associated runIds.
 let allRuns;
@@ -313,7 +313,7 @@ function generateColorPickerEntry(runId) {
   colorPicker.id = 'color_' + runId;
   // Initialize each value to a random starting color.
   colorPicker.value = '#' + Math.floor(
-      Math.random() * 16777215).toString(16);
+      Math.random() * 0xFFFFFF).toString(16);
   // Change the map graph color whenever a different color is selected.
   colorPicker.addEventListener('input', (event) => changeRunColor(event));
   colorPickerEntry.appendChild(colorPicker);
@@ -321,7 +321,7 @@ function generateColorPickerEntry(runId) {
   return colorPickerEntry;
 }
 /**
- * Change the color for a given run when the colocolorPickerrPicker changes
+ * Change the color for a given run when the colorPicker changes
  * value.
  * @param {MouseEvent} event
  */
@@ -495,38 +495,58 @@ function placeRectangleEnd() {
   // should likely store this in an object somewhere to prevent excess DOM
   // queries.
   const mapRuns = Object.entries(runs);
-  for ([id, currentRun] of mapRuns) {
-    if (!currentRun.checkBox.checked) {
-      continue;
-    }
-    const subSectionData = computeSubSection(currentRun.data,
-        currentLat, priorLat, currentLng, priorLng);
-    currentRun.subData = subSectionData.subData;
-    // Clear prior paths, only display newly selected ones.
-    const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
-    // Setup event listener to show option for 3D window when polyline is
-    // clicked.
-    currentRun.subSection = subPath;
-    subPath.setMap(map);
-    currentRun.markerBottom = genMarker(subSectionData.minLatPoint.lat,
-        subSectionData.minLatPoint.lng);
-    currentRun.markerTop = genMarker(subSectionData.maxLngPoint.lat,
-        subSectionData.maxLngPoint.lng);
-    showAll([currentRun.subSection, currentRun.markerBottom,
-      currentRun.markerTop]);
-  }
   const subSectionObject = {};
   for ([id, currentRun] of mapRuns) {
-    if (!(currentRun.checkBox.checked && currentRun.subData.length !== 0)) {
-      continue;
+    if (currentRun.checkBox.checked) {
+      generatedSelectedRegion(currentRun, currentLat,
+          priorLat, currentLng, priorLng);
+
+      if (currentRun.subData.length === 0) {
+        continue;
+      }
+      generateSessionStorage(subSectionObject, currentRun, id);
     }
-    subSectionObject[id] = {};
-    subSectionObject[id].color = currentRun.color.value;
-    subSectionObject[id].data = currentRun.subData;
-    console.log(subSectionObject);
-    google.maps.event.addListener(currentRun.subSection,
-        'click', (event) => createInfoWindow(event, subSectionObject));
   }
+}
+
+/**
+ * Grab the selected region and generate the necessary polylines and markers.
+ * @param {Run} currentRun
+ * @param {number} currentLat
+ * @param {number} priorLat
+ * @param {number} currentLng
+ * @param {number} priorLng
+ */
+function generatedSelectedRegion(currentRun, currentLat, priorLat,
+    currentLng, priorLng) {
+  const subSectionData = computeSubSection(currentRun.data,
+      currentLat, priorLat, currentLng, priorLng);
+  currentRun.subData = subSectionData.subData;
+  // Clear prior paths, only display newly selected ones.
+  const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
+  // Setup event listener to show option for 3D window when polyline is clicked.
+  currentRun.subSection = subPath;
+  subPath.setMap(map);
+  currentRun.markerBottom = genMarker(subSectionData.minLatPoint.lat,
+      subSectionData.minLatPoint.lng);
+  currentRun.markerTop = genMarker(subSectionData.maxLngPoint.lat,
+      subSectionData.maxLngPoint.lng);
+  showAll([currentRun.subSection, currentRun.markerBottom,
+    currentRun.markerTop]);
+}
+
+/** Save the given value to sessionStorage.
+ * @param {Array<Object<string, Array<PoseData>>>}  subSectionObject
+ * @param {Run} currentRun
+ * @param {string} id
+ */
+function generateSessionStorage(subSectionObject, currentRun, id) {
+  subSectionObject[id] = {};
+  subSectionObject[id].color = currentRun.color.value;
+  subSectionObject[id].data = currentRun.subData;
+  console.log(subSectionObject);
+  google.maps.event.addListener(currentRun.subSection,
+      'click', (event) => createInfoWindow(event, subSectionObject));
 }
 
 /**
