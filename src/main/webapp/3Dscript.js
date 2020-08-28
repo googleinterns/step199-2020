@@ -14,10 +14,6 @@ import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
  * @property {string} color The color in a standard HTML acceptable format
  */
 let runs;
-/*
-runId: data color
-
-*/
 // Overall Threejs objects, may be helpful to condense into one Object.
 let scene;
 let camera;
@@ -37,6 +33,7 @@ const defaultTransform = {
 // The runId of the current run being modified, bound to gui.
 const currentId = {};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
+let poseOrigin;
 
 initThreeJs();
 animate();
@@ -110,7 +107,7 @@ function addPoseData(runId, poseToPlot, hexColor) {
 /**
  * Converts lla coordinates to local world coordinates.
  * @param {number} runId The given run's id.
- * @param {Array<Point>} pose The run to center the data around.
+ * @param {Point} pose The run to center the data around.
  * @param {number} lat Latitude in degrees.
  * @param {number} lng Longitude in degrees.
  * @param {number} alt Altitude in meters.
@@ -125,9 +122,9 @@ function llaDegreeToLocal(runId, pose, lat, lng, alt) {
    * unit change in our 3D space. Since altitude is already represented in
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
-  const x = (lng - pose[0].lng) * 25000 * transforms[runId].scale;
-  const y = (alt - pose[0].alt) / 4;
-  const z = (lat - pose[0].lat) * 25000 * -transforms[runId].scale;
+  const x = (lng - pose.lng) * 25000 * transforms[runId].scale;
+  const y = (alt - pose.alt) / 4;
+  const z = (lat - pose.lat) * 25000 * -transforms[runId].scale;
   return [x, y, z];
 }
 /**
@@ -146,7 +143,7 @@ function plotTrajectory(runId, pose) {
    */
   const coordinates = [];
   for (const point of pose) {
-    const [x, y, z] = llaDegreeToLocal(runId, pose,
+    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
         point.lat, point.lng, point.alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
@@ -170,14 +167,8 @@ function plotOrientation(runId) {
   const pose = runs[runId].data;
   const orientation = runs[runId].orientation;
   for (const point of pose) {
-    /**
-     * Matrix is a 4x4 matrix used to translate and rotate each instance of the
-     * pose orientation locally instead using the world transform. This means it
-     * will rotate relative to the position of the matrix, not the center of the
-     * 3D scene.
-     */
     const matrix = new THREE.Matrix4();
-    const [x, y, z] = llaDegreeToLocal(runId, pose,
+    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
         point.lat, point.lng, point.alt);
 
     matrix.makeTranslation(x, y, z);
@@ -262,10 +253,9 @@ function fetchData() {
   if (isSubSection) {
     runs = JSON.parse(sessionStorage.getItem('subsection'));
     firstData = Object.values(runs)[0].data;
+    poseOrigin = firstData[0];
     currentId.value = Object.keys(runs)[0];
 
-    // set the runId to We should loop through all the runs and call
-    // addPoseData() for all of them.
     {
       // Initialize the transforms for each run.
       Object.keys(runs).forEach(
