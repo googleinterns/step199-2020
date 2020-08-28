@@ -317,7 +317,7 @@ function matrixRotation(orientation, direction, origin) {
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
   for (const point of pose) {
     /**
-     * Matrix4 is a 4x4 matrix used to translate, rotate, and
+     * Matrix4 is a 4 by 4 matrix used to translate, rotate, and
      * scale each instance of the pose orientation locally instead
      * using the world transform. This means it will rotate relative
      * to the position of the matrix, not the center of the 3D scene.
