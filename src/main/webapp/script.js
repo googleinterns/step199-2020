@@ -52,7 +52,7 @@ function initializeRow(json, key, currentRow) {
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
-      link.href = '/getrun?id=' + key + '&dataType=' + json[key];
+      link.href = '/2DVisual.html?id=' + key + '&dataType=' + json[key];
       link.innerText = type;
       columnEntry.appendChild(link);
     } else {

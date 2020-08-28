@@ -11,16 +11,20 @@ let controls;
 let orientation;
 let trajectory;
 let pose;
+let poseLength;
 const poseTransform = {
   /* Unit: 4 meters*/ translateX: 0,
   /* Unit: 4 meters*/ translateZ: 0,
   /* Unit: degrees*/ rotate: 0,
   /* Scalar*/ scale: 1};
 
-const poseStart = {start: 0};
-const poseEnd = {end: 10000};
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+/* variables used to keep track of indices of trajectory wanted to be viewed. */
+const poseStartIndex = {start: 0};
+const poseEndIndex = {end: Number.MAX_VALUE};
+
+/* Last indices to be picked for boundaries of a partial trajectory. */
+let oldStart=0;
+let oldEnd;
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
@@ -31,6 +35,7 @@ const scaleMatrix = new THREE.Matrix4().makeScale(
 const scaleInverseMatrix = new THREE.Matrix4().makeScale(
     1/scaleCylinder, 1/scaleCylinder, 1/scaleCylinder );
 
+/* Index of last selected point to view. */
 let selectedIndex= -1;
 
 /* For hiding trajectory. */
@@ -40,9 +45,7 @@ const zeroMatrix = new THREE.Matrix4().makeScale(
 const nonZeroMatrix = new THREE.Matrix4().makeScale(
     scaleHide, scaleHide, scaleHide);
 
-let oldStart=0;
-let oldEnd;
-
+/* Temp matrices used for matrix multiplication. */
 const instanceMatrix = new THREE.Matrix4();
 const matrix = new THREE.Matrix4();
 
@@ -50,8 +53,8 @@ const matrix = new THREE.Matrix4();
 let time;
 /*  Datapoint lat interface on gui. */
 let lat;
-/*  Datapoint long interface on gui. */
-let long;
+/*  Datapoint lng interface on gui. */
+let lng;
 /*  Datapoint alt interface on gui. */
 let alt;
 /*  Datapoint roll interface on gui. */
@@ -63,7 +66,6 @@ let pitch;
 
 
 initThreeJs();
-makeGUI();
 animate();
 
 /**
@@ -95,6 +97,7 @@ function makeCamera() {
       /* farFrustum =*/ 1000);
   camera.position.set(0, 1, 1);
 }
+
 
 /**
  * Creates the 2D terrain and points a light at it.
@@ -149,9 +152,9 @@ function llaDegreeToLocal(lat, lng, alt) {
    * change in our 3D space. Since altitude is already represented in
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
-  const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
-  const y = (alt - pose[0].alt)/4;
-  const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
+  const x = (lng - pose[5].lng) * 25000 * poseTransform.scale;
+  const y = (alt - pose[5].alt)/4;
+  const z = (lat - pose[5].lat) * 25000 * -poseTransform.scale;
   return [x, y, z];
 }
 /**
@@ -166,7 +169,7 @@ function plotTrajectory() {
    * up and down movement, and the z axis controls forward and back movement.
    */
   const coordinates=[];
-  for (point of pose) {
+  for (const point of pose) {
     const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
@@ -212,7 +215,7 @@ function plotPartialPath(start, end) {
  * call rather than the number of data points. (O(1) vs. O(N))
  */
 function plotOrientation() {
-  for (point of pose) {
+  for (const point of pose) {
     /**
      * Matrix is a 4x4 matrix used to translate and rotate each instance
      * of the pose orientation locally instead using the world transform.
@@ -231,7 +234,7 @@ function plotOrientation() {
     matrix.multiply(new THREE.Matrix4().makeRotationY(
         THREE.Math.degToRad(point.rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
-    orientation.setMatrixAt(i, matrix);
+    orientation.setMatrixAt(pose.indexOf(point), matrix);
   }
   orientation.instanceMatrix.needsUpdate = true;
   orientation.position.x = poseTransform.translateX;
@@ -241,39 +244,31 @@ function plotOrientation() {
 
 /**
 * get time in readable units
-* @param {double} time raw time up to 6 decimal places. from GPS time
+* @param {String} time raw time up to 6 decimal places. from GPS time
 * @return {String} readable time.
  */
 function formatTime(time) {
-  /* Time changed from gps to unix. */
-  const gpsDiff = 315964800;
-  const unixTimestamp = time - gpsDiff;
-  // Create a new JavaScript Date object based on the timestamp
-  // multiplied by 1000 so that the argument is in milliseconds, not seconds.
-  const date = new Date(unixTimestamp * 1000);
-  // Hours part from the timestamp
-  const hours = date.getHours();
-  // Minutes part from the timestamp
-  const minutes = '0' + date.getMinutes();
-  // Seconds part from the timestamp
-  const seconds = '0' + date.getSeconds();
-
-  // Will display time in 10:30:23 format
-  const formattedTime = hours + ':' +
-   minutes.substr(-2) + ':' + seconds.substr(-2);
-  return formattedTime;
+  time += '';
+  const x = time.split('.');
+  let x1 = x[0];
+  const x2 = x.length > 1 ? '.' + x[1] : '';
+  const rgx = /(\d+)(\d{3})/;
+  while (rgx.test(x1)) {
+    x1 = x1.replace(rgx, '$1' + ',' + '$2');
+  }
+  return x1 + x2;
 }
 
 /**
 * Does matrix multiplication on specific index of the direction matrix.
 * @param {object} typeOfMatrix matrix to multiply by.
-* @param {int} index  of point to change.
+* @param {int} index of point to change.
 */
 function changeMatrix(typeOfMatrix, index) {
-  direction.getMatrixAt(index, instanceMatrix );
+  orientation.getMatrixAt(index, instanceMatrix );
   matrix.multiplyMatrices( instanceMatrix, typeOfMatrix );
-  direction.setMatrixAt( index, matrix );
-  direction.instanceMatrix.needsUpdate = true;
+  orientation.setMatrixAt( index, matrix );
+  orientation.instanceMatrix.needsUpdate = true;
 }
 
 /**
@@ -283,7 +278,7 @@ function changeMatrix(typeOfMatrix, index) {
 function displayPointValues(index) {
   time.setValue(formatTime(pose[index].gpsTimestamp));
   lat.setValue(pose[index].lat);
-  long.setValue(pose[poseStart.start].lng);
+  lng.setValue(pose[index].alt);
   alt.setValue(pose[index].alt);
   yaw.setValue(pose[index].yawDeg);
   roll.setValue(pose[index].rollDeg);
@@ -294,31 +289,29 @@ function displayPointValues(index) {
 * Hides end of trajectory based on user selected point.
  */
 function hideOrientation() {
-  if (poseStart.start < poseEnd.end && poseEnd.end < pose.length) {
-    plotPartialPath(poseStart.start, poseEnd.end);
-
-    if (oldStart >= poseStart.start) {
-      for (let i = oldStart; i >= poseStart.start; i--) {
-        changeMatrix(nonZeroMatrix, i);
-      }
-    } else {
-      for (let i = oldStart; i <= poseStart.start; i++) {
-        changeMatrix(zeroMatrix, i);
-      }
-    }
-    if (oldEnd >= poseEnd.end) {
-      for (let i = oldEnd-1; i >= poseEnd.end; i--) {
-        changeMatrix(zeroMatrix, i);
-      }
-    } else {
-      for (let i = oldEnd; i < poseEnd.end; i++) {
-        changeMatrix(nonZeroMatrix, i);
-      }
-    }
-    /* Update oldentries. */
-    oldEnd = poseEnd.end;
-    oldStart = poseStart.start;
+  if (poseStartIndex.start >= poseEndIndex.end) {
+    return;
   }
+
+  const min = Math.min(poseEndIndex.end, poseLength);
+  plotPartialPath(poseStartIndex.start, min);
+  for (let i= 0; i<= oldStart; i++) {
+    changeMatrix(nonZeroMatrix, i);
+  }
+  for (let i= 0; i<= poseStartIndex.start; i++) {
+    changeMatrix(zeroMatrix, i);
+  }
+
+  for (let i= poseLength-1; i>oldEnd; i--) {
+    changeMatrix(nonZeroMatrix, i);
+  }
+  for (let i= poseLength-1; i> poseEndIndex.end; i--) {
+    changeMatrix(zeroMatrix, i);
+  }
+
+  /* Update oldentries. */
+  oldEnd = poseEndIndex.end;
+  oldStart = poseStartIndex.start;
 }
 
 /**
@@ -340,28 +333,36 @@ function makeGUI() {
       .onChange(plotOrientation)
       .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
 
-  /* Adds index of point manipulation to gui. */
-  const max= pose.length;
-  oldEnd=max;
-  gui.add(poseStart, 'start', 0, max, max/100+1)
+  /* Adds index of point manipulation to maxgui. */
+  const max = poseLength;
+  oldEnd=poseLength;
+  gui.add(poseStartIndex, 'start', 0, max, 1)
       .onFinishChange(hideOrientation);
-  gui.add(poseEnd, 'end', 0, max, max/100+1)
+
+  gui.add(poseEndIndex, 'end', 0, max, 1)
       .onFinishChange(hideOrientation);
 
   /* Time value. */
-  time = gui.add({time: ''}, '');
+  const timeStart = {time: ''};
+  time = gui.add(timeStart, 'time');
   /* Lat value. */
-  lat = gui.add({lat: ''}, 'lat');
-  /* Long value. */
-  long = gui.add({long: ''}, 'long');
+  const latStart= {lat: ''};
+  lat = gui.add(latStart, 'lat');
+  /* lng value. */
+  const lngStart = {lng: ''};
+  lng = gui.add(lngStart, 'lng');
   /* Alt value. */
-  alt = gui.add({alt: ''}, 'alt');
+  const altStart = {alt: ''};
+  alt = gui.add(altStart, 'alt');
   /* Yaw value. */
-  yaw = gui.add({yaw: ''}, 'yaw');
+  const yawStart= {yaw: ''};
+  yaw = gui.add(yawStart, 'yaw');
   /* Pitch value. */
-  pitch = gui.add({pitch: ''}, 'pitch');
+  const pitchStart= {pitch: ''};
+  pitch = gui.add(pitchStart, 'pitch');
   /* Roll value. */
-  roll = gui.add({roll: ''}, 'roll');
+  const rollStart = {roll: ''};
+  roll = gui.add(rollStart, 'roll');
 }
 
 /**
@@ -387,6 +388,8 @@ function onClick(event) {
     changeMatrix(scaleInverseMatrix, selectedIndex);
     selectedIndex= -1;
   }
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
 
   event.preventDefault();
 
@@ -399,23 +402,16 @@ function onClick(event) {
   const intersects = raycaster.intersectObjects(scene.children, true);
 
   /* Shows properties of first instance of intersected cylinder. */
-  for (const intersected of intersects) {
-    if ( intersected.object.type != 'Mesh' ) {
-      continue;
+  /* highlight first instance intersected and show properties of point. */
+  for (let i=0; i < intersects.length; i++) {
+    if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
+      const instanceId = intersects[i].instanceId;
+      changeMatrix(scaleMatrix, instanceId);
+      selectedIndex = instanceId;
+      displayPointValues(instanceId);
+
+      break;
     }
-    const instanceId = intersected.instanceId;
-
-    /* Scale cylinder and set it as the last index scaled. */
-    changeMatrix(scaleMatrix, i);
-
-    /* Set values in GUI. */
-    displayPointValues(instanceId);
-
-    /*
-      * Break because the raycaster could intersect multiple object but we only
-     *  need the first cylinder.
-      */
-    break;
   }
 }
 
@@ -436,6 +432,9 @@ function fetchData() {
 
   fetch('/getrun?id=' + id + '&dataType=' + type)
       .then((response) => response.json())
-      .then((data) => pose = data)
-      .then(() => addMap());
+      .then((data) => pose = data).then(()=> poseLength= pose.length)
+      .then(() => {
+        addMap(); makeGUI();
+      },
+      );
 }
