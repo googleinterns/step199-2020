@@ -46,6 +46,7 @@ let clock;
 let controls;
 let pose;
 let trajectory;
+
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 initThreeJs();
@@ -69,11 +70,10 @@ function initThreeJs() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
-  controls = new OrbitControls(camera, renderer.domElement );
+  controls = new OrbitControls(camera, renderer.domElement);
 
   fetchData();
 }
-
 
 /**
  * Fetchs pose data from the RunInfo servlet,
