@@ -94,7 +94,7 @@ function makeCheckbox(currentRow, index, link) {
 * Select all Checkboxes function.
  * @param {object} source checkbox
  */
-function toggle(source) {
+function checkAllBoxes(source) {
   for (const checkbox of checkArray) {
     checkbox.checked = source.checked;
   }
