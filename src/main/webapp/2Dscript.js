@@ -102,23 +102,13 @@ function initMap() {
     return;
   }
   const initialPose = runs[id].data;
-<<<<<<< HEAD
-  const initialPoseMap = runs[id].map;
-
-=======
   console.log('The value of runs is ' + JSON.stringify(runs[id]));
->>>>>>> 2DMultipleRun
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
     zoom: 18,
   });
 
-<<<<<<< HEAD
-  initialPoseMap = getPolyline(formatPoseData(initialPose), '#FF0000', 1.0, 2);
-  initialPoseMap.setMap(map);
-=======
->>>>>>> 2DMultipleRun
 
   const centerControlDiv = centerControl();
   map.controls[google.maps.ControlPosition.TOP_CENTER].push(centerControlDiv);
@@ -422,12 +412,8 @@ function updateRow(currentRow, columnElements) {
 
 /**
  * Generate a polyline from the given data points and return it.
-<<<<<<< HEAD
- * @param {Array<PoseData>} dataEntries
-=======
  * @param {Array<Point>} dataEntries
  * @param {string} color
->>>>>>> 2DMultipleRun
  * @return {google.maps.Polyline}
  */
 function plotLine(dataEntries, color) {
@@ -436,11 +422,7 @@ function plotLine(dataEntries, color) {
     currentLine.push({lat: point.lat, lng: point.lng});
   }
   console.log(currentLine);
-<<<<<<< HEAD
-  currentLineGraph = getPolyline(currentLine, 'blue', 1.0, 2);
-=======
   currentLineGraph = getPolyLine(currentLine, color, 1.0, 2);
->>>>>>> 2DMultipleRun
   return currentLineGraph;
 }
 
@@ -507,25 +489,6 @@ function placeRectangleEnd() {
   if (infoWindow !== undefined) {
     infoWindow.setMap(null);
   }
-<<<<<<< HEAD
-  const subSectionData = computeSubSection(currentRun.data,
-      currentLat, currentLng, priorLat, priorLng);
-  // Choose a subSectionNumber, implement differently in future pr.
-  const subSectionNumber = 1;
-  // Clear prior paths, only display newly selected ones.
-  if (markerBottom !== undefined) {
-    markerBottom.setMap(null);
-  }
-  if (markerTop !== undefined) {
-    markerTop.setMap(null);
-  }
-  if (subPath !== undefined) {
-    subPath.setMap(null);
-  }
-  subPath = getPolyline(subLine, 'blue', 1.0, 2);
-  // Setup event listener to show option for 3D window when polyline is clicked.
-  google.maps.event.addListener(subPath, 'click', linkTo3D);
-=======
   clearSelectedPaths(['subSection', 'markerBottom', 'markerTop']);
   // Clear other paths. line minLatPoint lat , lng minLngPoint lat, lng Iterate
   // over all data values here, need to find a way to check the checkbox value,
@@ -563,7 +526,6 @@ function generatedSelectedRegion(currentRun, currentLat,
   const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
   // Setup event listener to show option for 3D window when polyline is clicked.
   currentRun.subSection = subPath;
->>>>>>> 2DMultipleRun
   subPath.setMap(map);
   currentRun.markerBottom = genMarker(subSectionData.minLatPoint.lat,
       subSectionData.minLatPoint.lng);
@@ -658,14 +620,9 @@ function genMarker(latitude, longitude) {
  * @param {number} index
  * @return {google.maps.Polyline}
  */
-<<<<<<< HEAD
-function getPolyline(linePoints, color, opacity, weight, index = 1) {
-  const polyline = new google.maps.Polyline({
-=======
 function getPolyLine(linePoints, color, opacity, weight, index = 1) {
   console.log('The color is ' + color);
   const polyLine = new google.maps.Polyline({
->>>>>>> 2DMultipleRun
     path: linePoints,
     geodesic: true,
     strokeColor: color,
