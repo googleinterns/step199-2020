@@ -22,7 +22,7 @@ let clock;
 let controls;
 
 // Likely need to make a separate pose transform for each runId;
-const transforms = {};
+const runIdToTransforms = {};
 // poseTransforms indexed by runId;
 const defaultTransform = {
   /* Unit: 4 meters*/ translateX: 0,
@@ -107,13 +107,13 @@ function addPoseData(runId, poseToPlot, hexColor) {
 /**
  * Converts lla coordinates to local world coordinates.
  * @param {number} runId The given run's id.
- * @param {Point} pose The run to center the data around.
+ * @param {Point} origin The run to center the data around.
  * @param {number} lat Latitude in degrees.
  * @param {number} lng Longitude in degrees.
  * @param {number} alt Altitude in meters.
  * @return {Array<number, number, number>} An array returning gps coordinates.
  */
-function llaDegreeToLocal(runId, pose, lat, lng, alt) {
+function llaDegreeToLocal(runId, origin, lat, lng, alt) {
   /**
    * Subtracting each point by the first point starts the pose at coordinates
    * (0, 0, 0). Each unit in the 3D scene is 4 meters while the 6th decimal
@@ -122,9 +122,9 @@ function llaDegreeToLocal(runId, pose, lat, lng, alt) {
    * unit change in our 3D space. Since altitude is already represented in
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
-  const x = (lng - pose.lng) * 25000 * transforms[runId].scale;
-  const y = (alt - pose.alt) / 4;
-  const z = (lat - pose.lat) * 25000 * -transforms[runId].scale;
+  const x = (lng - origin.lng) * 25000 * runIdToTransforms[runId].scale;
+  const y = (alt - origin.alt) / 4;
+  const z = (lat - origin.lat) * 25000 * -runIdToTransforms[runId].scale;
   return [x, y, z];
 }
 /**
@@ -152,9 +152,9 @@ function plotTrajectory(runId, pose) {
   const trajectory = new THREE.Line(geometry, material);
   runs[runId].trajectory = trajectory;
   scene.add(trajectory);
-  trajectory.position.x = transforms[runId].translateX;
-  trajectory.position.z = transforms[runId].translateZ;
-  trajectory.rotation.y = THREE.Math.degToRad(transforms[runId].rotate);
+  trajectory.position.x = runIdToTransforms[runId].translateX;
+  trajectory.position.z = runIdToTransforms[runId].translateZ;
+  trajectory.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 /**
@@ -183,9 +183,9 @@ function plotOrientation(runId) {
     orientation.setMatrixAt(pose.indexOf(point), matrix);
   }
   orientation.instanceMatrix.needsUpdate = true;
-  orientation.position.x = transforms[runId].translateX;
-  orientation.position.z = transforms[runId].translateZ;
-  orientation.rotation.y = THREE.Math.degToRad(transforms[runId].rotate);
+  orientation.position.x = runIdToTransforms[runId].translateX;
+  orientation.position.z = runIdToTransforms[runId].translateZ;
+  orientation.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 /**
@@ -205,7 +205,7 @@ function loadGui() {
         currentData = runs[currentId.value].data; console.log(currentId);
       });
 
-  gui.add(transforms[currentId.value], 'rotate', 0, 360, 1)
+  gui.add(runIdToTransforms[currentId.value], 'rotate', 0, 360, 1)
       .onChange(() => {
         console.log('changed'); plotOrientation(currentId.value);
       })
@@ -214,15 +214,15 @@ function loadGui() {
         lotTrajectory(currentId.value, currentData);
       })
       .name('Pose Rotation (degrees)');
-  gui.add(transforms[currentId.value], 'translateX', -10, 10, .025)
+  gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
       .onChange(() => plotOrientation(currentId.value))
       .onFinishChange(() => plotTrajectory(currentId.value, currentData))
       .name('X Axis Translation');
-  gui.add(transforms[currentId.value], 'translateZ', -10, 10, .025)
+  gui.add(runIdToTransforms[currentId.value], 'translateZ', -10, 10, .025)
       .onChange(() => plotOrientation(currentId.value))
       .onFinishChange(() => plotTrajectory(currentId.value, currentData))
       .name('Z Axis Translation');
-  gui.add(transforms[currentId.value], 'scale', .5, 2, .25)
+  gui.add(runIdToTransforms[currentId.value], 'scale', .5, 2, .25)
       .onChange(() => plotOrientation(currentId.value))
       .onFinishChange(() => plotTrajectory(currentId.value, currentData))
       .name('Pose Scale Multiplier');
@@ -259,7 +259,7 @@ function fetchData() {
     {
       // Initialize the transforms for each run.
       Object.keys(runs).forEach(
-          (currentKey) => transforms[currentKey] = defaultTransform);
+          (currentKey) => runIdToTransforms[currentKey] = defaultTransform);
       // Render the different runs.
       const runsIterable = Object.entries(runs);
       for (const [runId, currentObject] of runsIterable) {

@@ -499,7 +499,7 @@ function placeRectangleEnd() {
   for ([id, currentRun] of mapRuns) {
     if (currentRun.checkBox.checked) {
       generatedSelectedRegion(currentRun, currentLat,
-          priorLat, currentLng, priorLng);
+          currentLng, priorLat, priorLng);
 
       if (currentRun.subData.length === 0) {
         continue;
@@ -513,12 +513,12 @@ function placeRectangleEnd() {
  * Grab the selected region and generate the necessary polylines and markers.
  * @param {Run} currentRun
  * @param {number} currentLat
- * @param {number} priorLat
  * @param {number} currentLng
+ * @param {number} priorLat
  * @param {number} priorLng
  */
-function generatedSelectedRegion(currentRun, currentLat, priorLat,
-    currentLng, priorLng) {
+function generatedSelectedRegion(currentRun, currentLat,
+    currentLng, priorLat, priorLng) {
   const subSectionData = computeSubSection(currentRun.data,
       currentLat, priorLat, currentLng, priorLng);
   currentRun.subData = subSectionData.subData;
