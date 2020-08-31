@@ -239,23 +239,6 @@ function plotOrientation() {
 }
 
 /**
-* get time in readable units
-* @param {String} time raw time up to 6 decimal places. from GPS time
-* @return {String} readable time.
- */
-function formatTime(time) {
-  time += '';
-  const x = time.split('.');
-  let x1 = x[0];
-  const x2 = x.length > 1 ? '.' + x[1] : '';
-  const rgx = /(\d+)(\d{3})/;
-  while (rgx.test(x1)) {
-    x1 = x1.replace(rgx, '$1' + ',' + '$2');
-  }
-  return x1 + x2;
-}
-
-/**
 * Does matrix multiplication on specific index of the direction matrix.
 * @param {object} multiplicand matrix to multiply by.
 * @param {int} index of point to change.
@@ -277,7 +260,7 @@ function multiplyInstanceMatrixAtIndex(multiplicand, index, object) {
 * @param {int} index index of point.
 */
 function displayPointValues(index) {
-  time.setValue(formatTime(pose[index].gpsTimestamp));
+  time.setValue(pose[index].gpsTimestamp);
   lat.setValue(pose[index].lat);
   lng.setValue(pose[index].alt);
   alt.setValue(pose[index].alt);
