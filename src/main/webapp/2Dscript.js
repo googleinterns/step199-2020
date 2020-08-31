@@ -630,7 +630,7 @@ function getPolyLine(linePoints, color, opacity, weight, index = 1) {
     strokeWeight: weight,
     zIndex: index,
   });
-  return polyline;
+  return polyLine;
 }
 /**
  * Clear prior markers/path if they exist.
