@@ -411,7 +411,7 @@ function fetchData() {
   const urlParams = new URLSearchParams(queryString);
   const id = urlParams.get('id');
   const type = urlParams.get('dataType');
-  
+
   makeCamera();
   // Only need to refetch the data if it is not contained in local storage, in
   // general it should be.
@@ -426,11 +426,12 @@ function fetchData() {
         .then((response) => response.json())
         .then((data) => pose = data).then(()=> poseLength= pose.length)
         .then(() => {
-        addMap(); makeGUI();
-      },
-      );
+          addMap(); makeGUI();
+        },
+        );
+  }
+}
 
 initThreeJs();
 gui();
 animate();
-
