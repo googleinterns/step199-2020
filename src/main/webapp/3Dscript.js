@@ -45,10 +45,6 @@ const zeroMatrix = new THREE.Matrix4().makeScale(
 const nonZeroMatrix = new THREE.Matrix4().makeScale(
     scaleHide, scaleHide, scaleHide);
 
-/* Temp matrices used for matrix multiplication. */
-const instanceMatrix = new THREE.Matrix4();
-const matrix = new THREE.Matrix4();
-
 /*  Datapoint time interface on gui. */
 let time;
 /*  Datapoint lat interface on gui. */
@@ -152,9 +148,9 @@ function llaDegreeToLocal(lat, lng, alt) {
    * change in our 3D space. Since altitude is already represented in
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
-  const x = (lng - pose[5].lng) * 25000 * poseTransform.scale;
-  const y = (alt - pose[5].alt)/4;
-  const z = (lat - pose[5].lat) * 25000 * -poseTransform.scale;
+  const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
+  const y = (alt - pose[0].alt)/4;
+  const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
   return [x, y, z];
 }
 /**
@@ -261,14 +257,19 @@ function formatTime(time) {
 
 /**
 * Does matrix multiplication on specific index of the direction matrix.
-* @param {object} typeOfMatrix matrix to multiply by.
+* @param {object} multiplicand matrix to multiply by.
 * @param {int} index of point to change.
+* @param {object} object mesh to get point from
 */
-function updateMatrixAtIndex(typeOfMatrix, index) {
-  orientation.getMatrixAt(index, instanceMatrix );
-  matrix.multiplyMatrices( instanceMatrix, typeOfMatrix );
-  orientation.setMatrixAt( index, matrix );
-  orientation.instanceMatrix.needsUpdate = true;
+function multiplyInstanceMatrixAtIndex(multiplicand, index, object) {
+  /* Temp matrices used for matrix multiplication. */
+  const instanceMatrix = new THREE.Matrix4();
+  const matrix = new THREE.Matrix4();
+
+  object.getMatrixAt(index, instanceMatrix );
+  matrix.multiplyMatrices( instanceMatrix, multiplicand );
+  object.setMatrixAt( index, matrix );
+  object.instanceMatrix.needsUpdate = true;
 }
 
 /**
@@ -296,17 +297,17 @@ function hideOrientation() {
   const min = Math.min(poseEndIndex.end, poseLength);
   plotPartialPath(poseStartIndex.start, min);
   for (let i= 0; i<= oldStart; i++) {
-    updateMatrixAtIndex(nonZeroMatrix, i);
+    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
   }
   for (let i= 0; i<= poseStartIndex.start; i++) {
-    updateMatrixAtIndex(zeroMatrix, i);
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
   }
 
   for (let i= poseLength-1; i>oldEnd; i--) {
-    updateMatrixAtIndex(nonZeroMatrix, i);
+    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
   }
   for (let i= poseLength-1; i> poseEndIndex.end; i--) {
-    updateMatrixAtIndex(zeroMatrix, i);
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
   }
 
   /* Update oldentries. */
@@ -377,7 +378,6 @@ function animate() {
   renderer.render(scene, camera);
 };
 
-
 /**
 * What to do on mouse click.
 * @param {event} event event.
@@ -385,7 +385,8 @@ function animate() {
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
-    updateMatrixAtIndex(scaleInverseMatrix, selectedIndex);
+    multiplyInstanceMatrixAtIndex(
+        scaleInverseMatrix, selectedIndex, orientation);
     selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
@@ -401,13 +402,12 @@ function onClick(event) {
   raycaster.setFromCamera( mouse, camera );
   const intersects = raycaster.intersectObjects(scene.children, true);
 
-  /* Shows properties of first instance of intersected cylinder. */
   /* highlight first instance intersected and show properties of point. */
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
       const instanceId = intersects[i].instanceId;
-      updateMatrixAtIndex(scaleMatrix, instanceId);
       selectedIndex = instanceId;
+      multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
       displayPointValues(instanceId);
 
       break;
