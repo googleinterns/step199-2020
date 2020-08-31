@@ -398,7 +398,6 @@ function onClick(event) {
   }
 }
 
-
 window.addEventListener('click', onClick);
 
 /**
