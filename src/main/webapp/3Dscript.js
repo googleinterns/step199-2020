@@ -26,6 +26,7 @@ const poseEndIndex = {end: Number.MAX_VALUE};
 let oldStart=-1;
 let oldEnd;
 
+
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 /* Matrices used to scale and unscale pose cylinders */
@@ -94,7 +95,6 @@ function makeCamera() {
   camera.position.set(0, 1, 1);
 }
 
-
 /**
  * Creates the 2D terrain and points a light at it.
  * It also calls two other functions so it can wait on the fetch
@@ -117,7 +117,7 @@ function addMap() {
   scene.add(map);
 
   // Add the light to the scene.
-  const light = new THREE.PointLight(0xffffff, 1, 0 );
+  const light = new THREE.PointLight(0xffffff, 1, 0);
   light.position.set(0, 100, 0);
   scene.add(light);
   plotTrajectory();
@@ -149,7 +149,7 @@ function llaDegreeToLocal(lat, lng, alt) {
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
   const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
-  const y = (alt - pose[0].alt)/4;
+  const y = (alt - pose[0].alt) / 4;
   const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
   return [x, y, z];
 }
@@ -222,7 +222,7 @@ function plotOrientation() {
     const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
 
     matrix.makeTranslation(x, y, z);
-    matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+    matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(point.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
@@ -411,13 +411,26 @@ function fetchData() {
   const urlParams = new URLSearchParams(queryString);
   const id = urlParams.get('id');
   const type = urlParams.get('dataType');
+  
   makeCamera();
-
-  fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then((response) => response.json())
-      .then((data) => pose = data).then(()=> poseLength= pose.length)
-      .then(() => {
+  // Only need to refetch the data if it is not contained in local storage, in
+  // general it should be.
+  const isStored = urlParams.get('stored');
+  const subSectionNumber = urlParams.get('subSection');
+  if (isStored) {
+    pose = JSON.parse(sessionStorage.getItem(id + '_' +
+      type + '_' + subSectionNumber));
+    addMap();
+  } else {
+    fetch('/getrun?id=' + id + '&dataType=' + type)
+        .then((response) => response.json())
+        .then((data) => pose = data).then(()=> poseLength= pose.length)
+        .then(() => {
         addMap(); makeGUI();
       },
       );
-}
+
+initThreeJs();
+gui();
+animate();
+

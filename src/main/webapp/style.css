@@ -56,6 +56,21 @@ h1 {
   text-fill-color: transparent; /* stylelint-disable-line */
 }
 
+/* On overflow make the table scrollable. */
+
+#scroll-body {
+  -ms-overflow-style: none;
+
+  /* IE and Edge. */
+  scrollbar-width: none;
+
+  /* Firefox. */
+  overflow: auto;
+  height: 400px;
+  margin-bottom: 5px;
+  margin-top: 10px;
+}
+
 #pose-data {
   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
   border-collapse: collapse;
@@ -124,21 +139,6 @@ input[type="submit"] {
   font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
   text-align: center;
   padding: 5px;
-}
-
-/* On overflow make the table scrollable. */
-
-#scroll-body {
-  -ms-overflow-style: none;
-
-  /* IE and Edge. */
-  scrollbar-width: none;
-
-  /* Firefox. */
-  overflow: auto;
-  height: 400px;
-  margin-bottom: 5px;
-  margin-top: 10px;
 }
 
 /* To hide the scrollbar in Chrome. */
