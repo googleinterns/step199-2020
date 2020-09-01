@@ -355,8 +355,33 @@ function makeGUI() {
 /** Updates time gui to show if time typed in is found or not. */
 function findTime() {
   let found = false;
-  console.log(time.getValue());
-  for (let i = 0; i< poseLength; i++) {
+  const value = time.getValue();
+  console.log(value);
+  let start =0;
+  let end = poseLength-1;
+  // Iterate while start not meets end using binary search.
+  while (start<=end && !found) {
+    // Find the mid index
+    const mid=Math.floor((start + end)/2);
+
+    // If element is present at mid,  show its info.
+    if (pose[mid].gpsTimestamp==value) {
+      unselectCylinder();
+      selectedIndex = mid;
+      selectCylinder();
+      displayPointValues(mid);
+      found= true;
+    } else if (pose[mid].gpsTimestamp < value) {
+      start = mid + 1;
+    } else {
+      end = mid - 1;
+    }
+  }
+  if (!found) {
+    time.setValue('no time found');
+  }
+
+  /* for (let i = 0; i< poseLength; i++) {
     // If point with time stamp is found
     if (pose[i].gpsTimestamp == time.getValue()) {
       unselectCylinder();
@@ -368,7 +393,7 @@ function findTime() {
   }
   if (!found) {
     time.setValue('no time found');
-  }
+  }*/
 }
 
 /**
