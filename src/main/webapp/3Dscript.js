@@ -65,7 +65,7 @@ let trajectory;
 let runs;
 let origin;
 const currentId = {};
-let runIdToTransforms = {};
+const runIdToTransforms = {};
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
@@ -104,13 +104,12 @@ function fetchData() {
   const urlParams = new URLSearchParams(queryString);
 
   const isSubSection = urlParams.get('subsection');
-
-  let firstData;
+  let latLng;
   if (isSubSection) {
     runs = JSON.parse(sessionStorage.getItem('subsection'));
     const firstData = Object.values(runs)[0].data;
     const [lat, lng, alt] = findMedians(firstData[0]);
-    const latLng = {latitude: lat, longitude: lng};
+    latLng = {latitude: lat, longitude: lng};
     origin = new Point(lat, lng, alt);
     currentId.value = Object.keys(runs)[0];
     {
@@ -138,13 +137,12 @@ function fetchData() {
 }
 
 
-
-
 /**
  * Finds the median value of the latitude, longitude,
  * and altitude. The median is used as a reference point
  * for the East-North-Up (ENU) conversion and as the center
  * point for the 2D map.
+ * @param {Object} pose
  * @return {array} An array containing median lat, lng, and alt
  *   coordinates.
  */
@@ -202,6 +200,7 @@ function addMap(center) {
  * Creates all the children for each axis of orientation. Each object
  * is a geometry instance, initializing the object with one geometry
  * call rather than the number of data points. (O(1) vs. O(N))
+ * @param {Number} poseLength
  * @return {object} A Point object holding a cylinder for each axis.
  */
 function createInstances(poseLength) {
@@ -293,11 +292,10 @@ function ecefToEnu(ecefPose, ecefOrigin, origin) {
   return [xEast, yNorth, zUp];
 }
 
-
 /**
  * Uses the pose data to build a line representing the pose
  * trajectory.
- * @param {} pose
+ * @param {Object} pose
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
@@ -331,7 +329,7 @@ function plotTrajectory(pose, origin) {
 /**
  * Controls all 3 geometry instances, along with positioning the individual
  * instances.
- * @param {Object} 
+ * @param {Object} pose
  * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {Object} origin Reference ECEF position, used as the origin
@@ -393,7 +391,8 @@ function matrixRotation(pose, orientation, direction, origin) {
     poseObject.setMatrixAt(pose.indexOf(point), matrix);
     poseObject.position.x = runIdToTransforms[runId].translateX;
     poseObject.position.y = runIdToTransforms[runId].translateY;
-    poseObject.rotation.z = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
+    poseObject.rotation.z =
+      THREE.Math.degToRad(runIdToTransforms[runId].rotate);
     increment++;
   }
 }
