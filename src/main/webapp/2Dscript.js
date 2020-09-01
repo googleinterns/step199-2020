@@ -676,8 +676,6 @@ function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   let discoveredMaxLngPair = -91;
   subData = [];
   for (point of pose) {
-    ;
-    ;
     if (withinBound(minLat, maxLat, minLng, maxLng, point.lat, point.lng)) {
       // While iterating save the max and min lat, same for the lng.
       if (discoveredMinLat > point.lat) {
