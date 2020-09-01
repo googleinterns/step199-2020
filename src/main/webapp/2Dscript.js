@@ -102,7 +102,6 @@ function initMap() {
     return;
   }
   const initialPose = runs[id].data;
-  console.log('The value of runs is ' + JSON.stringify(runs[id]));
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
@@ -520,7 +519,7 @@ function placeRectangleEnd() {
 function generatedSelectedRegion(currentRun, currentLat,
     currentLng, priorLat, priorLng) {
   const subSectionData = computeSubSection(currentRun.data,
-      currentLat, priorLat, currentLng, priorLng);
+      currentLat, currentLng, priorLat, priorLng);
   currentRun.subData = subSectionData.subData;
   // Clear prior paths, only display newly selected ones.
   const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
@@ -658,12 +657,12 @@ function clearSelectedPaths(pathArray) {
  * Compute the subsection of a line contained in a bounding rectangle.
  * @param {Array<Point>} pose
  * @param {number} currentLat
- * @param {number} priorLat
  * @param {number} currentLng
+ * @param {number} priorLat
  * @param {number} priorLng
  * @return {subSectionData}
  */
-function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
+function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   const minLat = Math.min(currentLat, priorLat);
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
@@ -677,17 +676,17 @@ function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   let discoveredMaxLngPair = -91;
   subData = [];
   for (point of pose) {
-    const loopLat = point.lat;
-    const loopLng = point.lng;
-    if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
+    ;
+    ;
+    if (withinBound(minLat, maxLat, minLng, maxLng, point.lat, point.lng)) {
       // While iterating save the max and min lat, same for the lng.
-      if (discoveredMinLat > loopLat) {
-        discoveredMinLatPair = loopLng;
-        discoveredMinLat = loopLat;
+      if (discoveredMinLat > point.lat) {
+        discoveredMinLatPair = point.lng;
+        discoveredMinLat = point.lat;
       }
-      if (discoveredMaxLng < loopLng) {
-        discoveredMaxLngPair = loopLat;
-        discoveredMaxLng = loopLng;
+      if (discoveredMaxLng < point.lng) {
+        discoveredMaxLngPair = point.lat;
+        discoveredMaxLng = point.lng;
       }
       subData.push(point);
     }
@@ -718,13 +717,13 @@ function linkTo3D(event, subSectionObject) { // eslint-disable-line
  * @param {number} maxLat
  * @param {number} minLng
  * @param {number} maxLng
- * @param {number} valLat
- * @param {number} valLng
+ * @param {number} lat
+ * @param {number} lng
  * @return {boolean}
  */
-function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
-  if (valLat >= minLat && valLat <= maxLat &&
-    valLng >= minLng && valLng <= maxLng) {
+function withinBound(minLat, maxLat, minLng, maxLng, lat, lng) {
+  if (lat >= minLat && lat <= maxLat &&
+    lng >= minLng && lng <= maxLng) {
     return true;
   }
   return false;
