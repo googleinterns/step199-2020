@@ -658,12 +658,12 @@ function clearSelectedPaths(pathArray) {
  * Compute the subsection of a line contained in a bounding rectangle.
  * @param {Array<Point>} pose
  * @param {number} currentLat
- * @param {number} currentLng
  * @param {number} priorLat
+ * @param {number} currentLng
  * @param {number} priorLng
  * @return {subSectionData}
  */
-function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
+function computeSubSection(pose, currentLat, priorLat, currentLng, priorLng) {
   const minLat = Math.min(currentLat, priorLat);
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
@@ -677,15 +677,17 @@ function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   let discoveredMaxLngPair = -91;
   subData = [];
   for (point of pose) {
+    const loopLat = point.lat;
+    const loopLng = point.lng;
     if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng)) {
       // While iterating save the max and min lat, same for the lng.
-      if (discoveredMinLat > point.lat) {
-        discoveredMinLatPair = point.lng;
-        discoveredMinLat = point.lat;
+      if (discoveredMinLat > loopLat) {
+        discoveredMinLatPair = loopLng;
+        discoveredMinLat = loopLat;
       }
-      if (discoveredMaxLng < point.lng) {
-        discoveredMaxLngPair = point.lat;
-        discoveredMaxLng = point.lng;
+      if (discoveredMaxLng < loopLng) {
+        discoveredMaxLngPair = loopLat;
+        discoveredMaxLng = loopLng;
       }
       subData.push(point);
     }
@@ -716,13 +718,13 @@ function linkTo3D(event, subSectionObject) { // eslint-disable-line
  * @param {number} maxLat
  * @param {number} minLng
  * @param {number} maxLng
- * @param {number} lat
- * @param {number} lng
+ * @param {number} valLat
+ * @param {number} valLng
  * @return {boolean}
  */
-function withinBound(minLat, maxLat, minLng, maxLng, lat, lng) {
-  if (lat >= minLat && lat <= maxLat &&
-    lng >= minLng && lng <= maxLng) {
+function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
+  if (valLat >= minLat && valLat <= maxLat &&
+    valLng >= minLng && valLng <= maxLng) {
     return true;
   }
   return false;
