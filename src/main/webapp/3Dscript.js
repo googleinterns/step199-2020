@@ -27,6 +27,9 @@ const poseEndIndex = {end: Number.MAX_VALUE};
 let oldStart=-1;
 let oldEnd;
 
+/* Timestamp search object. */
+const timeStart = {time: 'search for timestamp'};
+
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
@@ -61,7 +64,7 @@ let roll;
 let yaw;
 /*  Datapoint pitch interface on gui. */
 let pitch;
-
+/*  Datapoint pitch interface on gui. */
 
 initThreeJs();
 animate();
@@ -299,7 +302,6 @@ function hideOrientation() {
   oldEnd = poseEndIndex.end;
   oldStart = poseStartIndex.start;
 }
-
 /**
  * This function initializes gui allowing the user to manipulate the
  * pose objects.
@@ -329,8 +331,7 @@ function makeGUI() {
       .onFinishChange(hideOrientation);
 
   /* Time value. */
-  const timeStart = {time: ''};
-  time = gui.add(timeStart, 'time');
+  time = gui.add(timeStart, 'time').onFinishChange(findTime);
   /* Lat value. */
   const latStart= {lat: ''};
   lat = gui.add(latStart, 'lat');
@@ -349,6 +350,25 @@ function makeGUI() {
   /* Roll value. */
   const rollStart = {roll: ''};
   roll = gui.add(rollStart, 'roll');
+}
+
+/** Updates time gui to show if time typed in is found or not. */
+function findTime() {
+  let found = false;
+  console.log(time.getValue());
+  for (let i = 0; i< poseLength; i++) {
+    // If point with time stamp is found
+    if (pose[i].gpsTimestamp == time.getValue()) {
+      unselectCylinder();
+      selectedIndex = i;
+      selectCylinder();
+      displayPointValues(i);
+      found= true;
+    }
+  }
+  if (!found) {
+    time.setValue('no time found');
+  }
 }
 
 /**
@@ -370,14 +390,7 @@ function animate() {
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
-    // Scale down to regular size
-    multiplyInstanceMatrixAtIndex(
-        scaleInverseMatrix, selectedIndex, orientation);
-
-    // TODO: Turn color back to red
-    orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
-    orientation.instanceColor.needsUpdate = true;
-
+    unselectCylinder();
     selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
@@ -397,18 +410,32 @@ function onClick(event) {
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
       selectedIndex = intersects[i].instanceId;
-
-      // Set color to green.
-      orientation.setColorAt( selectedIndex, color.setHex(0x0ff00));
-      orientation.instanceColor.needsUpdate = true;
-
-      // Enlarge cylinder
-      multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
-      displayPointValues(selectedIndex);
-
+      selectCylinder(selectedIndex);
       break;
     }
   }
+}
+
+/** Brings back cylinder at selected Index back to original size and color. */
+function unselectCylinder() {
+  // Scale down to regular size
+  multiplyInstanceMatrixAtIndex(
+      scaleInverseMatrix, selectedIndex, orientation);
+
+  // Turn color back to red
+  orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
+  orientation.instanceColor.needsUpdate = true;
+}
+
+/** Enlarges and changes color of cylinder at selected index */
+function selectCylinder() {
+// Set color to green.
+  orientation.setColorAt( selectedIndex, color.setHex(0x0ff00));
+  orientation.instanceColor.needsUpdate = true;
+
+  // Enlarge cylinder
+  multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
+  displayPointValues(selectedIndex);
 }
 
 window.addEventListener('click', onClick);
