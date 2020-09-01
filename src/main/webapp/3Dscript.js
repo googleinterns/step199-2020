@@ -1,4 +1,12 @@
 import {OrbitControls} from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
+import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
+/**
+* A Point object with a lat and lng.
+* @typedef {Object<number, number, number>} Point
+* @property {number} lat The lat of the point.
+* @property {number} lng The lng of the point.
+* @property {number} alt The alt of the point.
+*/
 
 /**
  * Class for storing 3D coordinates.
@@ -39,19 +47,30 @@ class Point {
   }
 }
 // Global objects.
+/**
+ * @typedef {Array<number, number>}
+ * @property {Array<Point>} data All the stored run data for a given runId
+ * @property {string} color The color in a standard HTML acceptable format
+ */
 let scene;
 let camera;
 let renderer;
 let clock;
 let controls;
-let pose;
 let trajectory;
+/* The runs, origin, currentId, and runIdToTransforms
+ * are all being read of modified by the gui, requiring
+ * they be global variables.
+*/
+let runs;
+let origin;
+const currentId = {};
+let runIdToTransforms = {};
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
 initThreeJs();
 animate();
-
 
 /**
  * Initializes the essential three.js 3D components then fetchs
@@ -83,22 +102,43 @@ function initThreeJs() {
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
-  fetch('/getrun?id=' + id + '&dataType=' + type)
-      .then((response) => response.json())
-      .then((data) => pose = data)
-      .then(() => {
-        const [lat, lng, alt] = findMedians();
-        const latLng = {latitude, longitude};
-        const origin = new Point(lat, lng, alt);
-        addMap(latLng);
-        const [xAxis, yAxis, zAxis] = createInstances();
-        const orientation = {x: xAxis, y: yAxis, z: zAxis};
-        plotTrajectory(origin);
-        plotOrientation(orientation, origin);
-      });
+
+  const isSubSection = urlParams.get('subsection');
+
+  let firstData;
+  if (isSubSection) {
+    runs = JSON.parse(sessionStorage.getItem('subsection'));
+    const firstData = Object.values(runs)[0].data;
+    const [lat, lng, alt] = findMedians(firstData[0]);
+    const latLng = {latitude: lat, longitude: lng};
+    origin = new Point(lat, lng, alt);
+    currentId.value = Object.keys(runs)[0];
+    {
+      // Initialize the runIdToTransforms for each run.
+      Object.keys(runs).forEach(
+          (currentKey) => runIdToTransforms[currentKey] = defaultTransform);
+      // Render the different runs.
+      const runsIterable = Object.entries(runs);
+      for (const [runId, currentObject] of runsIterable) {
+        const poseData = currentObject.data;
+        const [xAxis, yAxis, zAxis] =
+          createInstances(poseData.length);
+        runs[runId].orientation = {x: xAxis, y: yAxis, z: zAxis};
+        runs[runId].data = poseData;
+        runs[runId].color = currentObject.color;
+        plotOrientation(poseData, runs[runId].orientation, origin);
+        plotTrajectory(pose, origin, currentObject.color);
+      }
+    }
+  } else {
+    console.log('Invalid input format provided');
+  }
+  loadGui();
+  addMap(latLng);
 }
+
+
+
 
 /**
  * Finds the median value of the latitude, longitude,
@@ -108,7 +148,7 @@ function fetchData() {
  * @return {array} An array containing median lat, lng, and alt
  *   coordinates.
  */
-function findMedians() {
+function findMedians(pose) {
   const arrays = {lat: [], lng: [], alt: []};
   for (const point of pose) {
     arrays.lat.push(point.lat);
@@ -164,25 +204,25 @@ function addMap(center) {
  * call rather than the number of data points. (O(1) vs. O(N))
  * @return {object} A Point object holding a cylinder for each axis.
  */
-function createInstances() {
+function createInstances(poseLength) {
   // Blue corresponds to the Z axis.
   let material = new THREE.MeshBasicMaterial({color: 'blue'});
   /* Geometry defines the top and bottom radius along with the length.
     The numbers are given to be distinguishable from other data points. */
   const geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
-  const zCylinder = new THREE.InstancedMesh(geometry, material, pose.length);
+  const zCylinder = new THREE.InstancedMesh(geometry, material, poseLength);
   zCylinder.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(zCylinder);
 
   // Green corresponds to the Y axis.
   material = new THREE.MeshBasicMaterial({color: 'green'});
-  const yCylinder = new THREE.InstancedMesh(geometry, material, pose.length);
+  const yCylinder = new THREE.InstancedMesh(geometry, material, poseLength);
   yCylinder.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(yCylinder);
 
   // Red corresponds to the X axis.
   material = new THREE.MeshBasicMaterial({color: 'red'});
-  const xCylinder = new THREE.InstancedMesh(geometry, material, pose.length);
+  const xCylinder = new THREE.InstancedMesh(geometry, material, poseLength);
   xCylinder.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   scene.add(xCylinder);
 
@@ -257,10 +297,11 @@ function ecefToEnu(ecefPose, ecefOrigin, origin) {
 /**
  * Uses the pose data to build a line representing the pose
  * trajectory.
+ * @param {} pose
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
-function plotTrajectory(origin) {
+function plotTrajectory(pose, origin) {
   // Removes any existing trajectory objects for repositioning.
   scene.remove(trajectory);
   /**
@@ -282,26 +323,31 @@ function plotTrajectory(origin) {
   const material = new THREE.LineBasicMaterial({color: 'green'});
   trajectory = new THREE.Line(geometry, material);
   scene.add(trajectory);
+  trajectory.position.x = runIdToTransforms[runId].translateX;
+  trajectory.position.y = runIdToTransforms[runId].translateY;
+  trajectory.rotation.z = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 /**
  * Controls all 3 geometry instances, along with positioning the individual
  * instances.
+ * @param {Object} 
  * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
-function plotOrientation(orientation, origin) {
+function plotOrientation(pose, orientation, origin) {
   const axes = ['x', 'y', 'z'];
   for (const axis of axes) {
-    matrixRotation(orientation, axis, origin);
+    matrixRotation(pose, orientation, axis, origin);
   }
 }
 
 /**
  * Creates a Matrix4 object for each individual instance, using translations
  * and rotations to maneuver them into a given position.
+ * @param {Object} pose
  * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {String} direction Specifies which instance mesh to manipulate using
@@ -309,8 +355,7 @@ function plotOrientation(orientation, origin) {
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
-function matrixRotation(orientation, direction, origin) {
-  let increment = 0;
+function matrixRotation(pose, orientation, direction, origin) {
   let poseObject;
   const [ecefX, ecefY, ecefZ] =
     llaToEcef(origin.getX(), origin.getY(), origin.getZ());
@@ -345,9 +390,45 @@ function matrixRotation(orientation, direction, origin) {
       poseObject = orientation.z;
     }
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
-    poseObject.setMatrixAt(increment, matrix);
+    poseObject.setMatrixAt(pose.indexOf(point), matrix);
+    poseObject.position.x = runIdToTransforms[runId].translateX;
+    poseObject.position.y = runIdToTransforms[runId].translateY;
+    poseObject.rotation.z = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
     increment++;
   }
+}
+
+/**
+ * This function initializes gui allowing the user to manipulate the pose
+ * objects.
+ */
+function loadGui() {
+  // Need a way to select which pose run to make this change to and pass this
+  // parameter.
+  const runId = currentId.value;
+  const gui = new GUI();
+  let currentPose = runs[runId].data;
+  let currentOrientation = runs[runId].orientation;
+  let currentColor = runs[runID].color;
+  // On change of selected runId, update the given dataset to use;
+  gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
+      () => {
+        currentPose = runs[currentId.value].data;
+        currentOrientation = runs[runId].orientation;
+        currentColor = runs[runId].color;
+      });
+  gui.add(runIdToTransforms[currentId.value], 'rotate', 0, 360, 1)
+      .onChange(() => plotOrientation(currentPose, currentOrientation, origin))
+      .onFinishChange(() => plotTrajectory(currentPose, origin, currentColor))
+      .name('Pose Rotation (degrees)');
+  gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
+      .onChange(() => plotOrientation(currentPose, currentOrientation, origin))
+      .onFinishChange(() => plotTrajectory(currentPose, origin, currentColor))
+      .name('X Axis Translation');
+  gui.add(runIdToTransforms[currentId.value], 'translateZ', -10, 10, .025)
+      .onChange(() => plotOrientation(currentPose, currentOrientation, origin))
+      .onFinishChange(() => plotTrajectory(currentPose, origin, currentColor))
+      .name('Z Axis Translation');
 }
 
 /**
