@@ -237,7 +237,6 @@ function showPoseData(event) {
   if (checked) { // eslint-disable-line
     // First check the cache for this value.
     dataEntries = runs[id].data;
-    console.log('The value of dataentries is ' + dataEntries);
     // If the value is not found in the cache then fetch it.
     if (dataEntries === undefined) {
       fetchAndGraphData(id);
@@ -351,7 +350,6 @@ function generateViewIcon(runId) {
   viewIcon.addEventListener('click', function() {
     const viewId = this.id;  // eslint-disable-line
     const runId = viewId.split('_')[1];
-    console.log('run id is ' + runId);
     const isChecked = runs[runId].checkBox.checked;
     console.log('The checkbox value is ' + isChecked);
     if (isChecked && runs[runId].data !== undefined &&
@@ -543,7 +541,6 @@ function generateSessionStorage(subSectionObject, currentRun, id) {
   subSectionObject[id] = {};
   subSectionObject[id].color = currentRun.color.value;
   subSectionObject[id].data = currentRun.subData;
-  console.log(subSectionObject);
   google.maps.event.addListener(currentRun.subSection,
       'click', (event) => createInfoWindow(event, subSectionObject));
 }
@@ -667,7 +664,6 @@ function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
   const maxLng = Math.max(currentLng, priorLng);
-  console.log(pose);
   // Lat can be from [-90,90].
   let discoveredMinLat = 91;
   let discoveredMinLatPair = 181;

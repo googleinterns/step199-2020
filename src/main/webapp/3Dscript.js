@@ -54,6 +54,10 @@ function initThreeJs() {
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
   controls = new OrbitControls(camera, renderer.domElement);
+  // Add the light to the scene.
+  const light = new THREE.PointLight(0xffffff, 1, 0);
+  light.position.set(0, 100, 0);
+  scene.add(light);
 
   fetchData();
 }
@@ -86,10 +90,6 @@ function initMap(pose) {
  * @param {string} hexColor
 */
 function addPoseData(runId, poseToPlot, hexColor) {
-  // Add the light to the scene.
-  const light = new THREE.PointLight(0xffffff, 1, 0);
-  light.position.set(0, 100, 0);
-  scene.add(light);
   plotTrajectory(runId, poseToPlot);
 
   // Adds pose data to the scene as one Geometry instance.
@@ -211,7 +211,7 @@ function loadGui() {
       })
       .onFinishChange(() => {
         console.log(currentId.value);
-        lotTrajectory(currentId.value, currentData);
+        plotTrajectory(currentId.value, currentData);
       })
       .name('Pose Rotation (degrees)');
   gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
