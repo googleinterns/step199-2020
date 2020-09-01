@@ -59,11 +59,12 @@ function appendRow(runInformation, key, currentRow) {
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
-      link.href = '/getrun?id=' + key + '&dataType=' + runInformation[key];
+      link.href = '/2DVisual.html?id=' + key +
+        '&dataType=' + runInformation[key];
       link.innerText = type;
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
-      /* Makes checkboxes for each data entry. */
+
       makeCheckbox(currentRow, index, link);
     } else {
       columnEntry.innerText = '';
@@ -81,11 +82,13 @@ function appendRow(runInformation, key, currentRow) {
 * @param {link} link associated with row checkbox will be on
 */
 function makeCheckbox(currentRow, index, link) {
+  const columnElement = document.createElement('td');
   const checkbox = document.createElement('INPUT');
   checkbox.type = 'checkbox';
   checkbox.setAttribute('name', 'check');
   checkbox.setAttribute('value', link.getAttribute('name'));
-  currentRow.appendChild(checkbox);
+  columnElement.appendChild(checkbox);
+  currentRow.appendChild(columnElement);
   checkArray.push(checkbox);
 }
 
@@ -118,7 +121,7 @@ function makeMultiRunJson() {
     }
   }
   strArray.push('}');
-  const str=strArray.join('');
+  const str = strArray.join('');
   sessionStorage.setItem('selected', str);
 }
 
