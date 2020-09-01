@@ -59,11 +59,12 @@ function appendRow(runInformation, key, currentRow) {
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
-      link.href = '/2DVisual.html?id=' + key + '&dataType=' + runInformation[key];
+      link.href = '/2DVisual.html?id=' + key +
+        '&dataType=' + runInformation[key];
       link.innerText = type;
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
-     
+
       makeCheckbox(currentRow, index, link);
     } else {
       columnEntry.innerText = '';
@@ -86,7 +87,6 @@ function makeCheckbox(currentRow, index, link) {
   checkbox.type = 'checkbox';
   checkbox.setAttribute('name', 'check');
   checkbox.setAttribute('value', link.getAttribute('name'));
-  console.log(checkbox);
   columnElement.appendChild(checkbox);
   currentRow.appendChild(columnElement);
   checkArray.push(checkbox);
@@ -121,7 +121,7 @@ function makeMultiRunJson() {
     }
   }
   strArray.push('}');
-  const str=strArray.join('');
+  const str = strArray.join('');
   sessionStorage.setItem('selected', str);
 }
 
