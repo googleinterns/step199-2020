@@ -1,13 +1,6 @@
-package test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import IO.DbReader;
-import IO.DbWriter;
-import data.Database;
-import data.DatabaseQuery;
-import data.FileDatabase;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,9 +9,16 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import IO.DbReader;
+import IO.DbWriter;
+import data.Database;
+import data.DatabaseQuery;
+import data.FileDatabase;
 
 @RunWith(JUnit4.class)
 /* Validate that a .txt file can be properly be stored written and read from database. */
