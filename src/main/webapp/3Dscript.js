@@ -23,13 +23,12 @@ const poseTransform = {
 const poseStartIndex = {start: 0};
 const poseEndIndex = {end: Number.MAX_VALUE};
 
-/* Last indices to be picked for boundaries of a partial trajectory. */
-let oldStart=-1;
-let oldEnd;
-
 /* Timestamp search object. */
 const timeStart = {time: 'search for timestamp'};
 
+/* Last indices to be picked for boundaries of a partial trajectory. */
+let oldStart=-1;
+let oldEnd;
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
 
@@ -302,6 +301,7 @@ function hideOrientation() {
   oldEnd = poseEndIndex.end;
   oldStart = poseStartIndex.start;
 }
+
 /**
  * This function initializes gui allowing the user to manipulate the
  * pose objects.
@@ -361,7 +361,7 @@ function findTime() {
   let end = poseLength-1;
   // Iterate while start not meets end using binary search.
   while (start<=end && !found) {
-    // Find the mid index
+    // Find the mid index.
     const mid=Math.floor((start + end)/2);
 
     // If element is present at mid,  show its info.
@@ -380,20 +380,6 @@ function findTime() {
   if (!found) {
     time.setValue('no time found');
   }
-
-  /* for (let i = 0; i< poseLength; i++) {
-    // If point with time stamp is found
-    if (pose[i].gpsTimestamp == time.getValue()) {
-      unselectCylinder();
-      selectedIndex = i;
-      selectCylinder();
-      displayPointValues(i);
-      found= true;
-    }
-  }
-  if (!found) {
-    time.setValue('no time found');
-  }*/
 }
 
 /**
@@ -427,7 +413,7 @@ function onClick(event) {
   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-  /* Get array of objects intersected by raycaster */
+  /* Get array of objects intersected by raycaster. */
   raycaster.setFromCamera( mouse, camera );
   const intersects = raycaster.intersectObjects(scene.children, true);
 
@@ -443,22 +429,22 @@ function onClick(event) {
 
 /** Brings back cylinder at selected Index back to original size and color. */
 function unselectCylinder() {
-  // Scale down to regular size
+  // Scale down to regular size.
   multiplyInstanceMatrixAtIndex(
       scaleInverseMatrix, selectedIndex, orientation);
 
-  // Turn color back to red
+  // Turn color back to red.
   orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
   orientation.instanceColor.needsUpdate = true;
 }
 
-/** Enlarges and changes color of cylinder at selected index */
+/** Enlarges and changes color of cylinder at selected index. */
 function selectCylinder() {
 // Set color to green.
-  orientation.setColorAt( selectedIndex, color.setHex(0x0ff00));
+  orientation.setColorAt( selectedIndex, color.setHex(0x00ff00));
   orientation.instanceColor.needsUpdate = true;
 
-  // Enlarge cylinder
+  // Enlarge cylinder.
   multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
   displayPointValues(selectedIndex);
 }
