@@ -12,6 +12,7 @@ let orientation;
 let trajectory;
 let pose;
 let poseLength;
+const color = new THREE.Color();
 const poseTransform = {
   /* Unit: 4 meters*/ translateX: 0,
   /* Unit: 4 meters*/ translateZ: 0,
@@ -231,6 +232,7 @@ function plotOrientation() {
         THREE.Math.degToRad(point.rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     orientation.setMatrixAt(pose.indexOf(point), matrix);
+    orientation.setColorAt( pose.indexOf(point), color );
   }
   orientation.instanceMatrix.needsUpdate = true;
   orientation.position.x = poseTransform.translateX;
@@ -368,8 +370,14 @@ function animate() {
 function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
+    // Scale down to regular size
     multiplyInstanceMatrixAtIndex(
         scaleInverseMatrix, selectedIndex, orientation);
+
+    // TODO: Turn color back to red
+    orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
+    orientation.instanceColor.needsUpdate = true;
+
     selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
@@ -388,10 +396,15 @@ function onClick(event) {
   /* highlight first instance intersected and show properties of point. */
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
-      const instanceId = intersects[i].instanceId;
-      selectedIndex = instanceId;
+      selectedIndex = intersects[i].instanceId;
+
+      // Set color to green.
+      orientation.setColorAt( selectedIndex, color.setHex(0x0ff00));
+      orientation.instanceColor.needsUpdate = true;
+
+      // Enlarge cylinder
       multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
-      displayPointValues(instanceId);
+      displayPointValues(selectedIndex);
 
       break;
     }
@@ -430,7 +443,3 @@ function fetchData() {
         );
   }
 }
-
-initThreeJs();
-gui();
-animate();
