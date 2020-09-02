@@ -67,6 +67,7 @@ const scaleInverseMatrix = new THREE.Matrix4().makeScale(
 
 /* Index of last selected point to view. */
 let selectedIndex= -1;
+let selectedRun = -1;
 
 /* For hiding trajectory. */
 const scaleHide = 400;
@@ -100,14 +101,7 @@ animate();
 function initThreeJs() {
   scene = new THREE.Scene();
   makeCamera();
-  /* renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-  clock = new THREE.Clock();
-  fetchData();
-  // The camera controls allows the user to fly with the camera.
-  controls = new OrbitControls(camera, renderer.domElement );*/
+  
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
@@ -152,6 +146,7 @@ function initMap(pose) {
   map.rotation.x = -Math.PI / 2;
   scene.add(map);
 }
+
 /**
  * Creates the 2D terrain and points a light at it. It also calls two other
  * functions so it can wait on the fetch request and significantly cut down
@@ -171,6 +166,13 @@ function addPoseData(runId, poseToPlot, hexColor) {
   orientation.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   runs[runId].orientation = orientation;
   runs[runId].data = poseToPlot;
+
+  /* Add all other necessary run info.  */
+  runs[runId]. oldStart =-1;
+   runs[runId].oldEnd = poseToPlot.length;
+   runs[runId].currentStart = 0;
+   runs[runId].currentEnd = Number.MAX_VALUE;
+
   scene.add(orientation);
   plotOrientation(runId);
 }
@@ -212,11 +214,6 @@ function plotTrajectory(runId, pose) {
    * The x axis controls the left and right direction, the y axis controls up
    * and down movement, and the z axis controls forward and back movement.
    */
-  /*
-  const coordinates=[];
-  for (const point of pose) {
-    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
-*/
   const coordinates = [];
   for (const point of pose) {
     const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
@@ -240,25 +237,29 @@ function plotTrajectory(runId, pose) {
  * @param {int} start beginning index, inclusive.
  * @param {int} end end index, exclusive.
  */
-function plotPartialPath(start, end) {
+function plotPartialPath(runId, start, end) {
   // Removes any existing trajectory objects for repositioning.
-  scene.remove(trajectory);
+   if (runs[runId].trajectory !== undefined) {
+    scene.remove(runs[runId].trajectory);
+  }
   /**
    * The x axis controls the left and right direction, the y axis controls
    * up and down movement, and the z axis controls forward and back movement.
    */
   const coordinates=[];
   for (let i= start; i < end; i++) {
-    const [x, y, z] = llaDegreeToLocal(pose[i].lat, pose[i].lng, pose[i].alt);
+    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin, runs[runId].data[i].lat,
+     runs[runId].data[i].lng, runs[runId].data[i].alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
-  const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
-  const material = new THREE.LineBasicMaterial({color: 'blue'});
-  trajectory = new THREE.Line(geometry, material);
+    const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
+  const material = new THREE.LineBasicMaterial({color: 'black'});
+  const trajectory = new THREE.Line(geometry, material);
+  runs[runId].trajectory = trajectory;
   scene.add(trajectory);
-  trajectory.position.x = poseTransform.translateX;
-  trajectory.position.z = poseTransform.translateZ;
-  trajectory.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
+  trajectory.position.x = runIdToTransforms[runId].translateX;
+  trajectory.position.z = runIdToTransforms[runId].translateZ;
+  trajectory.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 
@@ -321,43 +322,46 @@ function multiplyInstanceMatrixAtIndex(multiplicand, index, object) {
 * Updates GUI with specific point information.
 * @param {int} index index of point.
 */
-function displayPointValues(index) {
-  time.setValue(pose[index].gpsTimestamp);
-  lat.setValue(pose[index].lat);
-  lng.setValue(pose[index].alt);
-  alt.setValue(pose[index].alt);
-  yaw.setValue(pose[index].yawDeg);
-  roll.setValue(pose[index].rollDeg);
-  pitch.setValue(pose[index].pitchDeg);
+function displayPointValues(runId, index) {
+  time.setValue(runs[runId].data[index].gpsTimestamp);
+  lat.setValue(runs[runId].data[index].lat);
+  lng.setValue(runs[runId].data[index].alt);
+  alt.setValue(runs[runId].data[index].alt);
+  yaw.setValue(runs[runId].data[index].yawDeg);
+  roll.setValue(runs[runId].data[index].rollDeg);
+  pitch.setValue(runs[runId].data[index].pitchDeg);
 }
 
 /**
 * Hides end of trajectory based on user selected point.
  */
-function hideOrientation() {
-  if (poseStartIndex.start >= poseEndIndex.end) {
+function hideOrientation(runId) {
+    runs[runId].start= poseStartIndex.start;
+    runs[runId].end = poseEndIndex.end;
+    
+  if (runs[runId].start >= runs[runId].end) {
     return;
   }
 
-  const min = Math.min(poseEndIndex.end, poseLength);
-  plotPartialPath(poseStartIndex.start, min);
-  for (let i= 0; i<= oldStart; i++) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
+  const min = Math.min(runs[runId].end, runs[runId].length);
+  plotPartialPath(runId, runs[runId].start, min);
+  for (let i= 0; i<= runs[runId].oldStart; i++) {
+    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[runId].orientation);
   }
-  for (let i= 0; i<= poseStartIndex.start; i++) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
+  for (let i= 0; i<= runs[runId].start; i++) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[runId].orientation);
   }
 
-  for (let i= poseLength-1; i>oldEnd; i--) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
+  for (let i= runs[runId].length-1; i>runs[runId].oldEnd; i--) {
+    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[runId].orientation);
   }
-  for (let i= poseLength-1; i> poseEndIndex.end; i--) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
+  for (let i= runs[runId].length-1; i> runs[runId].end; i--) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[runId].orientation);
   }
 
   /* Update oldentries. */
-  oldEnd = poseEndIndex.end;
-  oldStart = poseStartIndex.start;
+  runs[runId].oldEnd = runs[runId].end;
+  runs[runId].oldStart = runs[runId].start;
 }
 
 /**
@@ -403,16 +407,16 @@ function loadGui() {
 
 
   /* Adds index of point manipulation to maxgui. */
-  const max = poseLength;
-  oldEnd=poseLength;
+  const max = 1000;
+  
   gui.add(poseStartIndex, 'start', 0, max, 1)
-      .onFinishChange(hideOrientation);
+      .onFinishChange(hideOrientation(currentId.value));
 
   gui.add(poseEndIndex, 'end', 0, max, 1)
-      .onFinishChange(hideOrientation);
+      .onFinishChange(hideOrientation(currentId.value));
 
   /* Time value. */
-  time = gui.add(timeStart, 'time').onFinishChange(findTime);
+  time = gui.add(timeStart, 'time').onFinishChange(findTime(currentId.value));
   /* Lat value. */
   const latStart= {lat: ''};
   lat = gui.add(latStart, 'lat');
@@ -434,25 +438,26 @@ function loadGui() {
 }
 
 /** Updates time gui to show if time typed in is found or not. */
-function findTime() {
+function findTime(runId) {
   let found = false;
   const value = time.getValue();
   console.log(value);
   let start =0;
-  let end = poseLength-1;
+  let end = runs[runId].length-1;
   // Iterate while start not meets end using binary search.
   while (start<=end && !found) {
     // Find the mid index.
     const mid=Math.floor((start + end)/2);
 
     // If element is present at mid,  show its info.
-    if (pose[mid].gpsTimestamp==value) {
+    if (runs[runId].data[mid].gpsTimestamp==value) {
       unselectCylinder();
       selectedIndex = mid;
+      selectedRun = runId; 
       selectCylinder();
       displayPointValues(mid);
       found= true;
-    } else if (pose[mid].gpsTimestamp < value) {
+    } else if (runs[runId].data[mid].gpsTimestamp < value) {
       start = mid + 1;
     } else {
       end = mid - 1;
@@ -483,7 +488,6 @@ function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
     unselectCylinder();
-    selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -501,8 +505,11 @@ function onClick(event) {
   /* highlight first instance intersected and show properties of point. */
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
+
       selectedIndex = intersects[i].instanceId;
-      selectCylinder(selectedIndex);
+      /*TODO: find index of runid intersected. */
+      //selectedRun = *******; 
+      selectCylinder();
       break;
     }
   }
@@ -510,6 +517,7 @@ function onClick(event) {
 
 /** Brings back cylinder at selected Index back to original size and color. */
 function unselectCylinder() {
+    const orientation = runs[selectedRun].orientation;
   // Scale down to regular size.
   multiplyInstanceMatrixAtIndex(
       scaleInverseMatrix, selectedIndex, orientation);
@@ -517,17 +525,22 @@ function unselectCylinder() {
   // Turn color back to red.
   orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
   orientation.instanceColor.needsUpdate = true;
+
+  selectedIndex = -1;
+  selectedRun = -1;
+
 }
 
 /** Enlarges and changes color of cylinder at selected index. */
 function selectCylinder() {
+    const orientation = runs[selectedRun].orientation;
 // Set color to green.
   orientation.setColorAt( selectedIndex, color.setHex(0x00ff00));
   orientation.instanceColor.needsUpdate = true;
 
   // Enlarge cylinder.
   multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
-  displayPointValues(selectedIndex);
+  displayPointValues(selectedRun, selectedIndex);
 }
 
 window.addEventListener('click', onClick);
@@ -541,28 +554,6 @@ window.addEventListener('click', onClick);
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-
-  /*  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
-
-  makeCamera();
-  // Only need to refetch the data if it is not contained in local storage, in
-  // general it should be.
-  const isStored = urlParams.get('stored');
-  const subSectionNumber = urlParams.get('subSection');
-  if (isStored) {
-    pose = JSON.parse(sessionStorage.getItem(id + '_' +
-      type + '_' + subSectionNumber));
-    addMap();
-  } else {
-    fetch('/getrun?id=' + id + '&dataType=' + type)
-        .then((response) => response.json())
-        .then((data) => pose = data).then(()=> poseLength= pose.length)
-        .then(() => {
-          addMap(); makeGUI();
-        },
-        );
-*/
 
   const isSubSection = urlParams.get('subsection');
 
