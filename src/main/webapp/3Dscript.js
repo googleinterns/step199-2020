@@ -3,9 +3,9 @@ import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 /**
 * A Point object with a lat and lng.
 * @typedef {Object<number, number, number>} Point
-* @property {number} lat The lat of the point.
-* @property {number} lng The lng of the point.
-* @property {number} alt The alt of the point.
+* @property {number} lat The latitude of the point.
+* @property {number} lng The longitude of the point.
+* @property {number} alt The altitude of the point.
 */
 
 /**
@@ -126,7 +126,7 @@ function fetchData() {
         runs[runId].data = poseData;
         runs[runId].color = currentObject.color;
         plotOrientation(poseData, runs[runId].orientation, origin);
-        plotTrajectory(pose, origin, currentObject.color);
+        plotTrajectory(poseData, origin, currentObject.color);
       }
     }
   } else {
@@ -142,16 +142,16 @@ function fetchData() {
  * and altitude. The median is used as a reference point
  * for the East-North-Up (ENU) conversion and as the center
  * point for the 2D map.
- * @param {Object} pose
+ * @param {Object} poses
  * @return {array} An array containing median lat, lng, and alt
  *   coordinates.
  */
-function findMedians(pose) {
+function findMedians(poses) {
   const arrays = {lat: [], lng: [], alt: []};
-  for (const point of pose) {
-    arrays.lat.push(point.lat);
-    arrays.lng.push(point.lng);
-    arrays.alt.push(point.alt);
+  for (const pose of poses) {
+    arrays.lat.push(pose.lat);
+    arrays.lng.push(pose.lng);
+    arrays.alt.push(pose.alt);
   }
   const sorted = {
     /* Sorts the array given using the compare function given as a parameter.
@@ -263,19 +263,21 @@ function llaToEcef(lat, lng, alt) {
 /**
  * Converts Earth-Centered, Earth-Fixed coordinates (ECEF) to
  * East-North-Up coordinates (ENU).
- * @param {Object} ecefPose The pose data point being converted to ENU.
+ * @param {Object} ecefPosition The pose data point being converted to ENU.
  * @param {Object} ecefOrigin Reference ECEF position, used as the origin
  *     of the 3D world.
  * @param {Object} origin Reference LLA position, used as the origin
  *     of the 3D world.
  * @return {array} An array containing x, y, z ENU coordinates.
  */
-function ecefToEnu(ecefPose, ecefOrigin, origin) {
-  // ECEF to ENU equation: https://www.mathworks.com/help/map/ref/ecef2enu.html
-  // Localizes the new xyz coordinate using the reference point.
-  const localX = ecefPose.getX() - ecefOrigin.getX();
-  const localY = ecefPose.getY() - ecefOrigin.getY();
-  const localZ = ecefPose.getZ() - ecefOrigin.getZ();
+function ecefToEnu(ecefPosition, ecefOrigin, origin) {
+  /* ECEF to ENU equation:
+   * hydrometronics.com/downloads/Ellipsoidal%20Orthographic%20Projection.pdf
+   * Localizes the new xyz coordinate using the reference point.
+   */
+  const localX = ecefPosition.getX() - ecefOrigin.getX();
+  const localY = ecefPosition.getY() - ecefOrigin.getY();
+  const localZ = ecefPosition.getZ() - ecefOrigin.getZ();
 
   const sinLambda = Math.sin(THREE.Math.degToRad(origin.getX()));
   const cosLambda = Math.cos(THREE.Math.degToRad(origin.getX()));
@@ -295,11 +297,12 @@ function ecefToEnu(ecefPose, ecefOrigin, origin) {
 /**
  * Uses the pose data to build a line representing the pose
  * trajectory.
- * @param {Object} pose
+ * @param {Object} poses
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
+ * @param {Number} hexColor The color of the pose trajectory.
  */
-function plotTrajectory(pose, origin) {
+function plotTrajectory(poses, origin, hexColor) {
   // Removes any existing trajectory objects for repositioning.
   scene.remove(trajectory);
   /**
@@ -310,15 +313,19 @@ function plotTrajectory(pose, origin) {
   const [ecefX, ecefY, ecefZ] =
     llaToEcef(origin.getX(), origin.getY(), origin.getZ());
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
-  for (const point of pose) {
-    const [x0, y0, z0] = llaToEcef(point.lat, point.lng, point.alt);
-    const ecefPose = new Point(x0, y0, z0);
-    const [x, y, z] = ecefToEnu(ecefPose, ecefOrigin, origin);
-    coordinates.push(new THREE.Vector3(x, y, z)
+  for (const pose of poses) {
+    const [x0, y0, z0] = llaToEcef(pose.lat, pose.lng, pose.alt);
+    const ecefPosition = new Point(x0, y0, z0);
+    const [x, y, z] = ecefToEnu(ecefPosition, ecefOrigin, origin);
+    const enuPosition = new Point(x, y, z);
+    coordinates.push(new THREE.Vector3(
+        enuPosition.getX(),
+        enuPosition.getY(),
+        enuPosition.getZ())
         .multiplyScalar(poseTransform.scale));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
-  const material = new THREE.LineBasicMaterial({color: 'green'});
+  const material = new THREE.LineBasicMaterial({color: hexColor});
   trajectory = new THREE.Line(geometry, material);
   scene.add(trajectory);
   trajectory.position.x = runIdToTransforms[runId].translateX;
@@ -329,23 +336,23 @@ function plotTrajectory(pose, origin) {
 /**
  * Controls all 3 geometry instances, along with positioning the individual
  * instances.
- * @param {Object} pose
+ * @param {Object} poses
  * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
-function plotOrientation(pose, orientation, origin) {
+function plotOrientation(poses, orientation, origin) {
   const axes = ['x', 'y', 'z'];
   for (const axis of axes) {
-    matrixRotation(pose, orientation, axis, origin);
+    matrixRotation(poses, orientation, axis, origin);
   }
 }
 
 /**
  * Creates a Matrix4 object for each individual instance, using translations
  * and rotations to maneuver them into a given position.
- * @param {Object} pose
+ * @param {Object} poses
  * @param {Object} orientation A dictionary holding each axis' instance
  *     mesh.
  * @param {String} direction Specifies which instance mesh to manipulate using
@@ -353,12 +360,12 @@ function plotOrientation(pose, orientation, origin) {
  * @param {Object} origin Reference ECEF position, used as the origin
  *     of the 3D world.
  */
-function matrixRotation(pose, orientation, direction, origin) {
+function matrixRotation(poses, orientation, direction, origin) {
   let poseObject;
   const [ecefX, ecefY, ecefZ] =
     llaToEcef(origin.getX(), origin.getY(), origin.getZ());
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
-  for (const point of pose) {
+  for (const pose of poses) {
     /**
      * Matrix4 is a 4 by 4 matrix used to translate, rotate, and
      * scale each instance of the pose orientation locally instead
@@ -366,17 +373,21 @@ function matrixRotation(pose, orientation, direction, origin) {
      * to the position of the matrix, not the center of the 3D scene.
      */
     const matrix = new THREE.Matrix4();
-    const [x0, y0, z0] = llaToEcef(point.lat, point.lng, point.alt);
-    const ecefPose = new Point(x0, y0, z0);
-    const [x, y, z] = ecefToEnu(ecefPose, ecefOrigin, origin);
-    matrix.makeTranslation(x, y, z);
+    const [x0, y0, z0] = llaToEcef(pose.lat, pose.lng, pose.alt);
+    const ecefPosition = new Point(x0, y0, z0);
+    const [x, y, z] = ecefToEnu(ecefPosition, ecefOrigin, origin);
+    const enuPosition = new Point(x, y, z);
+    matrix.makeTranslation(
+        enuPosition.getX(),
+        enuPosition.getY(),
+        enuPosition.getZ());
     matrix.multiply(new THREE.Matrix4().makeRotationX(Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
-        THREE.Math.degToRad(point.pitchDeg)));
+        THREE.Math.degToRad(pose.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
-        THREE.Math.degToRad(point.yawDeg)));
+        THREE.Math.degToRad(pose.yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
-        THREE.Math.degToRad(point.rollDeg)));
+        THREE.Math.degToRad(pose.rollDeg)));
     if (direction == 'z') {
       poseObject = orientation.x;
     } else if (direction == 'y') {
@@ -388,12 +399,11 @@ function matrixRotation(pose, orientation, direction, origin) {
       poseObject = orientation.z;
     }
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
-    poseObject.setMatrixAt(pose.indexOf(point), matrix);
+    poseObject.setMatrixAt(poses.indexOf(pose), matrix);
     poseObject.position.x = runIdToTransforms[runId].translateX;
     poseObject.position.y = runIdToTransforms[runId].translateY;
     poseObject.rotation.z =
       THREE.Math.degToRad(runIdToTransforms[runId].rotate);
-    increment++;
   }
 }
 
