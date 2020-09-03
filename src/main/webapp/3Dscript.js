@@ -74,7 +74,6 @@ let origin;
 const currentId = {};
 const runIdToTransforms = {};
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
-let poseOrigin;
 
 initThreeJs();
 animate();
@@ -116,7 +115,6 @@ function fetchData() {
   let latLng;
   if (isSubSection) {
     runs = JSON.parse(sessionStorage.getItem('subsection'));
-    const firstData = Object.values(runs)[0].data;
     const [lat, lng, alt] = findMedians(Object.entries(runs)[0][1].data);
     latLng = {latitude: lat, longitude: lng};
     origin = new Point(lat, lng, alt);
@@ -330,11 +328,11 @@ function plotTrajectory(poses, origin, hexColor) {
     const [x, y, z] = ecefToEnu(ecefPosition, ecefOrigin, origin);
     const enuPosition = new Point(x, y, z);
     coordinates.push(new THREE.Vector3(
-      enuPosition.getX(),
-      enuPosition.getY(),
-      enuPosition.getZ())
+        enuPosition.getX(),
+        enuPosition.getY(),
+        enuPosition.getZ()),
     );
-    console.log(x + " " + y + " " + z);
+    console.log(x + ' ' + y + ' ' + z);
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
   const material = new THREE.LineBasicMaterial({color: hexColor});
