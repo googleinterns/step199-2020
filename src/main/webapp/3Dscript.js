@@ -20,28 +20,15 @@ let camera;
 let renderer;
 let clock;
 let controls;
-let orientation;
-let trajectory;
-let pose;
-let poseLength;
-const color = new THREE.Color();
-const poseTransform = {
-  /* Unit: 4 meters*/ translateX: 0,
-  /* Unit: 4 meters*/ translateZ: 0,
-  /* Unit: degrees*/ rotate: 0,
-  /* Scalar*/ scale: 1};
 
-/* variables used to keep track of indices of trajectory wanted to be viewed. */
+const color = new THREE.Color();
+
+/*  Keep track of indices of trajectory wanted to be viewed. */
 const poseStartIndex = {start: 0};
 const poseEndIndex = {end: Number.MAX_VALUE};
 
 /* Timestamp search object. */
 const timeStart = {time: 'search for timestamp'};
-
-/* Last indices to be picked for boundaries of a partial trajectory. */
-let oldStart=-1;
-let oldEnd;
-
 
 // Likely need to make a separate pose transform for each runId;
 const runIdToTransforms = {};
@@ -90,7 +77,8 @@ let roll;
 let yaw;
 /*  Datapoint pitch interface on gui. */
 let pitch;
-/*  Datapoint pitch interface on gui. */
+
+let maxLength=-1;
 
 initThreeJs();
 animate();
@@ -101,7 +89,7 @@ animate();
 function initThreeJs() {
   scene = new THREE.Scene();
   makeCamera();
-  
+
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
@@ -168,10 +156,14 @@ function addPoseData(runId, poseToPlot, hexColor) {
   runs[runId].data = poseToPlot;
 
   /* Add all other necessary run info.  */
+  runs[runId].length = poseToPlot.length;
+  if (maxLength < runs[runId].length) {
+    maxLength = runs[runId].length;
+  }
   runs[runId]. oldStart =-1;
-   runs[runId].oldEnd = poseToPlot.length;
-   runs[runId].currentStart = 0;
-   runs[runId].currentEnd = Number.MAX_VALUE;
+  runs[runId].oldEnd = poseToPlot.length;
+  runs[runId].currentStart = 0;
+  runs[runId].currentEnd = Number.MAX_VALUE;
 
   scene.add(orientation);
   plotOrientation(runId);
@@ -237,10 +229,12 @@ function plotTrajectory(runId, pose) {
  * @param {int} start beginning index, inclusive.
  * @param {int} end end index, exclusive.
  */
-function plotPartialPath(runId, start, end) {
+function plotPartialPath(start, end) {
+  console.log('in plotpartial path');
+  selectedRun= currentId.value;
   // Removes any existing trajectory objects for repositioning.
-   if (runs[runId].trajectory !== undefined) {
-    scene.remove(runs[runId].trajectory);
+  if (runs[selectedRun].trajectory !== undefined) {
+    scene.remove(runs[selectedRun].trajectory);
   }
   /**
    * The x axis controls the left and right direction, the y axis controls
@@ -248,18 +242,21 @@ function plotPartialPath(runId, start, end) {
    */
   const coordinates=[];
   for (let i= start; i < end; i++) {
-    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin, runs[runId].data[i].lat,
-     runs[runId].data[i].lng, runs[runId].data[i].alt);
+    const [x, y, z] = llaDegreeToLocal(selectedRun, poseOrigin,
+        runs[selectedRun].data[i].lat, runs[selectedRun].data[i].lng,
+        runs[selectedRun].data[i].alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
-    const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
+  const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
   const material = new THREE.LineBasicMaterial({color: 'black'});
-  const trajectory = new THREE.Line(geometry, material);
-  runs[runId].trajectory = trajectory;
-  scene.add(trajectory);
-  trajectory.position.x = runIdToTransforms[runId].translateX;
-  trajectory.position.z = runIdToTransforms[runId].translateZ;
-  trajectory.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
+  runs[selectedRun].trajectory = new THREE.Line(geometry, material);
+  scene.add(runs[selectedRun].trajectory);
+  runs[selectedRun].trajectory.position.x =
+  runIdToTransforms[selectedRun].translateX;
+  runs[selectedRun].trajectory.position.z =
+  runIdToTransforms[selectedRun].translateZ;
+  runs[selectedRun].trajectory.rotation.y =
+  THREE.Math.degToRad(runIdToTransforms[selectedRun].rotate);
 }
 
 
@@ -322,46 +319,48 @@ function multiplyInstanceMatrixAtIndex(multiplicand, index, object) {
 * Updates GUI with specific point information.
 * @param {int} index index of point.
 */
-function displayPointValues(runId, index) {
-  time.setValue(runs[runId].data[index].gpsTimestamp);
-  lat.setValue(runs[runId].data[index].lat);
-  lng.setValue(runs[runId].data[index].alt);
-  alt.setValue(runs[runId].data[index].alt);
-  yaw.setValue(runs[runId].data[index].yawDeg);
-  roll.setValue(runs[runId].data[index].rollDeg);
-  pitch.setValue(runs[runId].data[index].pitchDeg);
+function displayPointValues( index) {
+  time.setValue(runs[selectedRun].data[index].gpsTimestamp);
+  lat.setValue(runs[selectedRun].data[index].lat);
+  lng.setValue(runs[selectedRun].data[index].alt);
+  alt.setValue(runs[selectedRun].data[index].alt);
+  yaw.setValue(runs[selectedRun].data[index].yawDeg);
+  roll.setValue(runs[selectedRun].data[index].rollDeg);
+  pitch.setValue(runs[selectedRun].data[index].pitchDeg);
 }
 
 /**
 * Hides end of trajectory based on user selected point.
  */
-function hideOrientation(runId) {
-    runs[runId].start= poseStartIndex.start;
-    runs[runId].end = poseEndIndex.end;
-    
-  if (runs[runId].start >= runs[runId].end) {
+function hideOrientation() {
+  selectedRun = currentId.value;
+  runs[selectedRun].start= poseStartIndex.start;
+  runs[selectedRun].end = poseEndIndex.end;
+
+  if (runs[selectedRun].start >= runs[selectedRun].end) {
     return;
   }
 
-  const min = Math.min(runs[runId].end, runs[runId].length);
-  plotPartialPath(runId, runs[runId].start, min);
-  for (let i= 0; i<= runs[runId].oldStart; i++) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[runId].orientation);
+  const min = Math.min(runs[selectedRun].end, runs[selectedRun].length);
+  plotPartialPath(selectedRun, runs[selectedRun].start, min);
+  for (let i= 0; i<= runs[selectedRun].oldStart; i++) {
+    multiplyInstanceMatrixAtIndex(
+        nonZeroMatrix, i, runs[selectedRun].orientation);
   }
-  for (let i= 0; i<= runs[runId].start; i++) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[runId].orientation);
+  for (let i= 0; i<= runs[selectedRun].start; i++) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[selectedRun].orientation);
   }
 
-  for (let i= runs[runId].length-1; i>runs[runId].oldEnd; i--) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[runId].orientation);
+  for (let i= runs[selectedRun].length-1; i>runs[selectedRun].oldEnd; i--) {
+    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[selectedRun].orientation);
   }
-  for (let i= runs[runId].length-1; i> runs[runId].end; i--) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[runId].orientation);
+  for (let i= runs[selectedRun].length-1; i> runs[selectedRun].end; i--) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[selectedRun].orientation);
   }
 
   /* Update oldentries. */
-  runs[runId].oldEnd = runs[runId].end;
-  runs[runId].oldStart = runs[runId].start;
+  runs[selectedRun].oldEnd = runs[selectedRun].end;
+  runs[selectedRun].oldStart = runs[selectedRun].start;
 }
 
 /**
@@ -374,12 +373,12 @@ function loadGui() {
   const runId = currentId.value;
 
   const gui = new GUI();
-  console.log(runs);
+
   let currentData = runs[runId].data;
   // On change of selected runId, update the given dataset to use;
   gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
       () => {
-        currentData = runs[currentId.value].data; console.log(currentId);
+        currentData = runs[currentId.value].data;
       });
 
   gui.add(runIdToTransforms[currentId.value], 'rotate', 0, 360, 1)
@@ -407,13 +406,13 @@ function loadGui() {
 
 
   /* Adds index of point manipulation to maxgui. */
-  const max = 1000;
-  
+  const max = maxLength;
+
   gui.add(poseStartIndex, 'start', 0, max, 1)
-      .onFinishChange(hideOrientation(currentId.value));
+      .onFinishChange(hideOrientation);
 
   gui.add(poseEndIndex, 'end', 0, max, 1)
-      .onFinishChange(hideOrientation(currentId.value));
+      .onFinishChange(hideOrientation);
 
   /* Time value. */
   time = gui.add(timeStart, 'time').onFinishChange(()=>findTime(currentId.value));
@@ -453,7 +452,7 @@ function findTime(runId) {
     if (runs[runId].data[mid].gpsTimestamp==value) {
       unselectCylinder();
       selectedIndex = mid;
-      selectedRun = runId; 
+      selectedRun = runId;
       selectCylinder();
       displayPointValues(mid);
       found= true;
@@ -505,11 +504,8 @@ function onClick(event) {
   /* highlight first instance intersected and show properties of point. */
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
-
       selectedIndex = intersects[i].instanceId;
-      /*TODO: find index of runid intersected. */
-      //selectedRun = *******; 
-      selectedRun="practice";
+      selectedRun = currentId.value;
       selectCylinder();
       break;
     }
@@ -518,33 +514,30 @@ function onClick(event) {
 
 /** Brings back cylinder at selected Index back to original size and color. */
 function unselectCylinder() {
-    const orientation = runs[selectedRun].orientation;
+  const orientation = runs[selectedRun].orientation;
   // Scale down to regular size.
   multiplyInstanceMatrixAtIndex(
       scaleInverseMatrix, selectedIndex, orientation);
 
   // Turn color back to red.
-  let originalColor = runs[selectedRun].color;
-  let colorToSet = new THREE.Color(originalColor);
-  console.log(colorToSet)
+  const originalColor = runs[selectedRun].color;
+  const colorToSet = new THREE.Color(originalColor);
   orientation.setColorAt( selectedIndex, colorToSet);
   orientation.instanceColor.needsUpdate = true;
 
   selectedIndex = -1;
-  selectedRun = -1;
-
 }
 
 /** Enlarges and changes color of cylinder at selected index. */
 function selectCylinder() {
-    const orientation = runs[selectedRun].orientation;
-// Set color to green.
+  const orientation = runs[selectedRun].orientation;
+  // Set color to green.
   orientation.setColorAt( selectedIndex, color.setHex(0x00ff00));
   orientation.instanceColor.needsUpdate = true;
 
   // Enlarge cylinder.
   multiplyInstanceMatrixAtIndex(scaleMatrix, selectedIndex, orientation);
-  displayPointValues(selectedRun, selectedIndex);
+  displayPointValues(selectedIndex);
 }
 
 window.addEventListener('click', onClick);
@@ -584,3 +577,15 @@ function fetchData() {
   loadGui();
   initMap(firstData);
 }
+
+function maxLength1() {
+  let max=-1;
+  for (const run of Object.keys(runs)) {
+    if (run.length>max) {
+      max= run.length;
+    }
+  }
+  return max;
+}
+
+
