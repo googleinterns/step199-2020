@@ -52,12 +52,19 @@ class Point {
  * @property {Array<Point>} data All the stored run data for a given runId
  * @property {string} color The color in a standard HTML acceptable format
  */
+// Overall Threejs objects, may be helpful to condense into one Object.
 let scene;
 let camera;
 let renderer;
 let clock;
 let controls;
 let trajectory;
+const defaultTransform = {
+  /* Unit: 4 meters*/ translateX: 0,
+  /* Unit: 4 meters*/ translateY: 0,
+  /* Unit: degrees*/ rotate: 0,
+};
+
 /* The runs, origin, currentId, and runIdToTransforms
  * are all being read of modified by the gui, requiring
  * they be global variables.
@@ -66,15 +73,14 @@ let runs;
 let origin;
 const currentId = {};
 const runIdToTransforms = {};
-
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
+let poseOrigin;
 
 initThreeJs();
 animate();
 
 /**
- * Initializes the essential three.js 3D components then fetchs
- * the pose data.
+ * Initializes the essential three.js 3D components then fetchs the pose data.
  */
 function initThreeJs() {
   scene = new THREE.Scene();
@@ -90,10 +96,13 @@ function initThreeJs() {
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
   controls = new OrbitControls(camera, renderer.domElement);
+  // Add the light to the scene.
+  const light = new THREE.PointLight(0xffffff, 1, 0);
+  light.position.set(0, 100, 0);
+  scene.add(light);
 
   fetchData();
 }
-
 /**
  * Fetchs pose data from the RunInfo servlet,
  * it is an asynchronous call requiring addMap() to be
@@ -108,7 +117,7 @@ function fetchData() {
   if (isSubSection) {
     runs = JSON.parse(sessionStorage.getItem('subsection'));
     const firstData = Object.values(runs)[0].data;
-    const [lat, lng, alt] = findMedians(firstData[0]);
+    const [lat, lng, alt] = findMedians(Object.entries(runs)[0][1].data);
     latLng = {latitude: lat, longitude: lng};
     origin = new Point(lat, lng, alt);
     currentId.value = Object.keys(runs)[0];
@@ -125,8 +134,8 @@ function fetchData() {
         runs[runId].orientation = {x: xAxis, y: yAxis, z: zAxis};
         runs[runId].data = poseData;
         runs[runId].color = currentObject.color;
-        plotOrientation(poseData, runs[runId].orientation, origin);
         plotTrajectory(poseData, origin, currentObject.color);
+        plotOrientation(poseData, runs[runId].orientation, origin);
       }
     }
   } else {
@@ -312,25 +321,29 @@ function plotTrajectory(poses, origin, hexColor) {
   const coordinates=[];
   const [ecefX, ecefY, ecefZ] =
     llaToEcef(origin.getX(), origin.getY(), origin.getZ());
+
   const ecefOrigin = new Point(ecefX, ecefY, ecefZ);
+
   for (const pose of poses) {
     const [x0, y0, z0] = llaToEcef(pose.lat, pose.lng, pose.alt);
     const ecefPosition = new Point(x0, y0, z0);
     const [x, y, z] = ecefToEnu(ecefPosition, ecefOrigin, origin);
     const enuPosition = new Point(x, y, z);
     coordinates.push(new THREE.Vector3(
-        enuPosition.getX(),
-        enuPosition.getY(),
-        enuPosition.getZ())
-        .multiplyScalar(poseTransform.scale));
+      enuPosition.getX(),
+      enuPosition.getY(),
+      enuPosition.getZ())
+    );
+    console.log(x + " " + y + " " + z);
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
   const material = new THREE.LineBasicMaterial({color: hexColor});
   trajectory = new THREE.Line(geometry, material);
   scene.add(trajectory);
-  trajectory.position.x = runIdToTransforms[runId].translateX;
-  trajectory.position.y = runIdToTransforms[runId].translateY;
-  trajectory.rotation.z = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
+  trajectory.position.x = runIdToTransforms[currentId.value].translateX;
+  trajectory.position.y = runIdToTransforms[currentId.value].translateY;
+  trajectory.rotation.z =
+    THREE.Math.degToRad(runIdToTransforms[currentId.value].rotate);
 }
 
 /**
@@ -381,29 +394,27 @@ function matrixRotation(poses, orientation, direction, origin) {
         enuPosition.getX(),
         enuPosition.getY(),
         enuPosition.getZ());
-    matrix.multiply(new THREE.Matrix4().makeRotationX(Math.PI/2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
         THREE.Math.degToRad(pose.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
         THREE.Math.degToRad(pose.yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
         THREE.Math.degToRad(pose.rollDeg)));
-    if (direction == 'z') {
+    if (direction == 'x') {
+      matrix.multiply(new THREE.Matrix4().makeRotationZ(Math.PI/2));
       poseObject = orientation.x;
     } else if (direction == 'y') {
-      matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
       poseObject = orientation.y;
-    } else if (direction == 'x') {
+    } else if (direction == 'z') {
       matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-      matrix.multiply(new THREE.Matrix4().makeRotationZ(-Math.PI/2));
       poseObject = orientation.z;
     }
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     poseObject.setMatrixAt(poses.indexOf(pose), matrix);
-    poseObject.position.x = runIdToTransforms[runId].translateX;
-    poseObject.position.y = runIdToTransforms[runId].translateY;
+    poseObject.position.x = runIdToTransforms[currentId.value].translateX;
+    poseObject.position.y = runIdToTransforms[currentId.value].translateY;
     poseObject.rotation.z =
-      THREE.Math.degToRad(runIdToTransforms[runId].rotate);
+      THREE.Math.degToRad(runIdToTransforms[currentId.value].rotate);
   }
 }
 
@@ -414,15 +425,16 @@ function matrixRotation(poses, orientation, direction, origin) {
 function loadGui() {
   // Need a way to select which pose run to make this change to and pass this
   // parameter.
-  const runId = currentId.value;
   const gui = new GUI();
+  let runId = currentId.value;
   let currentPose = runs[runId].data;
   let currentOrientation = runs[runId].orientation;
-  let currentColor = runs[runID].color;
+  let currentColor = runs[runId].color;
   // On change of selected runId, update the given dataset to use;
   gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
       () => {
-        currentPose = runs[currentId.value].data;
+        runId = currentId.value;
+        currentPose = runs[runId].data;
         currentOrientation = runs[runId].orientation;
         currentColor = runs[runId].color;
       });
@@ -434,16 +446,16 @@ function loadGui() {
       .onChange(() => plotOrientation(currentPose, currentOrientation, origin))
       .onFinishChange(() => plotTrajectory(currentPose, origin, currentColor))
       .name('X Axis Translation');
-  gui.add(runIdToTransforms[currentId.value], 'translateZ', -10, 10, .025)
+  gui.add(runIdToTransforms[currentId.value], 'translateY', -10, 10, .025)
       .onChange(() => plotOrientation(currentPose, currentOrientation, origin))
       .onFinishChange(() => plotTrajectory(currentPose, origin, currentColor))
       .name('Z Axis Translation');
 }
 
 /**
- * This is the animation loop which continually updates the scene.
- * It allows the movement of objects to be seen on screen and the camera
- * to be moved in accordance to the controls.
+ * This is the animation loop which continually updates the scene. It allows the
+ * movement of objects to be seen on screen and the camera to be moved in
+ * accordance to the controls.
  */
 function animate() {
   requestAnimationFrame(animate);
