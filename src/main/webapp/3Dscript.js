@@ -67,7 +67,7 @@ const scaleInverseMatrix = new THREE.Matrix4().makeScale(
 
 /* Index of last selected point to view. */
 let selectedIndex= -1;
-let selectedRun = -1;
+let selectedRun = '';
 
 /* For hiding trajectory. */
 const scaleHide = 400;
@@ -416,7 +416,7 @@ function loadGui() {
       .onFinishChange(hideOrientation(currentId.value));
 
   /* Time value. */
-  time = gui.add(timeStart, 'time').onFinishChange(findTime(currentId.value));
+  time = gui.add(timeStart, 'time').onFinishChange(()=>findTime(currentId.value));
   /* Lat value. */
   const latStart= {lat: ''};
   lat = gui.add(latStart, 'lat');
@@ -509,6 +509,7 @@ function onClick(event) {
       selectedIndex = intersects[i].instanceId;
       /*TODO: find index of runid intersected. */
       //selectedRun = *******; 
+      selectedRun="practice";
       selectCylinder();
       break;
     }
@@ -523,7 +524,10 @@ function unselectCylinder() {
       scaleInverseMatrix, selectedIndex, orientation);
 
   // Turn color back to red.
-  orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
+  let originalColor = runs[selectedRun].color;
+  let colorToSet = new THREE.Color(originalColor);
+  console.log(colorToSet)
+  orientation.setColorAt( selectedIndex, colorToSet);
   orientation.instanceColor.needsUpdate = true;
 
   selectedIndex = -1;
