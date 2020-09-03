@@ -1,5 +1,5 @@
-import { OrbitControls } from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
-import { GUI } from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
+import {OrbitControls} from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
+import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
 /**
 * A Point object with a lat and lng.
 * @typedef {Object<number, number, number>} Point
@@ -20,6 +20,7 @@ let camera;
 let renderer;
 let clock;
 let controls;
+let proj = new MercatorProjection();
 
 // Likely need to make a separate pose transform for each runId;
 const runIdToTransforms = {};
@@ -37,6 +38,38 @@ let poseOrigin;
 
 initThreeJs();
 animate();
+/* From stackoverflow post (Marcelo):
+ https://stackoverflow.com/questions/12507274/how-to-get-bounds-of-a-google-static-map
+ Like all stackoverflow posts this content is distributed under the
+ Creative Commons Attribution-ShareAlike license:
+ https://creativecommons.org/licenses/by-sa/4.0/,
+ meaning that this material can be used for nany purpose, including commercial.
+ */
+
+
+/**
+ * Compute the coordinates of the bounding rectange containing this map.
+ * @param {google.maps.LatLng} center
+ * @param {number} zoom The Maps api specified zoom level.
+ * @param {number} mapWidth The map width specified in pixels.
+ * @param {number} mapHeight The map height specified in pixels.
+ * @return {Array<number, number>}
+ */
+function getCorners(center, zoom, mapWidth, mapHeight) {
+  const scale = Math.pow(2, zoom);
+  const centerPx = proj.fromLatLngToPoint(center);
+  const SWPoint = {
+    x: (centerPx.x - (mapWidth / 2) / scale), y:
+            (centerPx.y + (mapHeight / 2) / scale),
+  };
+  const SWLatLon = proj.fromPointToLatLng(SWPoint);
+  const NEPoint = {
+    x: (centerPx.x + (mapWidth / 2) / scale), y:
+            (centerPx.y - (mapHeight / 2) / scale),
+  };
+  const NELatLon = proj.fromPointToLatLng(NEPoint);
+  return [SWLatLon, NELatLon];
+}
 
 /**
  * Initializes the essential three.js 3D components then fetchs the pose data.
@@ -54,7 +87,9 @@ function initThreeJs() {
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
   controls = new OrbitControls(camera, renderer.domElement);
-
+  const light = new THREE.PointLight(0xffffff, 1, 0);
+  light.position.set(0, 100, 0);
+  scene.add(light);
   fetchData();
 }
 /**
@@ -65,44 +100,56 @@ function initMap(pose) {
   // strange rendering was due to the light not the scene itself
   // Creates the 2D map.
   const loader = new THREE.TextureLoader();
-//  const light = new THREE.DirectionalLight(0xffffff);
- // light.position.set(0, 1, 1).normalize();
-  //scene.add(light);
-  let newGeometry = new THREE.PlaneGeometry(50, 50, 50, 50);
-  for (let i = 0, l = newGeometry.vertices.length; i < l; i++) {
-    newGeometry.vertices[i].z = Math.random() % 8*4;
-  }
-/*
+  //  const light = new THREE.DirectionalLight(0xffffff);
+  // light.position.set(0, 1, 1).normalize();
+  // scene.add(light);
+  const newGeometry = new THREE.PlaneGeometry(50, 50, 700, 700);
+
+  console.log("The sie of the given geometry is "+newGeometry.vertices.length);
+ 
+  /*
   let material2 = new THREE.MeshPhongMaterial({
      color: 0xff0000,
      wireframe: true
    });*/
-   console.log(pose[0].lat);
-   console.log(pose[0].lng);
-  
-  loader.load(
-    'https://maps.googleapis.com/maps/api/staticmap' +
-    '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
-    '&zoom=18&size=500x500&key=' + apiKey, 
- (texture) => {
-      let material2 = new THREE.MeshLambertMaterial({map: texture});
-      let plane = new THREE.Mesh(newGeometry, material2);
-      plane.position.set(0, -4, 0);
-      plane.rotation.x = -Math.PI / 2;
-      scene.add(plane);
-    });
-
-
-
-
-
+  console.log(pose[0].lat);
+  console.log(pose[0].lng);
+  const centerPoint = new google.maps.LatLng(pose[0].lat, pose[0].lng);
+  const zoom = 10;
+  const [firstCorner, secondCorner] = getCorners(centerPoint, zoom, 790, 790);
+  console.log('The first corner is ' + firstCorner);
+  console.log('The second corner is ' + secondCorner);
+  const path = '/terrain?minLat='+firstCorner.x+'&minLng='+firstCorner.y+'&maxLat='+secondCorner.x+'&maxLng'+secondCorner.y;
+  console.log("The path is "+path);
+  //'/terrain?minLat=11.143450874999994&minLng=47.835723546120256&maxLat=12.022357124999994&maxLng=48.42234523396127'
+  //mountain http://localhost:8080/terrain?minLat=7.5&minLng=46.1&maxLat=8&maxLng=46.2
+  fetch('/terrain?minLat=11.143450874999994&minLng=47.835723546120256&maxLat=12.022357124999994&maxLng=48.42234523396127').then(response=> response.json()).then(
+    (data)=>
+    {
+      console.log(data);
+      for (let i = 0, l = newGeometry.vertices.length; i < l; i++) {
+        newGeometry.vertices[i].z = data[i]/80;
+      }
+      loader.load(
+        'https://maps.googleapis.com/maps/api/staticmap' +
+      '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
+      '&zoom=18&size=500x500&key=' + apiKey,
+        (texture) => {
+          const material2 = new THREE.MeshLambertMaterial({map: texture});
+          const plane = new THREE.Mesh(newGeometry, material2);
+          plane.position.set(0, -4, 0);
+          plane.rotation.x = -Math.PI / 2;
+          scene.add(plane);
+        });
+    }
+  );
 
 
 
   console.log('Map initialized at lat: ' + pose[0].lat + ' lng ' + pose[0].lng);
   const material = new THREE.MeshLambertMaterial({
     map: loader.load(
-      'https://maps.googleapis.com/maps/api/staticmap' +
+        'https://maps.googleapis.com/maps/api/staticmap' +
       '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
       '&zoom=18&size=500x500&key=' + apiKey),
   });
@@ -110,7 +157,7 @@ function initMap(pose) {
   const map = new THREE.Mesh(geometry, material);
   map.position.set(0, -4, 0);
   map.rotation.x = -Math.PI / 2;
-  scene.add(map);
+ // scene.add(map);
 }
 /**
  * Creates the 2D terrain and points a light at it. It also calls two other
@@ -122,16 +169,13 @@ function initMap(pose) {
 */
 function addPoseData(runId, poseToPlot, hexColor) {
   // Add the light to the scene.
-  const light = new THREE.PointLight(0xffffff, 1, 0);
-  light.position.set(0, 100, 0);
-  scene.add(light);
   plotTrajectory(runId, poseToPlot);
 
   // Adds pose data to the scene as one Geometry instance.
-  const material = new THREE.MeshBasicMaterial({ color: hexColor });
+  const material = new THREE.MeshBasicMaterial({color: hexColor});
   const geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
   const orientation = new THREE.InstancedMesh(geometry,
-    material, poseToPlot.length);
+      material, poseToPlot.length);
   orientation.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   runs[runId].orientation = orientation;
   runs[runId].data = poseToPlot;
@@ -179,11 +223,11 @@ function plotTrajectory(runId, pose) {
   const coordinates = [];
   for (const point of pose) {
     const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
-      point.lat, point.lng, point.alt);
+        point.lat, point.lng, point.alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
-  const material = new THREE.LineBasicMaterial({ color: 'black' });
+  const material = new THREE.LineBasicMaterial({color: 'black'});
   const trajectory = new THREE.Line(geometry, material);
   runs[runId].trajectory = trajectory;
   scene.add(trajectory);
@@ -204,16 +248,16 @@ function plotOrientation(runId) {
   for (const point of pose) {
     const matrix = new THREE.Matrix4();
     const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
-      point.lat, point.lng, point.alt);
+        point.lat, point.lng, point.alt);
 
     matrix.makeTranslation(x, y, z);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
     matrix.multiply(new THREE.Matrix4().makeRotationX(
-      THREE.Math.degToRad(point.pitchDeg)));
+        THREE.Math.degToRad(point.pitchDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationZ(
-      THREE.Math.degToRad(point.yawDeg)));
+        THREE.Math.degToRad(point.yawDeg)));
     matrix.multiply(new THREE.Matrix4().makeRotationY(
-      THREE.Math.degToRad(point.rollDeg)));
+        THREE.Math.degToRad(point.rollDeg)));
     matrix.multiply(new THREE.Matrix4().makeTranslation(0.0, .05, 0.0));
     orientation.setMatrixAt(pose.indexOf(point), matrix);
   }
@@ -236,31 +280,31 @@ function loadGui() {
   let currentData = runs[runId].data;
   // On change of selected runId, update the given dataset to use;
   gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
-    () => {
-      currentData = runs[currentId.value].data; console.log(currentId);
-    });
+      () => {
+        currentData = runs[currentId.value].data; console.log(currentId);
+      });
 
   gui.add(runIdToTransforms[currentId.value], 'rotate', 0, 360, 1)
-    .onChange(() => {
-      console.log('changed'); plotOrientation(currentId.value);
-    })
-    .onFinishChange(() => {
-      console.log(currentId.value);
-      lotTrajectory(currentId.value, currentData);
-    })
-    .name('Pose Rotation (degrees)');
+      .onChange(() => {
+        console.log('changed'); plotOrientation(currentId.value);
+      })
+      .onFinishChange(() => {
+        console.log(currentId.value);
+        lotTrajectory(currentId.value, currentData);
+      })
+      .name('Pose Rotation (degrees)');
   gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
-    .onChange(() => plotOrientation(currentId.value))
-    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
-    .name('X Axis Translation');
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('X Axis Translation');
   gui.add(runIdToTransforms[currentId.value], 'translateZ', -10, 10, .025)
-    .onChange(() => plotOrientation(currentId.value))
-    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
-    .name('Z Axis Translation');
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('Z Axis Translation');
   gui.add(runIdToTransforms[currentId.value], 'scale', .5, 2, .25)
-    .onChange(() => plotOrientation(currentId.value))
-    .onFinishChange(() => plotTrajectory(currentId.value, currentData))
-    .name('Pose Scale Multiplier');
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('Pose Scale Multiplier');
 }
 
 /**
@@ -294,7 +338,7 @@ function fetchData() {
     {
       // Initialize the transforms for each run.
       Object.keys(runs).forEach(
-        (currentKey) => runIdToTransforms[currentKey] = defaultTransform);
+          (currentKey) => runIdToTransforms[currentKey] = defaultTransform);
       // Render the different runs.
       const runsIterable = Object.entries(runs);
       for (const [runId, currentObject] of runsIterable) {
@@ -304,6 +348,6 @@ function fetchData() {
   } else {
     console.log('Invalid input format provided');
   }
- // loadGui();
+  loadGui();
   initMap(firstData);
 }
