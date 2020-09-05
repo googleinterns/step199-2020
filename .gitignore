@@ -1,3 +1,4 @@
 target
 .stylelintrc.json
 src/main/java/proto/SensorData.java
+

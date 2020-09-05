@@ -1,36 +1,49 @@
-// import {FlyControls} from 'https://threejs.org/examples/jsm/controls/FlyControls.js';
 import {OrbitControls} from 'https://threejs.org/examples/jsm/controls/OrbitControls.js';
 import {GUI} from 'https://threejs.org/examples/jsm/libs/dat.gui.module.js';
-
+/**
+* A Point object with a lat and lng.
+* @typedef {Object<number, number, number>} Point
+* @property {number} lat The lat of the point.
+* @property {number} lng The lng of the point.
+* @property {number} alt The alt of the point.
+*/
 // These are global objects.
+/**
+ * @typedef {Array<number, number>}
+ * @property {Array<Point>} data All the stored run data for a given runId
+ * @property {string} color The color in a standard HTML acceptable format
+ */
+let runs;
+// Overall Threejs objects, may be helpful to condense into one Object.
 let scene;
 let camera;
 let renderer;
 let clock;
 let controls;
-let orientation;
-let trajectory;
-let pose;
-let poseLength;
-const color = new THREE.Color();
-const poseTransform = {
-  /* Unit: 4 meters*/ translateX: 0,
-  /* Unit: 4 meters*/ translateZ: 0,
-  /* Unit: degrees*/ rotate: 0,
-  /* Scalar*/ scale: 1};
 
-/* variables used to keep track of indices of trajectory wanted to be viewed. */
+const color = new THREE.Color();
+
+/*  Keep track of indices of trajectory wanted to be viewed. */
 const poseStartIndex = {start: 0};
 const poseEndIndex = {end: Number.MAX_VALUE};
 
 /* Timestamp search object. */
 const timeStart = {time: 'search for timestamp'};
 
-/* Last indices to be picked for boundaries of a partial trajectory. */
-let oldStart=-1;
-let oldEnd;
+// Likely need to make a separate pose transform for each runId;
+const runIdToTransforms = {};
+// poseTransforms indexed by runId;
+const defaultTransform = {
+  /* Unit: 4 meters*/ translateX: 0,
+  /* Unit: 4 meters*/ translateZ: 0,
+  /* Unit: degrees*/ rotate: 0,
+  /* Scalar*/ scale: 1,
+};
+// The runId of the current run being modified, bound to gui.
+const currentId = {};
 
 const apiKey = 'AIzaSyDCgKca9sLuoQ9xQDfHUvZf1_KAv06SoTU';
+let poseOrigin;
 
 /* Matrices used to scale and unscale pose cylinders */
 const scaleCylinder = 2;
@@ -41,6 +54,7 @@ const scaleInverseMatrix = new THREE.Matrix4().makeScale(
 
 /* Index of last selected point to view. */
 let selectedIndex= -1;
+let selectedRun = '';
 
 /* For hiding trajectory. */
 const scaleHide = 400;
@@ -63,26 +77,28 @@ let roll;
 let yaw;
 /*  Datapoint pitch interface on gui. */
 let pitch;
-/*  Datapoint pitch interface on gui. */
+
+let maxLength=-1;
 
 initThreeJs();
 animate();
 
 /**
- * Initializes the essential three.js 3D components then fetchs
- * the pose data.
+ * Initializes the essential three.js 3D components then fetchs the pose data.
  */
 function initThreeJs() {
   scene = new THREE.Scene();
+  makeCamera();
 
   renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
   clock = new THREE.Clock();
-  fetchData();
-  // The camera controls allows the user to fly with the camera.
-  controls = new OrbitControls(camera, renderer.domElement );
+  controls = new OrbitControls(camera, renderer.domElement);
+  // Add the light to the scene.
+  const light = new THREE.PointLight(0xffffff, 1, 0);
+  light.position.set(0, 100, 0);
+  scene.add(light);
 }
 
 /**
@@ -96,89 +112,115 @@ function makeCamera() {
       /* nearFrustum =*/.1,
       /* farFrustum =*/ 1000);
   camera.position.set(0, 1, 1);
+  fetchData();
 }
-
 /**
- * Creates the 2D terrain and points a light at it.
- * It also calls two other functions so it can wait on the fetch
- * request and significantly cut down rendering time with
- * geometry instancing.
-*/
-function addMap() {
+ * Plot the map centered around this run's first coordinate.
+ * @param {Array<Point>} pose
+ */
+function initMap(pose) {
   // Creates the 2D map.
   const loader = new THREE.TextureLoader();
-  let material = new THREE.MeshLambertMaterial({
+  console.log('Map initialized at lat: ' + pose[0].lat + ' lng ' + pose[0].lng);
+  const material = new THREE.MeshLambertMaterial({
     map: loader.load(
         'https://maps.googleapis.com/maps/api/staticmap' +
       '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
       '&zoom=18&size=500x500&key=' + apiKey),
   });
-  let geometry = new THREE.PlaneGeometry(50, 50);
+  const geometry = new THREE.PlaneGeometry(50, 50);
   const map = new THREE.Mesh(geometry, material);
   map.position.set(0, -4, 0);
   map.rotation.x = -Math.PI / 2;
   scene.add(map);
+}
 
-  // Add the light to the scene.
-  const light = new THREE.PointLight(0xffffff, 1, 0);
-  light.position.set(0, 100, 0);
-  scene.add(light);
-  plotTrajectory();
+/**
+ * Creates the 2D terrain and points a light at it. It also calls two other
+ * functions so it can wait on the fetch request and significantly cut down
+ * rendering time with geometry instancing.
+ * @param {number} runId
+ * @param {Array<Point>} poseToPlot
+ * @param {string} hexColor
+*/
+function addPoseData(runId, poseToPlot, hexColor) {
+  plotTrajectory(runId, poseToPlot);
 
   // Adds pose data to the scene as one Geometry instance.
-  material = new THREE.MeshBasicMaterial({color: 'red'});
-  geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
-  orientation = new THREE.InstancedMesh(geometry, material, pose.length);
+  const material = new THREE.MeshBasicMaterial({color: hexColor});
+  const geometry = new THREE.CylinderBufferGeometry(.005, .005, .1);
+  const orientation = new THREE.InstancedMesh(geometry,
+      material, poseToPlot.length);
   orientation.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  runs[runId].orientation = orientation;
+  runs[runId].data = poseToPlot;
+
+  /* Add all other necessary run info.  */
+  runs[runId].length = poseToPlot.length;
+  if (maxLength < runs[runId].length) {
+    maxLength = runs[runId].length;
+  }
+  runs[runId]. oldStart =-1;
+  runs[runId].oldEnd = poseToPlot.length;
+  runs[runId].currentStart = 0;
+  runs[runId].currentEnd = Number.MAX_VALUE;
+
   scene.add(orientation);
-  plotOrientation();
+  plotOrientation(runId);
 }
 
 /**
  * Converts lla coordinates to local world coordinates.
- * @param {double} lat Latitude in degrees.
- * @param {double} lng Longitude in degrees.
- * @param {double} alt Altitude in meters.
- * @return {array} An array returning gps coordinates.
+ * @param {number} runId The given run's id.
+ * @param {Point} origin The run to center the data around.
+ * @param {number} lat Latitude in degrees.
+ * @param {number} lng Longitude in degrees.
+ * @param {number} alt Altitude in meters.
+ * @return {Array<number, number, number>} An array returning gps coordinates.
  */
-function llaDegreeToLocal(lat, lng, alt) {
+function llaDegreeToLocal(runId, origin, lat, lng, alt) {
   /**
-   * Subtracting each point by the first point starts the pose
-   * at coordinates (0, 0, 0). Each unit in the 3D scene is 4
-   * meters while the 6th decimal point in GPS coordinates represents
-   * .11 meters. This is why we multiple the lat/lng by 25000, an
-   * increment in the 6th decimal place equates to a 0.025 unit
-   * change in our 3D space. Since altitude is already represented in
+   * Subtracting each point by the first point starts the pose at coordinates
+   * (0, 0, 0). Each unit in the 3D scene is 4 meters while the 6th decimal
+   * point in GPS coordinates represents .11 meters. This is why we multiple the
+   * lat/lng by 25000, an increment in the 6th decimal place equates to a 0.025
+   * unit change in our 3D space. Since altitude is already represented in
    * meters, we simply divide by 4 to adjust for our 1:4 unit ratio.
    */
-  const x = (lng - pose[0].lng) * 25000 * poseTransform.scale;
-  const y = (alt - pose[0].alt) / 4;
-  const z = (lat - pose[0].lat) * 25000 * -poseTransform.scale;
+  const x = (lng - origin.lng) * 25000 * runIdToTransforms[runId].scale;
+  const y = (alt - origin.alt) / 4;
+  const z = (lat - origin.lat) * 25000 * -runIdToTransforms[runId].scale;
   return [x, y, z];
 }
 /**
  * This uses the pose data to create a blue line representing the pose
  * trajectory.
+ * @param {number} runId
+ * @param {Array<Point>} pose
  */
-function plotTrajectory() {
-  // Removes any existing trajectory objects for repositioning.
-  scene.remove(trajectory);
+function plotTrajectory(runId, pose) {
+  if (runs[runId].trajectory !== undefined) {
+    scene.remove(runs[runId].trajectory);
+  }
   /**
-   * The x axis controls the left and right direction, the y axis controls
-   * up and down movement, and the z axis controls forward and back movement.
+   * The x axis controls the left and right direction, the y axis controls up
+   * and down movement, and the z axis controls forward and back movement.
    */
-  const coordinates=[];
+  const coordinates = [];
   for (const point of pose) {
-    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
+        point.lat, point.lng, point.alt);
+
     coordinates.push(new THREE.Vector3(x, y, z));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
-  const material = new THREE.LineBasicMaterial({color: 'blue'});
-  trajectory = new THREE.Line(geometry, material);
+  const material = new THREE.LineBasicMaterial({color: 'black'});
+  const trajectory = new THREE.Line(geometry, material);
+  runs[runId].trajectory = trajectory;
   scene.add(trajectory);
-  trajectory.position.x = poseTransform.translateX;
-  trajectory.position.z = poseTransform.translateZ;
-  trajectory.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
+  trajectory.position.x = runIdToTransforms[runId].translateX;
+  trajectory.position.z = runIdToTransforms[runId].translateZ;
+  trajectory.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 /**
@@ -188,32 +230,45 @@ function plotTrajectory() {
  * @param {int} end end index, exclusive.
  */
 function plotPartialPath(start, end) {
+  console.log('in plotpartial path');
+  selectedRun= currentId.value;
   // Removes any existing trajectory objects for repositioning.
-  scene.remove(trajectory);
+  if (runs[selectedRun].trajectory !== undefined) {
+    scene.remove(runs[selectedRun].trajectory);
+  }
   /**
    * The x axis controls the left and right direction, the y axis controls
    * up and down movement, and the z axis controls forward and back movement.
    */
   const coordinates=[];
   for (let i= start; i < end; i++) {
-    const [x, y, z] = llaDegreeToLocal(pose[i].lat, pose[i].lng, pose[i].alt);
+    const [x, y, z] = llaDegreeToLocal(selectedRun, poseOrigin,
+        runs[selectedRun].data[i].lat, runs[selectedRun].data[i].lng,
+        runs[selectedRun].data[i].alt);
     coordinates.push(new THREE.Vector3(x, y, z));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(coordinates);
-  const material = new THREE.LineBasicMaterial({color: 'blue'});
-  trajectory = new THREE.Line(geometry, material);
-  scene.add(trajectory);
-  trajectory.position.x = poseTransform.translateX;
-  trajectory.position.z = poseTransform.translateZ;
-  trajectory.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
+  const material = new THREE.LineBasicMaterial({color: 'black'});
+  runs[selectedRun].trajectory = new THREE.Line(geometry, material);
+  scene.add(runs[selectedRun].trajectory);
+  runs[selectedRun].trajectory.position.x =
+  runIdToTransforms[selectedRun].translateX;
+  runs[selectedRun].trajectory.position.z =
+  runIdToTransforms[selectedRun].translateZ;
+  runs[selectedRun].trajectory.rotation.y =
+  THREE.Math.degToRad(runIdToTransforms[selectedRun].rotate);
 }
 
+
 /**
- * This repositions all children the orientation object. The object
- * is a geometry instance, initializing the object with one geometry
- * call rather than the number of data points. (O(1) vs. O(N))
+* This repositions all children the orientation object. The object is a
+ * geometry instance, initializing the object with one geometry call rather than
+ * the number of data points. (O(1) vs. O(N))
+ * @param {number} runId
  */
-function plotOrientation() {
+function plotOrientation(runId) {
+  const pose = runs[runId].data;
+  const orientation = runs[runId].orientation;
   for (const point of pose) {
     /**
      * Matrix is a 4x4 matrix used to translate and rotate each instance
@@ -222,7 +277,8 @@ function plotOrientation() {
      * not the center of the 3D scene.
      */
     const matrix = new THREE.Matrix4();
-    const [x, y, z] = llaDegreeToLocal(point.lat, point.lng, point.alt);
+    const [x, y, z] = llaDegreeToLocal(runId, poseOrigin,
+        point.lat, point.lng, point.alt);
 
     matrix.makeTranslation(x, y, z);
     matrix.multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
@@ -237,9 +293,9 @@ function plotOrientation() {
     orientation.setColorAt( pose.indexOf(point), color );
   }
   orientation.instanceMatrix.needsUpdate = true;
-  orientation.position.x = poseTransform.translateX;
-  orientation.position.z = poseTransform.translateZ;
-  orientation.rotation.y = THREE.Math.degToRad(poseTransform.rotate);
+  orientation.position.x = runIdToTransforms[runId].translateX;
+  orientation.position.z = runIdToTransforms[runId].translateZ;
+  orientation.rotation.y = THREE.Math.degToRad(runIdToTransforms[runId].rotate);
 }
 
 /**
@@ -263,67 +319,96 @@ function multiplyInstanceMatrixAtIndex(multiplicand, index, object) {
 * Updates GUI with specific point information.
 * @param {int} index index of point.
 */
-function displayPointValues(index) {
-  time.setValue(pose[index].gpsTimestamp);
-  lat.setValue(pose[index].lat);
-  lng.setValue(pose[index].alt);
-  alt.setValue(pose[index].alt);
-  yaw.setValue(pose[index].yawDeg);
-  roll.setValue(pose[index].rollDeg);
-  pitch.setValue(pose[index].pitchDeg);
+function displayPointValues( index) {
+  time.setValue(runs[selectedRun].data[index].gpsTimestamp);
+  lat.setValue(runs[selectedRun].data[index].lat);
+  lng.setValue(runs[selectedRun].data[index].alt);
+  alt.setValue(runs[selectedRun].data[index].alt);
+  yaw.setValue(runs[selectedRun].data[index].yawDeg);
+  roll.setValue(runs[selectedRun].data[index].rollDeg);
+  pitch.setValue(runs[selectedRun].data[index].pitchDeg);
 }
 
 /**
 * Hides end of trajectory based on user selected point.
  */
 function hideOrientation() {
-  if (poseStartIndex.start >= poseEndIndex.end) {
+  selectedRun = currentId.value;
+  runs[selectedRun].start= poseStartIndex.start;
+  runs[selectedRun].end = poseEndIndex.end;
+
+  if (runs[selectedRun].start >= runs[selectedRun].end) {
     return;
   }
 
-  const min = Math.min(poseEndIndex.end, poseLength);
-  plotPartialPath(poseStartIndex.start, min);
-  for (let i= 0; i<= oldStart; i++) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
+  const min = Math.min(runs[selectedRun].end, runs[selectedRun].length);
+  plotPartialPath(selectedRun, runs[selectedRun].start, min);
+  for (let i= 0; i<= runs[selectedRun].oldStart; i++) {
+    multiplyInstanceMatrixAtIndex(
+        nonZeroMatrix, i, runs[selectedRun].orientation);
   }
-  for (let i= 0; i<= poseStartIndex.start; i++) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
+  for (let i= 0; i<= runs[selectedRun].start; i++) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[selectedRun].orientation);
   }
 
-  for (let i= poseLength-1; i>oldEnd; i--) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, orientation);
+  for (let i= runs[selectedRun].length-1; i>runs[selectedRun].oldEnd; i--) {
+    multiplyInstanceMatrixAtIndex(
+        nonZeroMatrix, i, runs[selectedRun].orientation);
   }
-  for (let i= poseLength-1; i> poseEndIndex.end; i--) {
-    multiplyInstanceMatrixAtIndex(zeroMatrix, i, orientation);
+  for (let i= runs[selectedRun].length-1; i> runs[selectedRun].end; i--) {
+    multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[selectedRun].orientation);
   }
 
   /* Update oldentries. */
-  oldEnd = poseEndIndex.end;
-  oldStart = poseStartIndex.start;
+  runs[selectedRun].oldEnd = runs[selectedRun].end;
+  runs[selectedRun].oldStart = runs[selectedRun].start;
 }
 
 /**
- * This function initializes gui allowing the user to manipulate the
- * pose objects.
+ * This function initializes gui allowing the user to manipulate the pose
+ * objects.
  */
-function makeGUI() {
+function loadGui() {
+  // Need a way to select which pose run to make this change to and pass this
+  // parameter.
+  const runId = currentId.value;
+
   const gui = new GUI();
-  gui.add(poseTransform, 'rotate', 0, 360, 1).onChange(plotOrientation)
-      .onFinishChange(plotTrajectory)
+
+  let currentData = runs[runId].data;
+  // On change of selected runId, update the given dataset to use;
+  gui.add(currentId, 'value', Object.keys(runs)).onFinishChange(
+      () => {
+        currentData = runs[currentId.value].data;
+      });
+
+  gui.add(runIdToTransforms[currentId.value], 'rotate', 0, 360, 1)
+      .onChange(() => {
+        console.log('changed'); plotOrientation(currentId.value);
+      })
+      .onFinishChange(() => {
+        console.log(currentId.value);
+        plotTrajectory(currentId.value, currentData);
+      })
       .name('Pose Rotation (degrees)');
-  gui.add(poseTransform, 'translateX', -10, 10, .025)
-      .onChange(plotOrientation)
-      .onFinishChange(plotTrajectory).name('X Axis Translation');
-  gui.add(poseTransform, 'translateZ', -10, 10, .025)
-      .onChange(plotOrientation)
-      .onFinishChange(plotTrajectory).name('Z Axis Translation');
-  gui.add(poseTransform, 'scale', .5, 2, .25)
-      .onChange(plotOrientation)
-      .onFinishChange(plotTrajectory).name('Pose Scale Multiplier');
+
+  gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('X Axis Translation');
+  gui.add(runIdToTransforms[currentId.value], 'translateZ', -10, 10, .025)
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('Z Axis Translation');
+  gui.add(runIdToTransforms[currentId.value], 'scale', .5, 2, .25)
+      .onChange(() => plotOrientation(currentId.value))
+      .onFinishChange(() => plotTrajectory(currentId.value, currentData))
+      .name('Pose Scale Multiplier');
+
 
   /* Adds index of point manipulation to maxgui. */
-  const max = poseLength;
-  oldEnd=poseLength;
+  const max = maxLength;
+
   gui.add(poseStartIndex, 'start', 0, max, 1)
       .onFinishChange(hideOrientation);
 
@@ -331,7 +416,8 @@ function makeGUI() {
       .onFinishChange(hideOrientation);
 
   /* Time value. */
-  time = gui.add(timeStart, 'time').onFinishChange(findTime);
+  time = gui.add(timeStart, 'time').
+      onFinishChange(()=>findTime(currentId.value));
   /* Lat value. */
   const latStart= {lat: ''};
   lat = gui.add(latStart, 'lat');
@@ -352,26 +438,30 @@ function makeGUI() {
   roll = gui.add(rollStart, 'roll');
 }
 
-/** Updates time gui to show if time typed in is found or not. */
-function findTime() {
+/**
+* Updates time gui to show if time typed in is found or not.
+* @param {String} runId name of runid
+*/
+function findTime(runId) {
   let found = false;
   const value = time.getValue();
   console.log(value);
   let start =0;
-  let end = poseLength-1;
+  let end = runs[runId].length-1;
   // Iterate while start not meets end using binary search.
   while (start<=end && !found) {
     // Find the mid index.
     const mid=Math.floor((start + end)/2);
 
     // If element is present at mid,  show its info.
-    if (pose[mid].gpsTimestamp==value) {
+    if (runs[runId].data[mid].gpsTimestamp==value) {
       unselectCylinder();
       selectedIndex = mid;
+      selectedRun = runId;
       selectCylinder();
       displayPointValues(mid);
       found= true;
-    } else if (pose[mid].gpsTimestamp < value) {
+    } else if (runs[runId].data[mid].gpsTimestamp < value) {
       start = mid + 1;
     } else {
       end = mid - 1;
@@ -383,9 +473,9 @@ function findTime() {
 }
 
 /**
- * This is the animation loop which continually updates the scene.
- * It allows the movement of objects to be seen on screen and the camera
- * to be moved in accordance to the controls.
+ * This is the animation loop which continually updates the scene. It allows the
+ * movement of objects to be seen on screen and the camera to be moved in
+ * accordance to the controls.
  */
 function animate() {
   requestAnimationFrame(animate);
@@ -402,7 +492,6 @@ function onClick(event) {
   /* If a cylinder was the previous thing clicked, unscale it. */
   if (selectedIndex!= -1) {
     unselectCylinder();
-    selectedIndex= -1;
   }
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -421,7 +510,8 @@ function onClick(event) {
   for (let i=0; i < intersects.length; i++) {
     if ( intersects[i].object.geometry.type == 'CylinderBufferGeometry' ) {
       selectedIndex = intersects[i].instanceId;
-      selectCylinder(selectedIndex);
+      selectedRun = currentId.value;
+      selectCylinder();
       break;
     }
   }
@@ -429,18 +519,24 @@ function onClick(event) {
 
 /** Brings back cylinder at selected Index back to original size and color. */
 function unselectCylinder() {
+  const orientation = runs[selectedRun].orientation;
   // Scale down to regular size.
   multiplyInstanceMatrixAtIndex(
       scaleInverseMatrix, selectedIndex, orientation);
 
   // Turn color back to red.
-  orientation.setColorAt( selectedIndex, color.setHex(0xff0000));
+  const originalColor = runs[selectedRun].color;
+  const colorToSet = new THREE.Color(originalColor);
+  orientation.setColorAt( selectedIndex, colorToSet);
   orientation.instanceColor.needsUpdate = true;
+
+  selectedIndex = -1;
 }
 
 /** Enlarges and changes color of cylinder at selected index. */
 function selectCylinder() {
-// Set color to green.
+  const orientation = runs[selectedRun].orientation;
+  // Set color to green.
   orientation.setColorAt( selectedIndex, color.setHex(0x00ff00));
   orientation.instanceColor.needsUpdate = true;
 
@@ -455,29 +551,36 @@ window.addEventListener('click', onClick);
  * This function fetchs pose data from the RunInfo servlet,
  * it is an asynchronous call requiring addMap() to be
  * called after the data is fully loaded.
+ * Get the necessary data from sessionStorage and load page contents.
  */
 function fetchData() {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const id = urlParams.get('id');
-  const type = urlParams.get('dataType');
 
-  makeCamera();
-  // Only need to refetch the data if it is not contained in local storage, in
-  // general it should be.
-  const isStored = urlParams.get('stored');
-  const subSectionNumber = urlParams.get('subSection');
-  if (isStored) {
-    pose = JSON.parse(sessionStorage.getItem(id + '_' +
-      type + '_' + subSectionNumber));
-    addMap();
+  const isSubSection = urlParams.get('subsection');
+
+  let firstData;
+  if (isSubSection) {
+    runs = JSON.parse(sessionStorage.getItem('subsection'));
+    firstData = Object.values(runs)[0].data;
+    poseOrigin = firstData[0];
+    currentId.value = Object.keys(runs)[0];
+
+    {
+      // Initialize the transforms for each run.
+      Object.keys(runs).forEach(
+          (currentKey) => runIdToTransforms[currentKey] = defaultTransform);
+      // Render the different runs.
+      const runsIterable = Object.entries(runs);
+      for (const [runId, currentObject] of runsIterable) {
+        addPoseData(runId, currentObject.data, currentObject.color);
+      }
+    }
   } else {
-    fetch('/getrun?id=' + id + '&dataType=' + type)
-        .then((response) => response.json())
-        .then((data) => pose = data).then(()=> poseLength= pose.length)
-        .then(() => {
-          addMap(); makeGUI();
-        },
-        );
+    console.log('Invalid input format provided');
   }
+  loadGui();
+  initMap(firstData);
 }
+
+
