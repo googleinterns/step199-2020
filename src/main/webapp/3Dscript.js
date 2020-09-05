@@ -352,7 +352,8 @@ function hideOrientation() {
   }
 
   for (let i= runs[selectedRun].length-1; i>runs[selectedRun].oldEnd; i--) {
-    multiplyInstanceMatrixAtIndex(nonZeroMatrix, i, runs[selectedRun].orientation);
+    multiplyInstanceMatrixAtIndex(
+        nonZeroMatrix, i, runs[selectedRun].orientation);
   }
   for (let i= runs[selectedRun].length-1; i> runs[selectedRun].end; i--) {
     multiplyInstanceMatrixAtIndex(zeroMatrix, i, runs[selectedRun].orientation);
@@ -415,7 +416,8 @@ function loadGui() {
       .onFinishChange(hideOrientation);
 
   /* Time value. */
-  time = gui.add(timeStart, 'time').onFinishChange(()=>findTime(currentId.value));
+  time = gui.add(timeStart, 'time').
+      onFinishChange(()=>findTime(currentId.value));
   /* Lat value. */
   const latStart= {lat: ''};
   lat = gui.add(latStart, 'lat');
@@ -436,7 +438,10 @@ function loadGui() {
   roll = gui.add(rollStart, 'roll');
 }
 
-/** Updates time gui to show if time typed in is found or not. */
+/**
+* Updates time gui to show if time typed in is found or not.
+* @param {String} runId name of runid
+*/
 function findTime(runId) {
   let found = false;
   const value = time.getValue();
@@ -576,16 +581,6 @@ function fetchData() {
   }
   loadGui();
   initMap(firstData);
-}
-
-function maxLength1() {
-  let max=-1;
-  for (const run of Object.keys(runs)) {
-    if (run.length>max) {
-      max= run.length;
-    }
-  }
-  return max;
 }
 
 
