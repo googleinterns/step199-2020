@@ -31,8 +31,15 @@ public class GetTerrain extends HttpServlet {
     System.out.println(maxLng);
     String current = new java.io.File(".").getCanonicalPath();
     System.out.println("The path is " + current);
-    String programPath = "python3 /home/dmoe/Documents/Google/ShadyFeatures/src/main/java/python/testFinalish.py "
-        + minLat + " " + minLng + " " + maxLat + " " + maxLng;
+    String programPath =
+        "python3 /home/dmoe/Documents/Google/ShadyFeatures/src/main/java/python/testFinalish.py "
+            + minLat
+            + " "
+            + minLng
+            + " "
+            + maxLat
+            + " "
+            + maxLng;
     System.out.println(programPath);
     Process p = Runtime.getRuntime().exec(programPath);
     System.out.println("Got here");
