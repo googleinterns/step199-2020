@@ -20,7 +20,7 @@ let camera;
 let renderer;
 let clock;
 let controls;
-let proj = new MercatorProjection();
+const proj = new MercatorProjection();
 
 // Likely need to make a separate pose transform for each runId;
 const runIdToTransforms = {};
@@ -46,9 +46,8 @@ animate();
  meaning that this material can be used for nany purpose, including commercial.
  */
 
-
 /**
- * Compute the coordinates of the bounding rectange containing this map.
+ * Compute the coordinates of the bounding rectangle containing this map.
  * @param {google.maps.LatLng} center
  * @param {number} zoom The Maps api specified zoom level.
  * @param {number} mapWidth The map width specified in pixels.
@@ -60,15 +59,44 @@ function getCorners(center, zoom, mapWidth, mapHeight) {
   const centerPx = proj.fromLatLngToPoint(center);
   const SWPoint = {
     x: (centerPx.x - (mapWidth / 2) / scale), y:
-            (centerPx.y + (mapHeight / 2) / scale),
+      (centerPx.y + (mapHeight / 2) / scale),
   };
   const SWLatLon = proj.fromPointToLatLng(SWPoint);
   const NEPoint = {
     x: (centerPx.x + (mapWidth / 2) / scale), y:
-            (centerPx.y - (mapHeight / 2) / scale),
+      (centerPx.y - (mapHeight / 2) / scale),
   };
   const NELatLon = proj.fromPointToLatLng(NEPoint);
   return [SWLatLon, NELatLon];
+}
+/**
+ * Return the area of the given bounding rectangle in square metres.
+ * @param {number} lat1
+ * @param {number} lng1
+ * @param {number} lat2
+ * @param {number} lng2
+ * @return {number}
+ */
+function getArea(lat1, lng1, lat2, lng2) {
+  // Use a formula to compute the distance between two points,
+  // then as the region is a square use the fact that A = D^2/2
+  // Reference to this JavaScript code:
+  // https://www.movable-type.co.uk/scripts/latlong.html
+  const r = 6371e3; // metres
+  const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  // In meters.
+  const d = r * c;
+  // As the area of square is the diagonal squared /2.
+  return d * d / 2;
 }
 
 /**
@@ -100,64 +128,61 @@ function initMap(pose) {
   // strange rendering was due to the light not the scene itself
   // Creates the 2D map.
   const loader = new THREE.TextureLoader();
-  //  const light = new THREE.DirectionalLight(0xffffff);
-  // light.position.set(0, 1, 1).normalize();
-  // scene.add(light);
-  const newGeometry = new THREE.PlaneGeometry(50, 50, 700, 700);
+  const centerPoint = new google.maps.LatLng(pose[0].lat, pose[0].lng);
+  const zoom = 18;
+  const width = 500;
+  const height = 500;
+  const corners = getCorners(centerPoint, zoom, width, height);
+  const firstCorner = corners[0];
+  const secondCorner = corners[1];
+  const path = '/terrain?minLat=' + firstCorner.lat() + '&minLng=' +
+    firstCorner.lng() + '&maxLat=' +
+    secondCorner.lat() + '&maxLng=' + secondCorner.lng();
+  console.log('The path is ' + path);
+  const area = getArea(firstCorner.lat(), firstCorner.lng(),
+      secondCorner.lat(), secondCorner.lng());
+  const sideLength = Math.sqrt(area);
+  console.log('The side length is ' + sideLength);
+  // The lengths of the given parameters should be of the form (x+1)(y+1) =2
+  // the number of returned results. As there is ambiguity over the edge regions
+  // where partial chopping of the scans occur I am not sure how to determine
+  // which sides have been partially applied. These might be possible to resolve
+  // using dimensions in Earth Engine. For now I find the closest square and
+  // then know that each value can only differ by at most 2 from this value.
+  // I believe this is correct, but ambiguous, over which ordering
+  // to choose.
+  const newGeometry = new THREE.PlaneGeometry(sideLength, sideLength, 9, 6);
 
-  console.log("The sie of the given geometry is "+newGeometry.vertices.length);
- 
-  /*
-  let material2 = new THREE.MeshPhongMaterial({
-     color: 0xff0000,
-     wireframe: true
-   });*/
+  console.log('The size of the given geometry is ' +
+    newGeometry.vertices.length);
+
   console.log(pose[0].lat);
   console.log(pose[0].lng);
-  const centerPoint = new google.maps.LatLng(pose[0].lat, pose[0].lng);
-  const zoom = 10;
-  const [firstCorner, secondCorner] = getCorners(centerPoint, zoom, 790, 790);
-  console.log('The first corner is ' + firstCorner);
-  console.log('The second corner is ' + secondCorner);
-  const path = '/terrain?minLat='+firstCorner.x+'&minLng='+firstCorner.y+'&maxLat='+secondCorner.x+'&maxLng'+secondCorner.y;
-  console.log("The path is "+path);
-  //'/terrain?minLat=11.143450874999994&minLng=47.835723546120256&maxLat=12.022357124999994&maxLng=48.42234523396127'
-  //mountain http://localhost:8080/terrain?minLat=7.5&minLng=46.1&maxLat=8&maxLng=46.2
-  fetch('/terrain?minLat=11.143450874999994&minLng=47.835723546120256&maxLat=12.022357124999994&maxLng=48.42234523396127').then(response=> response.json()).then(
-    (data)=>
-    {
-      console.log(data);
-      for (let i = 0, l = newGeometry.vertices.length; i < l; i++) {
-        newGeometry.vertices[i].z = data[i]/80;
-      }
-      loader.load(
-        'https://maps.googleapis.com/maps/api/staticmap' +
-      '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
-      '&zoom=18&size=500x500&key=' + apiKey,
-        (texture) => {
-          const material2 = new THREE.MeshLambertMaterial({map: texture});
-          const plane = new THREE.Mesh(newGeometry, material2);
-          plane.position.set(0, -4, 0);
-          plane.rotation.x = -Math.PI / 2;
-          scene.add(plane);
-        });
-    }
-  );
 
-
-
-  console.log('Map initialized at lat: ' + pose[0].lat + ' lng ' + pose[0].lng);
-  const material = new THREE.MeshLambertMaterial({
-    map: loader.load(
-        'https://maps.googleapis.com/maps/api/staticmap' +
-      '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
-      '&zoom=18&size=500x500&key=' + apiKey),
-  });
-  const geometry = new THREE.PlaneGeometry(50, 50);
-  const map = new THREE.Mesh(geometry, material);
-  map.position.set(0, -4, 0);
-  map.rotation.x = -Math.PI / 2;
- // scene.add(map);
+  console.log('The computed area is ' + area);
+  fetch(path).
+      then((response) => response.json()).then(
+          (data) => {
+            console.log(data);
+            for (let i = 0, l = newGeometry.vertices.length; i < l; i++) {
+              newGeometry.vertices[i].z = data[i];
+            }
+            const mapPath = 'https://maps.googleapis.com/maps/api/staticmap' +
+          '?format=png&center=' + pose[0].lat + ',' + pose[0].lng +
+          '&zoom=' + zoom + '&size=' + width + 'x' + height + '&key=' + apiKey;
+            console.log(mapPath);
+            loader.load(
+                mapPath,
+                (texture) => {
+                  const material2 =
+              new THREE.MeshLambertMaterial({map: texture});
+                  const plane = new THREE.Mesh(newGeometry, material2);
+                  plane.position.set(0, -540, 0);
+                  plane.rotation.x = -Math.PI / 2;
+                  scene.add(plane);
+                });
+          },
+      );
 }
 /**
  * Creates the 2D terrain and points a light at it. It also calls two other
@@ -290,7 +315,7 @@ function loadGui() {
       })
       .onFinishChange(() => {
         console.log(currentId.value);
-        lotTrajectory(currentId.value, currentData);
+        plotTrajectory(currentId.value, currentData);
       })
       .name('Pose Rotation (degrees)');
   gui.add(runIdToTransforms[currentId.value], 'translateX', -10, 10, .025)
