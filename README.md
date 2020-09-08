@@ -21,3 +21,13 @@ seemingly simple data points into such a stellar project.
 
 PR #39 : showing multruns feature integrate
 https://drive.google.com/file/d/1vgGwR3QjZNX1plJUvNNQTPGEnu1c2vDF/view
+
+To interact with the 2D-viewer of the application the user can either ctr-
+click or shift-click to get a selection rectangle which will select a partial
+region, or the whole region based on those respective clicks. Here is a 
+brief demo of this functionality/the overall application flow.
+
+<figure class="video_container">
+  <iframe src="https://drive.google.com/file/d/1SDtIpxq6ZvCJJfwIKzEZPBSY-gvYe--f/view?usp=sharing" 
+          frameborder="0" allowfullscreen="true"> </iframe>
+</figure>
