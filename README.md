@@ -28,3 +28,10 @@ region, or the whole region based on those respective clicks. Here is a
 brief demo of this functionality/the overall application flow.
 
 [![StellarPoint 2D Viewer](http://img.youtube.com/vi/lUKZUFxjdkA/0.jpg)](http://www.youtube.com/watch?v=lUKZUFxjdkA "StellarPoint 2D Viewer")
+
+The terrain data is currently loaded from a 30m DEM scan using the Google Earth
+Engine platform to fetch this data. Load times our relatively fast with this low
+resolution scan; web workers may be required for much more precise scans. Here
+is an example rendering terrain to scale with not to scale pose data.
+
+[![Terrain Example](http://img.youtube.com/vi/vb1T0t8_fOU/0.jpg)](http://www.youtube.com/watch?v=vb1T0t8_fOU "Terrain Example")
