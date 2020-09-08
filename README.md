@@ -27,7 +27,4 @@ click or shift-click to get a selection rectangle which will select a partial
 region, or the whole region based on those respective clicks. Here is a 
 brief demo of this functionality/the overall application flow.
 
-<figure class="video_container">
-  <iframe src="https://drive.google.com/file/d/1SDtIpxq6ZvCJJfwIKzEZPBSY-gvYe--f/view?usp=sharing" 
-          frameborder="0" allowfullscreen="true"> </iframe>
-</figure>
+[![StellarPoint 2D Viewer](http://img.youtube.com/vi/lUKZUFxjdkA/0.jpg)](http://www.youtube.com/watch?v=lUKZUFxjdkA "StellarPoint 2D Viewer")
