@@ -102,6 +102,7 @@ function initMap() {
     return;
   }
   const initialPose = runs[id].data;
+  console.log('The value of runs is ' + JSON.stringify(runs[id]));
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: initialPose[0].lat, lng: initialPose[0].lng},
@@ -237,6 +238,7 @@ function showPoseData(event) {
   if (checked) { // eslint-disable-line
     // First check the cache for this value.
     dataEntries = runs[id].data;
+    console.log('The value of dataentries is ' + dataEntries);
     // If the value is not found in the cache then fetch it.
     if (dataEntries === undefined) {
       fetchAndGraphData(id);
@@ -350,6 +352,7 @@ function generateViewIcon(runId) {
   viewIcon.addEventListener('click', function() {
     const viewId = this.id;  // eslint-disable-line
     const runId = viewId.split('_')[1];
+    console.log('run id is ' + runId);
     const isChecked = runs[runId].checkBox.checked;
     console.log('The checkbox value is ' + isChecked);
     if (isChecked && runs[runId].data !== undefined &&
@@ -437,6 +440,7 @@ let priorLat;
 let priorLng;
 // Store whether or not selection has been clicked.
 let isMouseDown = false;
+let isShiftDown = false;
 let infoWindow;
 const LEFTCLICK = 1;
 $(function() {
@@ -450,11 +454,23 @@ $(function() {
           placeRectangleStart();
           isMouseDown = true;
         }
+      } else if (event.shiftKey) {
+        if (!isShiftDown) {
+          console.log('shiftKey mousedown triggered');
+          placeRectangleStart();
+          isMouseDown = true;
+          isShiftDown = true;
+        }
       } else {
         // Place the box.
         if (event.which === LEFTCLICK) {
           if (isMouseDown) {
-            placeRectangleEnd();
+            if (isShiftDown) {
+              placeRectangleEnd(true);
+              isShiftDown = false;
+            } else {
+              placeRectangleEnd();
+            }
             isMouseDown = false;
           }
         }
@@ -479,8 +495,10 @@ function placeRectangleStart() {
 
 /**
  * Finish placing the selection box, select the subsection within this region.
+ * @param {boolean} fullSelect Determine whether the whole or partial
+ * selected region should be selected.
  */
-function placeRectangleEnd() {
+function placeRectangleEnd(fullSelect = false) {
   $('.widget').remove();
   // Clear pop up window.
   if (infoWindow !== undefined) {
@@ -496,7 +514,7 @@ function placeRectangleEnd() {
   for ([id, currentRun] of mapRuns) {
     if (currentRun.checkBox.checked) {
       generatedSelectedRegion(currentRun, currentLat,
-          currentLng, priorLat, priorLng);
+          currentLng, priorLat, priorLng, fullSelect);
 
       if (currentRun.subData.length === 0) {
         continue;
@@ -513,11 +531,13 @@ function placeRectangleEnd() {
  * @param {number} currentLng
  * @param {number} priorLat
  * @param {number} priorLng
+ * @param {boolean} fullSelect Determine whether the whole or partial
+ * selected region should be selected.
  */
 function generatedSelectedRegion(currentRun, currentLat,
-    currentLng, priorLat, priorLng) {
+    currentLng, priorLat, priorLng, fullSelect = false) {
   const subSectionData = computeSubSection(currentRun.data,
-      currentLat, currentLng, priorLat, priorLng);
+      currentLat, priorLat, currentLng, priorLng, fullSelect);
   currentRun.subData = subSectionData.subData;
   // Clear prior paths, only display newly selected ones.
   const subPath = getPolyLine(currentRun.subData, 'blue', 1.0, 2, 1000);
@@ -541,6 +561,7 @@ function generateSessionStorage(subSectionObject, currentRun, id) {
   subSectionObject[id] = {};
   subSectionObject[id].color = currentRun.color.value;
   subSectionObject[id].data = currentRun.subData;
+  console.log(subSectionObject);
   google.maps.event.addListener(currentRun.subSection,
       'click', (event) => createInfoWindow(event, subSectionObject));
 }
@@ -654,16 +675,20 @@ function clearSelectedPaths(pathArray) {
  * Compute the subsection of a line contained in a bounding rectangle.
  * @param {Array<Point>} pose
  * @param {number} currentLat
- * @param {number} currentLng
  * @param {number} priorLat
+ * @param {number} currentLng
  * @param {number} priorLng
+ * @param {booelan} fullSelect Determine whether or not intersecting
+ * the line should select the whole line or a subsection.
  * @return {subSectionData}
  */
-function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
+function computeSubSection(pose, currentLat, priorLat,
+    currentLng, priorLng, fullSelect = false) {
   const minLat = Math.min(currentLat, priorLat);
   const maxLat = Math.max(currentLat, priorLat);
   const minLng = Math.min(currentLng, priorLng);
   const maxLng = Math.max(currentLng, priorLng);
+  console.log(pose);
   // Lat can be from [-90,90].
   let discoveredMinLat = 91;
   let discoveredMinLatPair = 181;
@@ -672,15 +697,18 @@ function computeSubSection(pose, currentLat, currentLng, priorLat, priorLng) {
   let discoveredMaxLngPair = -91;
   subData = [];
   for (point of pose) {
-    if (withinBound(minLat, maxLat, minLng, maxLng, point.lat, point.lng)) {
+    const loopLat = point.lat;
+    const loopLng = point.lng;
+    if (withinBound(minLat, maxLat, minLng, maxLng, loopLat, loopLng) ||
+      fullSelect) {
       // While iterating save the max and min lat, same for the lng.
-      if (discoveredMinLat > point.lat) {
-        discoveredMinLatPair = point.lng;
-        discoveredMinLat = point.lat;
+      if (discoveredMinLat > loopLat) {
+        discoveredMinLatPair = loopLng;
+        discoveredMinLat = loopLat;
       }
-      if (discoveredMaxLng < point.lng) {
-        discoveredMaxLngPair = point.lat;
-        discoveredMaxLng = point.lng;
+      if (discoveredMaxLng < loopLng) {
+        discoveredMaxLngPair = loopLat;
+        discoveredMaxLng = loopLng;
       }
       subData.push(point);
     }
@@ -711,13 +739,13 @@ function linkTo3D(event, subSectionObject) { // eslint-disable-line
  * @param {number} maxLat
  * @param {number} minLng
  * @param {number} maxLng
- * @param {number} lat
- * @param {number} lng
+ * @param {number} valLat
+ * @param {number} valLng
  * @return {boolean}
  */
-function withinBound(minLat, maxLat, minLng, maxLng, lat, lng) {
-  if (lat >= minLat && lat <= maxLat &&
-    lng >= minLng && lng <= maxLng) {
+function withinBound(minLat, maxLat, minLng, maxLng, valLat, valLng) {
+  if (valLat >= minLat && valLat <= maxLat &&
+    valLng >= minLng && valLng <= maxLng) {
     return true;
   }
   return false;
