@@ -18,3 +18,18 @@ important part of our data visualization. Its data describes the linear
 and rotational acceleration of the IMU sensor using an accelerometer
 and gyroscope. The name is meant to accentuate how we manipulate these
 seemingly simple data points into such a stellar project.
+
+[PR #39 : showing multruns feature integrate](https://drive.google.com/file/d/1vgGwR3QjZNX1plJUvNNQTPGEnu1c2vDF/view)
+
+To interact with the 2D-viewer of the application the user can either ctr-click or shift-click to get a selection rectangle which will select a partial
+region, or the whole region based on those respective clicks. Here is a
+brief demo of this functionality/the overall application flow.
+
+[![StellarPoint 2D Viewer](http://img.youtube.com/vi/lUKZUFxjdkA/0.jpg)](http://www.youtube.com/watch?v=lUKZUFxjdkA "StellarPoint 2D Viewer")
+
+The terrain data is currently loaded from a 30m DEM scan using the Google Earth
+Engine platform to fetch this data. Load times our relatively fast with this low
+resolution scan; web workers may be required for much more precise scans. Here
+is an example rendering terrain to scale with not to scale pose data.
+
+[![Terrain Example](http://img.youtube.com/vi/vb1T0t8_fOU/0.jpg)](http://www.youtube.com/watch?v=vb1T0t8_fOU "Terrain Example")
