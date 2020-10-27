@@ -43,7 +43,6 @@ function createTable() { // eslint-disable-line no-unused-vars
   });
 }
 
-
 /**
  * Create a row in the given table.
  * @param {Object} runInformation  that is currently being parsed.
@@ -59,8 +58,9 @@ function appendRow(runInformation, key, currentRow) {
     if ((type.toUpperCase() === 'POSE' && index === 0) ||
       (type.toUpperCase() === 'POINTCLOUD' && index === 1)) {
       const link = document.createElement('a');
-      link.href = '/2DVisual.html?id=' + key +
-        '&dataType=' + runInformation[key];
+      link.href = '/2DVisual.html?id=' + key + '&dataType=' +
+      runInformation[key];
+
       link.innerText = type;
       columnEntry.appendChild(link);
       currentRow.appendChild(columnEntry);
